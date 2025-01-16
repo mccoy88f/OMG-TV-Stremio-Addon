@@ -12,6 +12,7 @@ Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 ### Playlist Utilizzata
 - **URL Fisso**: `https://tivustream.website/urls/listm3u`
 - **EPG Predefinita**: `http://www.epg-guide.com/it.gz`
+- Vuoi modificare l'url della playlist? Utilizza quest'altra versione: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
   
 ## 🌟 Funzionalità 
 
