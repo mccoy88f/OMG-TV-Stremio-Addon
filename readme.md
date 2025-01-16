@@ -89,6 +89,7 @@ Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 ## ⚠️ Avvertenze
 - L'EPG potrebbe non funzionare su alcuni hosting gratuiti
 - Alcuni stream potrebbero richiedere il proxy
+- Render ha un tempo che manda in standby il server se non utilizzato rallentando poi il riavvio, utilizza [uptime](https://uptimerobot.com/) per risolvere il problema
 
 ## 📋 Requisiti
 - Node.js 16+
@@ -99,6 +100,10 @@ Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 - Non sono responsabile di un eventuale uso illecito di questo addon
 - Contenuti forniti da terze parti
 - Nessuna garanzia sulla disponibilità dei canali
+
+## 👏 Ringraziamenti
+- Grazie a FuriousCat per l'idea del nome OMG
+- Grazie a tutto il team di https://www.reddit.com/r/Stremio_Italia/ per il supporto, i suggerimenti e le guide di questo addon disponibili anche sul canale telegram https://t.me/Stremio_ITA
 
 ## 📜 Licenza
 Progetto rilasciato sotto licenza MIT.
