@@ -35,7 +35,7 @@ const config = {
         version: '1.5.0',
         name: 'OMG TV',
         description: 'Un add-on per Stremio con playlist di canali M3U predefinita, senza personalizzazione.',
-        logo: 'https://tivustream.website/urls/listm3u',
+        logo: 'https://github.com/mccoy88f/OMG-TV-Stremio-Addon/blob/main/tv.png?raw=true',
         resources: ['stream', 'catalog', 'meta'],
         types: ['tv'],
         idPrefixes: ['tv'],
