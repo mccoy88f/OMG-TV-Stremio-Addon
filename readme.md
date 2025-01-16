@@ -1,4 +1,4 @@
-# OMG+ TV - Stremio Addon
+# OMG TV - Stremio Addon
 
 Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 
