@@ -89,7 +89,7 @@ Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 ## ⚠️ Avvertenze
 - L'EPG potrebbe non funzionare su alcuni hosting gratuiti
 - Alcuni stream potrebbero richiedere il proxy
-- Render ha un tempo che manda in standby il server se non utilizzato rallentando poi il riavvio, utilizza [uptime](https://uptimerobot.com/) per risolvere il problema
+- ⚠️ Render.com ha un timer che manda in standby il server se non utilizzato, rallentando poi il riavvio; utilizza [uptime](https://uptimerobot.com/) per risolvere il problema
 
 ## 📋 Requisiti
 - Node.js 16+
