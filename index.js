@@ -12,13 +12,12 @@ async function generateConfig() {
         const transformer = new PlaylistTransformer();
         
         // Carica e trasforma la playlist
-        const playlistUrl = 'https://github.com/Tundrak/IPTV-Italia/raw/main/iptvitaplus.m3u';
-        
+        const playlistUrl = 'https://example.com/link.playlist'; // URL del file con le playlist M3U
         const data = await transformer.loadAndTransform(playlistUrl);
         console.log(`Trovati ${data.genres.length} generi`);
 
         // Gestione EPG URL - sempre dalla playlist o default
-        const epgUrl = process.env.EPG_URL || data.epgUrl || 'https://www.open-epg.com/files/italy2.xml';
+        const epgUrl = process.env.EPG_URL || data.epgUrl || 'https://example.com/link.epg'; // URL del file con gli EPG
         console.log('EPG URL configurato:', epgUrl);
 
         // Crea la configurazione base
@@ -26,7 +25,7 @@ async function generateConfig() {
             port: process.env.PORT || 10000,
             M3U_URL: playlistUrl,
             EPG_URL: epgUrl,
-            enableEPG: process.env.ENABLE_EPG === 'yes',
+            enableEPG: true, // EPG attivo di default
             PROXY_URL: process.env.PROXY_URL || null,
             PROXY_PASSWORD: process.env.PROXY_PASSWORD || null,
             FORCE_PROXY: process.env.FORCE_PROXY === 'yes',
@@ -40,13 +39,13 @@ async function generateConfig() {
             
             epgSettings: {
                 maxProgramsPerChannel: 50,
-                updateInterval: 24 * 60 * 60 * 1000,
+                updateInterval: 12 * 60 * 60 * 1000,
                 cacheExpiry: 24 * 60 * 60 * 1000
             },
             
             manifest: {
                 id: 'org.mccoy88f.omgtv',
-                version: '1.5.0',
+                version: '1.6.0', // Aggiornato alla versione 1.6.0
                 name: 'OMG TV',
                 description: 'Un add-on per Stremio con playlist di canali M3U predefinita, senza personalizzazione.',
                 logo: 'https://github.com/mccoy88f/OMG-TV-Stremio-Addon/blob/main/tv.png?raw=true',
