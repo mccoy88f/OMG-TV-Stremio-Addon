@@ -3,7 +3,7 @@ const config = {
     port: process.env.PORT || 10000,
     
     // Content sources
-    M3U_URL: 'https://tivustream.website/urls/listm3u',
+    M3U_URL: 'https://github.com/Tundrak/IPTV-Italia/raw/main/iptvitaplus.m3u',
     EPG_URL: process.env.EPG_URL || null, // Sarà popolato con l'URL dalla playlist se non specificato
     
     // Feature flags
