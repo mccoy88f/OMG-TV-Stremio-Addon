@@ -10,8 +10,8 @@ Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 - 📺 Canali TV italiani sempre aggiornati
 
 ### Playlist Utilizzata
-- **URL Fisso**: `https://github.com/Tundrak/IPTV-Italia/raw/main/iptvitaplus.m3u`
-- **EPG Predefinita**: `https://www.open-epg.com/files/italy2.xml`
+- **URL Fisso**: `https://tivustream.website/urls/listm3u`
+- **EPG Predefinita**: `https://www.epgitalia.tv/guidexz`
 - Vuoi modificare l'url della playlist? Utilizza quest'altra versione: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
   
 ## 🌟 Funzionalità 
@@ -76,7 +76,7 @@ Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 ## 🔄 Changelog
 
 ### v1.5.0
-- 🔒 Playlist sempre fissata a quella di Tundrak
+- 🔒 Playlist sempre fissata a quella di Tivustream
 - 🚀 Migliorata stabilità e semplicità di configurazione
 
 ## 🤝 Contribuire
