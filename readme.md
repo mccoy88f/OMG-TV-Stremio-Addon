@@ -71,7 +71,8 @@ Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 ### Deploy su Render.com
 1. Collega il repository a Render
 2. Configura le variabili d'ambiente opzionali
-3. Deploy automatico
+3. Deploy automatico tramite questo pulsante
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mccoy88f/OMG-TV-Stremio-Addon)
 
 ## 🔄 Changelog
 
