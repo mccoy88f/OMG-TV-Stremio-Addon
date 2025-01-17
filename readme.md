@@ -12,6 +12,7 @@ Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 ### Playlist Utilizzata
 - **URL Fisso**: `https://github.com/Tundrak/IPTV-Italia/raw/main/iptvitaplus.m3u`
 - **EPG Predefinita**: `https://www.open-epg.com/files/italy2.xml`
+- A partire dal 19/01/25 la nuova epg predefinita sarà `https://www.open-epg.com/generate/fGu73wSr6C.xml` che copre il 95% dei canali
 - Vuoi modificare l'url della playlist? Utilizza quest'altra versione: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
   
 ## 🌟 Funzionalità 
