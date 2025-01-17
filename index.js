@@ -12,14 +12,14 @@ async function generateConfig() {
         const transformer = new PlaylistTransformer();
         
         // Carica e trasforma la playlist
-        const playlistUrl = 'https://tivustream.website/urls/listm3u';
+        const playlistUrl = 'https://github.com/Tundrak/IPTV-Italia/raw/main/iptvitaplus.m3u';
         console.log('Caricamento playlist da URL FISSO:', playlistUrl);
         
         const data = await transformer.loadAndTransform(playlistUrl);
         console.log(`Trovati ${data.genres.length} generi`);
 
         // Gestione EPG URL - sempre dalla playlist o default
-        const epgUrl = process.env.EPG_URL || data.epgUrl || 'https://www.epgitalia.tv/guidexz';
+        const epgUrl = process.env.EPG_URL || data.epgUrl || 'https://www.open-epg.com/files/italy2.xml';
         console.log('EPG URL configurato:', epgUrl);
 
         // Crea la configurazione base
