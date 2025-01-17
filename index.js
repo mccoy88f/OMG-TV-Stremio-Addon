@@ -10,8 +10,6 @@ async function generateConfig() {
         
         // Crea un'istanza del transformer
         const transformer = new PlaylistTransformer();
-
-const playlistUrl = config.M3U_URL;
         
         // Carica e trasforma la playlist
         const playlistUrl = config.M3U_URL;
