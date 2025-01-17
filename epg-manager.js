@@ -72,29 +72,33 @@ class EPGManager {
         console.log('\n=== Inizio Aggiornamento EPG ===');
         const startTime = Date.now();
 
-
         try {
             this.isUpdating = true;
             console.log('Scaricamento EPG da:', url);
 
-            const response = await axios.get(url, { responseType: 'arraybuffer' });
-            let xmlString;
+            const epgUrls = await readExternalFile(url);
+            this.programGuide.clear();
 
-            try {
-                const decompressed = await gunzip(response.data);
-                xmlString = decompressed.toString();
-            } catch {
-                xmlString = response.data.toString();
+            for (const epgUrl of epgUrls) {
+                console.log('Scaricamento EPG da:', epgUrl);
+                const response = await axios.get(epgUrl, { responseType: 'arraybuffer' });
+                let xmlString;
+
+                try {
+                    const decompressed = await gunzip(response.data);
+                    xmlString = decompressed.toString();
+                } catch {
+                    xmlString = response.data.toString();
+                }
+
+                const xmlData = await parseStringPromise(xmlString);
+                await this.processEPGInChunks(xmlData);
             }
 
-            const xmlData = await parseStringPromise(xmlString);
-            this.programGuide.clear();
-            await this.processEPGInChunks(xmlData);
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             console.log(`\n✓ Aggiornamento EPG completato in ${duration} secondi`);
             console.log('=== Fine Aggiornamento EPG ===\n');
 
-            
         } catch (error) {
             console.error('Errore EPG:', error.message);
         } finally {
@@ -192,6 +196,17 @@ class EPGManager {
                           .reduce((acc, progs) => acc + progs.length, 0),
             timezone: this.timeZoneOffset
         };
+    }
+}
+
+// Funzione per leggere un file esterno (playlist o EPG)
+async function readExternalFile(url) {
+    try {
+        const response = await axios.get(url);
+        return response.data.split('\n').filter(line => line.trim() !== '');
+    } catch (error) {
+        console.error('Errore nel leggere il file esterno:', error);
+        throw error;
     }
 }
 
