@@ -12,12 +12,12 @@ async function generateConfig() {
         const transformer = new PlaylistTransformer();
         
         // Carica e trasforma la playlist
-        const playlistUrl = 'https://example.com/link.playlist'; // URL del file con le playlist M3U
+        const playlistUrl = 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.playlist'; // URL del file con le playlist M3U
         const data = await transformer.loadAndTransform(playlistUrl);
         console.log(`Trovati ${data.genres.length} generi`);
 
         // Gestione EPG URL - sempre dalla playlist o default
-        const epgUrl = process.env.EPG_URL || data.epgUrl || 'https://example.com/link.epg'; // URL del file con gli EPG
+        const epgUrl = process.env.EPG_URL || data.epgUrl || 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.epg'; // URL del file con gli EPG
         console.log('EPG URL configurato:', epgUrl);
 
         // Crea la configurazione base
