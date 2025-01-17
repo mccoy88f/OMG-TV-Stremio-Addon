@@ -19,7 +19,7 @@ async function generateConfig() {
         console.log(`Trovati ${data.genres.length} generi`);
 
         // Gestione EPG URL - sempre dalla playlist o default
-        const epgUrl = process.env.EPG_URL || data.epgUrl || 'http://www.epg-guide.com/kltv.gz';
+        const epgUrl = process.env.EPG_URL || data.epgUrl || 'https://www.open-epg.com/files/italy2.xml';
         console.log('EPG URL configurato:', epgUrl);
 
         // Crea la configurazione base
