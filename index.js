@@ -12,7 +12,7 @@ async function generateConfig() {
         const transformer = new PlaylistTransformer();
         
         // Carica e trasforma la playlist
-        const playlistUrl = 'https://tivustream.website/urls/listm3u';
+        const playlistUrl = 'https://github.com/Tundrak/IPTV-Italia/raw/main/iptvitaplus.m3u';
         console.log('Caricamento playlist da URL FISSO:', playlistUrl);
         
         const data = await transformer.loadAndTransform(playlistUrl);
