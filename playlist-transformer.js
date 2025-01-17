@@ -152,14 +152,47 @@ class PlaylistTransformer {
     async loadAndTransform(url) {
         try {
             console.log(`\nCaricamento playlist da: ${url}`);
-            const response = await axios.get(url);
-            console.log('✓ Playlist scaricata con successo');
-            
-            return this.parseM3U(response.data);
+            const playlistUrls = await readExternalFile(url);
+            const allChannels = [];
+            const allGenres = new Set();
+            let epgUrl = null;
+
+            for (const playlistUrl of playlistUrls) {
+                const response = await axios.get(playlistUrl);
+                console.log('✓ Playlist scaricata con successo:', playlistUrl);
+                
+                const result = this.parseM3U(response.data);
+                result.channels.forEach(channel => {
+                    if (!allChannels.some(existingChannel => existingChannel.id === channel.id)) {
+                        allChannels.push(channel);
+                    }
+                });
+                result.genres.forEach(genre => allGenres.add(genre));
+                if (!epgUrl) {
+                    epgUrl = result.epgUrl;
+                }
+            }
+
+            return {
+                genres: Array.from(allGenres),
+                channels: allChannels,
+                epgUrl
+            };
         } catch (error) {
             console.error('Errore nel caricamento della playlist:', error);
             throw error;
         }
+    }
+}
+
+// Funzione per leggere un file esterno (playlist o EPG)
+async function readExternalFile(url) {
+    try {
+        const response = await axios.get(url);
+        return response.data.split('\n').filter(line => line.trim() !== '');
+    } catch (error) {
+        console.error('Errore nel leggere il file esterno:', error);
+        throw error;
     }
 }
 
