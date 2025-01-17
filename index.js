@@ -13,7 +13,6 @@ async function generateConfig() {
         
         // Carica e trasforma la playlist
         const playlistUrl = 'https://github.com/Tundrak/IPTV-Italia/raw/main/iptvitaplus.m3u';
-        console.log('Caricamento playlist da URL FISSO:', playlistUrl);
         
         const data = await transformer.loadAndTransform(playlistUrl);
         console.log(`Trovati ${data.genres.length} generi`);
