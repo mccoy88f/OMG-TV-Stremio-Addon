@@ -76,7 +76,7 @@ Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 ## 🔄 Changelog
 
 ### v1.5.0
-- 🔒 Playlist sempre fissata a quella di Tivustream
+- 🔒 Playlist sempre fissata a quella di Tundrak
 - 🚀 Migliorata stabilità e semplicità di configurazione
 
 ## 🤝 Contribuire
