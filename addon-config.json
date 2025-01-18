@@ -1,8 +1,7 @@
 {
     "addonName": "My Custom TV Channels",
     "addonId": "com.mycompany.custom.tv",
-    "manifest": {
-        "version": "1.0.0",
-        "description": "Una selezione personalizzata di canali TV",
-    },
+    "addonDescription": "Una selezione personalizzata di canali TV",
+    "addonVersion": "1.0.0",
+    "addonLogo": "https://example.com/mio-logo.png"
 }
