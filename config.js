@@ -7,8 +7,8 @@ const baseConfig = {
     port: process.env.PORT || 10000,
     
     // Content sources
-    M3U_URL: process.env.M3U_URL || 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.playlist',
-    EPG_URL: process.env.EPG_URL || 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.epg',
+    M3U_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.playlist',
+    EPG_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.epg',
     
     // Feature flags
     enableEPG: true, // EPG attivo di default
@@ -73,7 +73,17 @@ function loadCustomConfig() {
     const configOverridePath = path.join(__dirname, 'addon-config.json');
     
     try {
-        if (fs.existsSync(configOverridePath)) {
+        // Verifica se il file addon-config.json esiste
+        const addonConfigExists = fs.existsSync(configOverridePath);
+
+        // Se addon-config.json esiste, abilita le variabili d'ambiente per M3U e EPG
+        if (addonConfigExists) {
+            baseConfig.M3U_URL = process.env.M3U_URL || baseConfig.M3U_URL;
+            baseConfig.EPG_URL = process.env.EPG_URL || baseConfig.EPG_URL;
+        }
+
+        // Carica il file di configurazione personalizzata se esiste
+        if (addonConfigExists) {
             const customConfig = JSON.parse(fs.readFileSync(configOverridePath, 'utf8'));
             
             const mergedConfig = {
