@@ -79,6 +79,9 @@ class PlaylistTransformer {
         // Reset dei dati
         this.stremioData.genres.clear();
         this.stremioData.channels = [];
+
+        // Aggiungi "Altri canali" manualmente al Set dei generi
+        this.stremioData.genres.add("Altri canali"); // <-- Qui
         
         // Estrai l'URL dell'EPG dall'header della playlist
         let epgUrl = null;
