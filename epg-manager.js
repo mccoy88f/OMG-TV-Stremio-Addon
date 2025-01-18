@@ -94,10 +94,6 @@ class EPGManager {
                 }
             }
 
-            // Aggiungi log per debug
-            console.log(`EPG ${epgUrl} - Lunghezza XML: ${xmlString.length}`);
-            console.log(`EPG ${epgUrl} - Prime 500 caratteri:`, xmlString.slice(0, 500));
-
             const xmlData = await parseStringPromise(xmlString);
             await this.processEPGInChunks(xmlData);
         } catch (error) {
