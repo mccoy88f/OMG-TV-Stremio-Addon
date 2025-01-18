@@ -1,6 +1,7 @@
 # OMG TV % OMG+ TV- Stremio Addon
 
 Un add-on per Stremio per aggiungere al catalogo playlist di canali M3U con EPG.
+PER LA VERSIONE PLUS CON PER INSERIRE LA TUA LISTA visita questa repository: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
 
 ## 🚀 Novità in questa Versione
 
