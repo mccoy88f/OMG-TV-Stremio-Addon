@@ -3,8 +3,8 @@ const config = {
     port: process.env.PORT || 10000,
     
     // Content sources
-    M3U_URL: process.env.M3U_URL,
-    EPG_URL: process.env.EPG_URL,
+    M3U_URL: process.env.M3U_URL || 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.playlist',
+    EPG_URL: process.env.EPG_URL || 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.epg',
     
     // Feature flags
     enableEPG: true, // EPG attivo di default
