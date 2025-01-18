@@ -1,31 +1,23 @@
-# OMG TV - Stremio Addon
+# OMG TV % OMG+ TV- Stremio Addon
 
-Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
-
-## 🚀 Novità in questa Versione (1.6.0)
-
-### Caratteristiche Principali
-- **🎯 Supporto per più playlist M3U**: Aggiungi più playlist M3U tramite un file `link.playlist`.
-- **📅 Supporto per più EPG**: Aggiungi più EPG tramite un file `link.epg`.
-- **🔍 Sovrapposizioni gestite**: In caso di sovrapposizioni (ad esempio, canali con lo stesso `tvg-id`), viene preso il valore della prima lista.
-- **📺 EPG attivo di default**: Le informazioni EPG sono ora attive di default.
-- **⚡ Cache aggiornata**: I dati della playlist e dell'EPG vengono memorizzati in cache e aggiornati automaticamente.
+Un add-on per Stremio per aggiungere al catalogo playlist di canali M3U con EPG.
 
 ## 🚀 Novità in questa Versione
 
 ### Caratteristiche Principali
-- 🔒 **Playlist Statica**: URL completamente hardcoded
+- 🔒 Versione Base: **Playlist Statica**: URL completamente hardcoded
+- 🔒 Versione Plus: **Playlist Dinamica**: URL definito tramite variabile d'ambiente
 - 🛡️ Configurazione semplificata e più sicura
-- 📺 Canali TV italiani sempre aggiornati
+- 📺 Versione Base: Canali TV italiani sempre aggiornati senza necessità di impostazioni
 
 ### Playlist Utilizzata
-- Vedi la lista delle playlist e delle epg nei file di questa repo: link.playlist e link.epg
-- Vuoi modificare l'url della playlist? Utilizza quest'altra versione: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
+- **URL Fisso multiplaylist**: `https://github.com/mccoy88f/OMG-TV-Stremio-Addon/tree/link.playlist`
+- **EPG Fisso multiplaylist**: `https://github.com/mccoy88f/OMG-TV-Stremio-Addon/tree/link.epg`
+- **URL & EPG Personalizzata multiplaylist** utilizza la versione plus: `https://github.com/mccoy88f/OMG-TV-Stremio-Addon/tree/plus`
   
 ## 🌟 Funzionalità 
 
 ### Core
-- Playlist M3U predefinita e non modificabile
 - Visualizzazione dei canali per categorie
 - Ricerca dei canali per nome
 - Ordinamento automatico per numero di canale
@@ -48,16 +40,16 @@ Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 #### ENABLE_EPG
 - Attiva/disattiva le funzionalità EPG
 - Valori: 
-  - `yes` per attivare 
-  - Qualsiasi altro valore per disattivare
-- Default: disattivato
+  - `no` per disattivare 
+- Default: attivo
+- ATTENZIONE: epg con dimensione estratta maggiore di 5/7 Mbyte potrebbero bloccare i servere se presenti su Render.com
 
 #### PROXY_URL e PROXY_PASSWORD
 - Configurazione del MediaFlow Proxy
 - Opzionali per la compatibilità con Android e Web
 
 #### FORCE_PROXY
-- Forza l'utilizzo del proxy se configurato
+- Forza l'utilizzo del proxy se configurato rimuovendo i canali diretti
 
 #### PORT
 - Porta del server
@@ -79,14 +71,15 @@ Un add-on per Stremio con playlist di canali M3U predefinita e non modificabile.
 ### Deploy su Render.com
 1. Collega il repository a Render
 2. Configura le variabili d'ambiente opzionali e procedi al deploy oppure
-3. Deploy automatico tramite questo pulsante (è necessario avere account anche gratuito su render.com)
+3. Deploy automatico tramite questo pulsante (è necessario avere account anche gratuito su render.com) - Selezionare la branch su plus per attivare la versione plus
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mccoy88f/OMG-TV-Stremio-Addon)
 
 ## 🔄 Changelog
 
-### v1.5.0
-- 🔒 Playlist sempre fissata a quella di Tundrak
+### v2.0.0
+- 🔒 Playlist aggiornata per la versione base
+- 📃 Modalità multiplaylist - multiepg (solo versione plus): invece di linkare direttamente ad una playlist o ad una epg puoi inserire nelle variabili il link ad un file di testo con più link dentro)
 - 🚀 Migliorata stabilità e semplicità di configurazione
 
 ## 🤝 Contribuire
