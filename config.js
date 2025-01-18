@@ -76,28 +76,24 @@ function loadCustomConfig() {
         if (fs.existsSync(configOverridePath)) {
             const customConfig = JSON.parse(fs.readFileSync(configOverridePath, 'utf8'));
             
-            // Unisci la configurazione personalizzata con quella base
             const mergedConfig = {
                 ...baseConfig,
-                ...customConfig,
                 manifest: {
                     ...baseConfig.manifest,
-                    // Sovrascrivi completamente il manifest se fornito
-                    ...(customConfig.manifest || {}),
-                    // Assicura che id e name siano corretti
-                    id: customConfig.manifest?.id || baseConfig.manifest.id,
-                    name: customConfig.manifest?.name || baseConfig.manifest.name
+                    id: customConfig.addonId || baseConfig.manifest.id,
+                    name: customConfig.addonName || baseConfig.manifest.name,
+                    description: customConfig.addonDescription || baseConfig.manifest.description,
+                    version: customConfig.addonVersion || baseConfig.manifest.version,
+                    logo: customConfig.addonLogo || baseConfig.manifest.logo
                 }
             };
 
-            console.log('Configurazione addon caricata:', mergedConfig.manifest.name);
             return mergedConfig;
         }
     } catch (error) {
         console.error('Errore nel caricare la configurazione personalizzata:', error);
     }
 
-    // Se non trova il file, usa la configurazione base
     return baseConfig;
 }
 
