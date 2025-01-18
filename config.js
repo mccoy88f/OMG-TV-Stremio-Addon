@@ -1,13 +1,17 @@
-const config = {
+const fs = require('fs');
+const path = require('path');
+
+// Configurazione base predefinita
+const baseConfig = {
     // Server configuration
     port: process.env.PORT || 10000,
     
     // Content sources
-    M3U_URL: 'https://github.com/Tundrak/IPTV-Italia/raw/main/iptvitaplus.m3u',
-    EPG_URL: process.env.EPG_URL || null, // Sarà popolato con l'URL dalla playlist se non specificato
+    M3U_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.playlist',
+    EPG_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.epg',
     
     // Feature flags
-    enableEPG: process.env.ENABLE_EPG === 'yes',
+    enableEPG: true, // EPG attivo di default
     
     // Proxy configuration
     PROXY_URL: process.env.PROXY_URL || null,
@@ -16,23 +20,23 @@ const config = {
     
     // Cache settings
     cacheSettings: {
-        updateInterval: 12 * 60 * 60 * 1000,
-        maxAge: 24 * 60 * 60 * 1000,
+        updateInterval: 12 * 60 * 60 * 1000, // 12 ore
+        maxAge: 24 * 60 * 60 * 1000, // 24 ore
         retryAttempts: 3,
-        retryDelay: 5000
+        retryDelay: 5000 // 5 secondi
     },
     
     // EPG settings
     epgSettings: {
         maxProgramsPerChannel: 50,
-        updateInterval: 12 * 60 * 60 * 1000,
-        cacheExpiry: 24 * 60 * 60 * 1000
+        updateInterval: 12 * 60 * 60 * 1000, // 12 ore
+        cacheExpiry: 24 * 60 * 60 * 1000 // 24 ore
     },
     
     // Manifest configuration
     manifest: {
         id: 'org.mccoy88f.omgtv',
-        version: '1.5.0',
+        version: '2.0.0',
         name: 'OMG TV',
         description: 'Un add-on per Stremio con playlist di canali M3U predefinita, senza personalizzazione.',
         logo: 'https://github.com/mccoy88f/OMG-TV-Stremio-Addon/blob/main/tv.png?raw=true',
@@ -48,7 +52,7 @@ const config = {
                     {
                         name: 'genre',
                         isRequired: false,
-                        options: [] // Lasciamo vuoto l'array dei generi
+                        options: []
                     },
                     {
                         name: 'search',
@@ -63,6 +67,52 @@ const config = {
         ]
     }
 };
+
+// Funzione per caricare la configurazione personalizzata
+function loadCustomConfig() {
+    const configOverridePath = path.join(__dirname, 'addon-config.json');
+    
+    try {
+        // Verifica se il file addon-config.json esiste
+        const addonConfigExists = fs.existsSync(configOverridePath);
+
+        // Se addon-config.json esiste, abilita le variabili d'ambiente per M3U e EPG
+        if (addonConfigExists) {
+            baseConfig.M3U_URL = process.env.M3U_URL || baseConfig.M3U_URL;
+            baseConfig.EPG_URL = process.env.EPG_URL || baseConfig.EPG_URL;
+        }
+
+        // Carica il file di configurazione personalizzata se esiste
+        if (addonConfigExists) {
+            const customConfig = JSON.parse(fs.readFileSync(configOverridePath, 'utf8'));
+            
+            const mergedConfig = {
+                ...baseConfig,
+                manifest: {
+                    ...baseConfig.manifest,
+                    id: customConfig.addonId || baseConfig.manifest.id,
+                    name: customConfig.addonName || baseConfig.manifest.name,
+                    description: customConfig.addonDescription || baseConfig.manifest.description,
+                    version: customConfig.addonVersion || baseConfig.manifest.version,
+                    logo: customConfig.addonLogo || baseConfig.manifest.logo,
+                    catalogs: [{
+                        ...baseConfig.manifest.catalogs[0],
+                        id: addonConfigExists ? 'omg_plus_tv' : baseConfig.manifest.catalogs[0].id,
+                        name: addonConfigExists ? 'OMG+ TV' : baseConfig.manifest.catalogs[0].name
+                    }]
+                }
+            };
+
+            return mergedConfig;
+        }
+    } catch (error) {
+        console.error('Errore nel caricare la configurazione personalizzata:', error);
+    }
+
+    return baseConfig;
+}
+
+const config = loadCustomConfig();
 
 // Funzione per aggiornare l'URL dell'EPG
 config.updateEPGUrl = function(url) {

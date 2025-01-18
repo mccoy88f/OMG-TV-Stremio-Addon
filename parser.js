@@ -4,6 +4,17 @@ const zlib = require('zlib');
 const { promisify } = require('util');
 const gunzip = promisify(zlib.gunzip);
 
+// Funzione per leggere un file esterno (playlist o EPG)
+async function readExternalFile(url) {
+    try {
+        const response = await axios.get(url);
+        return response.data.split('\n').filter(line => line.trim() !== '');
+    } catch (error) {
+        console.error('Errore nel leggere il file esterno:', error);
+        throw error;
+    }
+}
+
 // Funzione per estrarre l'URL EPG dalla playlist M3U
 function extractEPGUrl(m3uContent) {
     const firstLine = m3uContent.split('\n')[0];
@@ -14,77 +25,94 @@ function extractEPGUrl(m3uContent) {
     return null;
 }
 
-// Funzione per parsare la playlist M3U
+// Funzione per parsare una playlist M3U
 async function parsePlaylist(url) {
     try {
-        const m3uResponse = await axios.get(url);
-        const m3uContent = m3uResponse.data;
+        const playlistUrls = await readExternalFile(url);
+        const allItems = [];
+        const allGroups = new Set();
+        let epgUrl = null;
 
-        // Estrai l'URL dell'EPG
-        const epgUrl = extractEPGUrl(m3uContent);
+        for (const playlistUrl of playlistUrls) {
+            const m3uResponse = await axios.get(playlistUrl);
+            const m3uContent = m3uResponse.data;
 
-        // Estrai i gruppi unici (generi)
-        const groups = new Set();
-        const items = [];
+            // Estrai l'URL dell'EPG dalla prima playlist
+            if (!epgUrl) {
+                epgUrl = extractEPGUrl(m3uContent);
+            }
 
-        // Dividi la playlist in righe
-        const lines = m3uContent.split('\n');
-        let currentItem = null;
+            // Estrai i gruppi unici (generi)
+            const groups = new Set();
+            const items = [];
 
-        for (const line of lines) {
-            if (line.startsWith('#EXTINF:')) {
-                // Estrai i metadati del canale
-                const metadata = line.substring(8).trim();
-                const tvgData = {};
-                
-                // Estrai attributi tvg
-                const tvgMatches = metadata.match(/([a-zA-Z-]+)="([^"]+)"/g) || [];
-                tvgMatches.forEach(match => {
-                    const [key, value] = match.split('=');
-                    const cleanKey = key.replace('tvg-', '');
-                    tvgData[cleanKey] = value.replace(/"/g, '');
-                });
+            // Dividi la playlist in righe
+            const lines = m3uContent.split('\n');
+            let currentItem = null;
 
-                // Estrai il gruppo
-                const groupMatch = metadata.match(/group-title="([^"]+)"/);
-                const group = groupMatch ? groupMatch[1] : 'Altri';
-                groups.add(group);
+            for (const line of lines) {
+                if (line.startsWith('#EXTINF:')) {
+                    // Estrai i metadati del canale
+                    const metadata = line.substring(8).trim();
+                    const tvgData = {};
+                    
+                    // Estrai attributi tvg
+                    const tvgMatches = metadata.match(/([a-zA-Z-]+)="([^"]+)"/g) || [];
+                    tvgMatches.forEach(match => {
+                        const [key, value] = match.split('=');
+                        const cleanKey = key.replace('tvg-', '');
+                        tvgData[cleanKey] = value.replace(/"/g, '');
+                    });
 
-                // Estrai il nome del canale (ultima parte dopo la virgola)
-                const nameParts = metadata.split(',');
-                const name = nameParts[nameParts.length - 1].trim();
+                    // Estrai il gruppo
+                    const groupMatch = metadata.match(/group-title="([^"]+)"/);
+                    const group = groupMatch ? groupMatch[1] : 'Altri';
+                    groups.add(group);
 
-                // Crea l'oggetto canale
-                currentItem = {
-                    name: name,
-                    url: '', // Sarà impostato nella prossima riga
-                    tvg: {
-                        id: tvgData.id || null,
-                        name: tvgData.name || name,
-                        logo: tvgData.logo || null,
-                        chno: tvgData.chno ? parseInt(tvgData.chno, 10) : null
-                    },
-                    group: group,
-                    headers: {
-                        'User-Agent': 'HbbTV/1.6.1'
+                    // Estrai il nome del canale (ultima parte dopo la virgola)
+                    const nameParts = metadata.split(',');
+                    const name = nameParts[nameParts.length - 1].trim();
+
+                    // Crea l'oggetto canale
+                    currentItem = {
+                        name: name,
+                        url: '', // Sarà impostato nella prossima riga
+                        tvg: {
+                            id: tvgData.id || null,
+                            name: tvgData.name || name,
+                            logo: tvgData.logo || null,
+                            chno: tvgData.chno ? parseInt(tvgData.chno, 10) : null
+                        },
+                        group: group,
+                        headers: {
+                            'User-Agent': 'HbbTV/1.6.1'
+                        }
+                    };
+                } else if (line.trim().startsWith('http')) {
+                    // Imposta l'URL del canale
+                    if (currentItem) {
+                        currentItem.url = line.trim();
+                        items.push(currentItem);
+                        currentItem = null;
                     }
-                };
-            } else if (line.trim().startsWith('http')) {
-                // Imposta l'URL del canale
-                if (currentItem) {
-                    currentItem.url = line.trim();
-                    items.push(currentItem);
-                    currentItem = null;
                 }
             }
+
+            // Unisci i gruppi e gli elementi
+            items.forEach(item => {
+                if (!allItems.some(existingItem => existingItem.tvg.id === item.tvg.id)) {
+                    allItems.push(item);
+                }
+            });
+            groups.forEach(group => allGroups.add(group));
         }
 
-        const uniqueGroups = Array.from(groups).sort();
+        const uniqueGroups = Array.from(allGroups).sort();
         console.log('Gruppi unici trovati nel parser:', uniqueGroups);
-        console.log('Playlist M3U caricata correttamente. Numero di canali:', items.length);
+        console.log('Playlist M3U caricate correttamente. Numero di canali:', allItems.length);
         
         return { 
-            items, 
+            items: allItems, 
             groups: uniqueGroups.map(group => ({
                 name: group,
                 value: group
@@ -100,12 +128,24 @@ async function parsePlaylist(url) {
 // Funzione per parsare l'EPG
 async function parseEPG(url) {
     try {
-        console.log('Scaricamento EPG da:', url);
-        const response = await axios.get(url, { responseType: 'arraybuffer' });
-        const decompressed = await gunzip(response.data);
-        const xmlData = await parseStringPromise(decompressed.toString());
-        
-        return processEPGData(xmlData);
+        const epgUrls = await readExternalFile(url);
+        const allProgrammes = new Map();
+
+        for (const epgUrl of epgUrls) {
+            console.log('Scaricamento EPG da:', epgUrl);
+            const response = await axios.get(epgUrl, { responseType: 'arraybuffer' });
+            const decompressed = await gunzip(response.data);
+            const xmlData = await parseStringPromise(decompressed.toString());
+            
+            const programmes = processEPGData(xmlData);
+            programmes.forEach((value, key) => {
+                if (!allProgrammes.has(key)) {
+                    allProgrammes.set(key, value);
+                }
+            });
+        }
+
+        return allProgrammes;
     } catch (error) {
         console.error('Errore nel parsing dell\'EPG:', error);
         throw error;

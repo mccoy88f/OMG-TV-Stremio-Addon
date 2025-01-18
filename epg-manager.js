@@ -56,6 +56,7 @@ class EPGManager {
             const date = new Date(isoString);
             return isNaN(date.getTime()) ? null : date;
         } catch (error) {
+            console.error('Errore parsing data EPG:', error);
             return null;
         }
     }
@@ -67,38 +68,74 @@ class EPGManager {
         cron.schedule('0 3 * * *', () => this.startEPGUpdate(url));
     }
 
+    async downloadAndProcessEPG(epgUrl) {
+        console.log('Scaricamento EPG da:', epgUrl.trim());
+        try {
+            const response = await axios.get(epgUrl.trim(), { 
+                responseType: 'arraybuffer',
+                timeout: 10000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept-Encoding': 'gzip, deflate, br'
+                }
+            });
+
+            let xmlString;
+            try {
+                // Prova gzip
+                xmlString = await gunzip(response.data);
+            } catch (gzipError) {
+                try {
+                    // Prova zlib
+                    xmlString = zlib.inflateSync(response.data);
+                } catch (zlibError) {
+                    // Se non è compresso, prendi direttamente
+                    xmlString = response.data.toString();
+                }
+            }
+
+            const xmlData = await parseStringPromise(xmlString);
+            await this.processEPGInChunks(xmlData);
+        } catch (error) {
+            console.error(`Errore scaricamento EPG da ${epgUrl}:`, error.message);
+            console.error('Dettagli errore:', {
+                name: error.name,
+                code: error.code,
+                response: error.response?.data
+            });
+        }
+    }
+
     async startEPGUpdate(url) {
         if (this.isUpdating) return;
         console.log('\n=== Inizio Aggiornamento EPG ===');
         const startTime = Date.now();
 
-
         try {
             this.isUpdating = true;
-            console.log('Scaricamento EPG da:', url);
+            
+            // Supporta URL multipli separati da virgola o da file
+            const epgUrls = typeof url === 'string' && url.includes(',') 
+                ? url.split(',').map(u => u.trim()) 
+                : await readExternalFile(url);
 
-            const response = await axios.get(url, { responseType: 'arraybuffer' });
-            let xmlString;
+            // Pulisci la guida programmi esistente
+            this.programGuide.clear();
 
-            try {
-                const decompressed = await gunzip(response.data);
-                xmlString = decompressed.toString();
-            } catch {
-                xmlString = response.data.toString();
+            // Processa ogni URL EPG in sequenza
+            for (const epgUrl of epgUrls) {
+                await this.downloadAndProcessEPG(epgUrl);
             }
 
-            const xmlData = await parseStringPromise(xmlString);
-            this.programGuide.clear();
-            await this.processEPGInChunks(xmlData);
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             console.log(`\n✓ Aggiornamento EPG completato in ${duration} secondi`);
             console.log('=== Fine Aggiornamento EPG ===\n');
 
-            
         } catch (error) {
-            console.error('Errore EPG:', error.message);
+            console.error('Errore globale EPG:', error);
         } finally {
             this.isUpdating = false;
+            this.lastUpdate = Date.now();
         }
     }
 
@@ -133,11 +170,10 @@ class EPGManager {
             }
         }
 
+        // Ordina i programmi per ogni canale
         for (const [channelId, programs] of this.programGuide.entries()) {
             this.programGuide.set(channelId, programs.sort((a, b) => a.start - b.start));
         }
-
-        this.lastUpdate = Date.now();
     }
 
     getCurrentProgram(channelId) {
@@ -192,6 +228,26 @@ class EPGManager {
                           .reduce((acc, progs) => acc + progs.length, 0),
             timezone: this.timeZoneOffset
         };
+    }
+}
+
+// Funzione per leggere un file esterno (playlist o EPG)
+async function readExternalFile(url) {
+    try {
+        const response = await axios.get(url);
+        const content = response.data;
+
+        // Verifica se il contenuto è un elenco di URL
+        if (content.includes('http')) {
+            return content.split('\n')
+                .filter(line => line.trim() !== '' && line.startsWith('http'));
+        }
+
+        // Se non è un elenco di URL, restituisci l'URL originale
+        return [url];
+    } catch (error) {
+        console.error('Errore nel leggere il file esterno:', error);
+        throw error;
     }
 }
 

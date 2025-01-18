@@ -30,22 +30,24 @@ class PlaylistTransformer {
      * Converte un canale nel formato Stremio
      */
     transformChannelToStremio(channel) {
-        // Usa tvg-id per l'identificatore se disponibile, altrimenti usa il nome del canale
-        const id = `tv|${channel.tvg?.id || channel.name}`;
+        // Usa tvg-id se disponibile, altrimenti genera un ID dal nome del canale
+        const channelId = channel.tvg?.id || channel.name.trim();
+        const id = `tv|${channelId}`;
         
         // Usa tvg-name se disponibile, altrimenti usa il nome originale
         const name = channel.tvg?.name || channel.name;
         
+        // Usa il gruppo se disponibile, altrimenti usa "Altri canali"
+        const group = channel.group || "Altri canali";
+        
         // Aggiungi il genere alla lista dei generi
-        if (channel.group) {
-            this.stremioData.genres.add(channel.group);
-        }
+        this.stremioData.genres.add(group);
 
         const transformedChannel = {
             id,
             type: 'tv',
             name: name,
-            genre: channel.group ? [channel.group] : [],
+            genre: [group],
             posterShape: 'square',
             poster: channel.tvg?.logo,
             background: channel.tvg?.logo,
@@ -59,7 +61,11 @@ class PlaylistTransformer {
             streamInfo: {
                 url: channel.url,
                 headers: channel.headers,
-                tvg: channel.tvg || {}
+                tvg: {
+                    ...channel.tvg,
+                    id: channelId,
+                    name: name
+                }
             }
         };
 
@@ -77,6 +83,9 @@ class PlaylistTransformer {
         // Reset dei dati
         this.stremioData.genres.clear();
         this.stremioData.channels = [];
+
+        // Aggiungi "Altri canali" manualmente al Set dei generi
+        this.stremioData.genres.add("Altri canali");
         
         // Estrai l'URL dell'EPG dall'header della playlist
         let epgUrl = null;
@@ -106,7 +115,7 @@ class PlaylistTransformer {
 
                 // Estrai il gruppo
                 const groupMatch = metadata.match(/group-title="([^"]+)"/);
-                const group = groupMatch ? groupMatch[1] : 'Altri';
+                const group = groupMatch ? groupMatch[1] : 'Altri canali';
 
                 // Estrai il nome del canale e puliscilo
                 const nameParts = metadata.split(',');
@@ -152,14 +161,63 @@ class PlaylistTransformer {
     async loadAndTransform(url) {
         try {
             console.log(`\nCaricamento playlist da: ${url}`);
-            const response = await axios.get(url);
-            console.log('✓ Playlist scaricata con successo');
-            
-            return this.parseM3U(response.data);
+            const playlistUrls = await readExternalFile(url);
+            const allChannels = [];
+            const allGenres = new Set();
+            const allEpgUrls = []; // Array per memorizzare tutti gli URL EPG
+
+            for (const playlistUrl of playlistUrls) {
+                const response = await axios.get(playlistUrl);
+                console.log('✓ Playlist scaricata con successo:', playlistUrl);
+                
+                const result = this.parseM3U(response.data);
+                result.channels.forEach(channel => {
+                    if (!allChannels.some(existingChannel => existingChannel.id === channel.id)) {
+                        allChannels.push(channel);
+                    }
+                });
+                result.genres.forEach(genre => allGenres.add(genre));
+                
+                // Aggiungi l'URL EPG solo se non è già presente
+                if (result.epgUrl && !allEpgUrls.includes(result.epgUrl)) {
+                    allEpgUrls.push(result.epgUrl);
+                    console.log('EPG URL trovato:', result.epgUrl);
+                }
+            }
+
+            // Unisci tutti gli URL EPG trovati
+            const combinedEpgUrl = allEpgUrls.length > 0 ? allEpgUrls.join(',') : null;
+
+            return {
+                genres: Array.from(allGenres),
+                channels: allChannels,
+                epgUrl: combinedEpgUrl
+            };
         } catch (error) {
             console.error('Errore nel caricamento della playlist:', error);
             throw error;
         }
+    }
+}
+
+// Funzione per leggere un file esterno (playlist o EPG)
+async function readExternalFile(url) {
+    try {
+        const response = await axios.get(url);
+        const content = response.data;
+
+        // Verifica se il contenuto inizia con #EXTM3U (indicatore di una playlist M3U diretta)
+        if (content.trim().startsWith('#EXTM3U')) {
+            console.log('Rilevata playlist M3U diretta');
+            return [url]; // Restituisce un array con solo l'URL diretto
+        }
+
+        // Altrimenti tratta il contenuto come una lista di URL
+        console.log('Rilevato file con lista di URL');
+        return content.split('\n').filter(line => line.trim() !== '');
+    } catch (error) {
+        console.error('Errore nel leggere il file esterno:', error);
+        throw error;
     }
 }
 
