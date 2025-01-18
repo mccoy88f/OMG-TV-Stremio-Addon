@@ -33,10 +33,6 @@ const baseConfig = {
         cacheExpiry: 24 * 60 * 60 * 1000 // 24 ore
     },
     
-    // Default addon configuration
-    addonName: 'OMG TV',
-    addonId: 'org.mccoy88f.omgtv',
-    
     // Manifest configuration
     manifest: {
         id: 'org.mccoy88f.omgtv',
@@ -86,14 +82,15 @@ function loadCustomConfig() {
                 ...customConfig,
                 manifest: {
                     ...baseConfig.manifest,
-                    ...customConfig.manifest,
-                    // Sovrascrivi id e nome se forniti
-                    id: customConfig.addonId || baseConfig.manifest.id,
-                    name: customConfig.addonName || baseConfig.manifest.name
+                    // Sovrascrivi completamente il manifest se fornito
+                    ...(customConfig.manifest || {}),
+                    // Assicura che id e name siano corretti
+                    id: customConfig.manifest?.id || baseConfig.manifest.id,
+                    name: customConfig.manifest?.name || baseConfig.manifest.name
                 }
             };
 
-            console.log('Configurazione addon caricata:', mergedConfig.addonName);
+            console.log('Configurazione addon caricata:', mergedConfig.manifest.name);
             return mergedConfig;
         }
     } catch (error) {
