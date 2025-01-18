@@ -189,7 +189,17 @@ class PlaylistTransformer {
 async function readExternalFile(url) {
     try {
         const response = await axios.get(url);
-        return response.data.split('\n').filter(line => line.trim() !== '');
+        const content = response.data;
+
+        // Verifica se il contenuto inizia con #EXTM3U (indicatore di una playlist M3U diretta)
+        if (content.trim().startsWith('#EXTM3U')) {
+            console.log('Rilevata playlist M3U diretta');
+            return [url]; // Restituisce un array con solo l'URL diretto
+        }
+
+        // Altrimenti tratta il contenuto come una lista di URL
+        console.log('Rilevato file con lista di URL');
+        return content.split('\n').filter(line => line.trim() !== '');
     } catch (error) {
         console.error('Errore nel leggere il file esterno:', error);
         throw error;
