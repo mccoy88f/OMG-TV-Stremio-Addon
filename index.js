@@ -12,12 +12,14 @@ async function generateConfig() {
         const transformer = new PlaylistTransformer();
         
         // Carica e trasforma la playlist
-        const playlistUrl = config.M3U_URL;
+        const playlistUrl = 'https://example.com/link.playlist';
+
         const data = await transformer.loadAndTransform(playlistUrl);
         console.log(`Trovati ${data.genres.length} generi`);
 
         // Gestione EPG URL - sempre dalla playlist o default
-        const epgUrl = config.EPG_URL;
+        const epgUrl = 'https://example.com/link.epg';
+        
         console.log('EPG URL configurato:', epgUrl);
 
         // Crea la configurazione base
