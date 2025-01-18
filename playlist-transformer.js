@@ -30,22 +30,24 @@ class PlaylistTransformer {
      * Converte un canale nel formato Stremio
      */
     transformChannelToStremio(channel) {
-        // Usa tvg-id per l'identificatore se disponibile, altrimenti usa il nome del canale
-        const id = `tv|${channel.tvg?.id || channel.name}`;
+        // Usa tvg-id se disponibile, altrimenti genera un ID dal nome del canale
+        const channelId = channel.tvg?.id || channel.name.trim();
+        const id = `tv|${channelId}`;
         
         // Usa tvg-name se disponibile, altrimenti usa il nome originale
         const name = channel.tvg?.name || channel.name;
         
+        // Usa il gruppo se disponibile, altrimenti usa "Altri canali"
+        const group = channel.group || "Altri canali";
+        
         // Aggiungi il genere alla lista dei generi
-        if (channel.group) {
-            this.stremioData.genres.add(channel.group);
-        }
+        this.stremioData.genres.add(group);
 
         const transformedChannel = {
             id,
             type: 'tv',
             name: name,
-            genre: channel.group ? [channel.group] : [],
+            genre: [group],
             posterShape: 'square',
             poster: channel.tvg?.logo,
             background: channel.tvg?.logo,
@@ -106,7 +108,7 @@ class PlaylistTransformer {
 
                 // Estrai il gruppo
                 const groupMatch = metadata.match(/group-title="([^"]+)"/);
-                const group = groupMatch ? groupMatch[1] : 'Altri';
+                const group = groupMatch ? groupMatch[1] : 'Altri canali';
 
                 // Estrai il nome del canale e puliscilo
                 const nameParts = metadata.split(',');
