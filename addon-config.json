@@ -1,16 +1,8 @@
 {
     "addonName": "My Custom TV Channels",
     "addonId": "com.mycompany.custom.tv",
-    "port": 10001,
-    "M3U_URL": "https://example.com/my-custom-playlist.m3u",
-    "EPG_URL": "https://example.com/my-custom-epg.xml",
     "manifest": {
         "version": "1.0.0",
         "description": "Una selezione personalizzata di canali TV",
-        "logo": "https://example.com/my-custom-logo.png"
     },
-    "enableEPG": true,
-    "cacheSettings": {
-        "updateInterval": 6 * 60 * 60 * 1000
-    }
 }
