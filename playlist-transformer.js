@@ -41,7 +41,7 @@ class PlaylistTransformer {
         const group = channel.group || "Altri canali";
         
         // Aggiungi il genere alla lista dei generi
-        this.stremioData.genres.add(group);
+        this.stremioData.genres.add(group); // <-- Qui aggiungi il gruppo al Set
 
         const transformedChannel = {
             id,
@@ -143,6 +143,7 @@ class PlaylistTransformer {
 
         console.log(`[PlaylistTransformer] ✓ Canali processati: ${result.channels.length}`);
         console.log(`[PlaylistTransformer] ✓ Generi trovati: ${result.genres.length}`);
+        console.log('Generi trovati:', result.genres); // <-- Log per verificare i generi
         console.log('=== Fine Parsing Playlist M3U ===\n');
 
         return result;
