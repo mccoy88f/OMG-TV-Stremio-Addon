@@ -12,14 +12,12 @@ async function generateConfig() {
         const transformer = new PlaylistTransformer();
         
         // Carica e trasforma la playlist
-        const playlistUrl = 'https://example.com/link.playlist';
-
+        const playlistUrl = 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.playlist';
         const data = await transformer.loadAndTransform(playlistUrl);
         console.log(`Trovati ${data.genres.length} generi`);
 
         // Gestione EPG URL - sempre dalla playlist o default
-        const epgUrl = 'https://example.com/link.epg';
-        
+        const epgUrl = process.env.EPG_URL || 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.epg';
         console.log('EPG URL configurato:', epgUrl);
 
         // Crea la configurazione base
@@ -47,7 +45,7 @@ async function generateConfig() {
             
             manifest: {
                 id: 'org.mccoy88f.omgtv',
-                version: '1.6.0', // Aggiornato alla versione 1.6.0
+                version: '1.6.0',
                 name: 'OMG TV',
                 description: 'Un add-on per Stremio con playlist di canali M3U predefinita, senza personalizzazione.',
                 logo: 'https://github.com/mccoy88f/OMG-TV-Stremio-Addon/blob/main/tv.png?raw=true',
