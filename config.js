@@ -94,7 +94,12 @@ function loadCustomConfig() {
                     name: customConfig.addonName || baseConfig.manifest.name,
                     description: customConfig.addonDescription || baseConfig.manifest.description,
                     version: customConfig.addonVersion || baseConfig.manifest.version,
-                    logo: customConfig.addonLogo || baseConfig.manifest.logo
+                    logo: customConfig.addonLogo || baseConfig.manifest.logo,
+                    catalogs: [{
+                        ...baseConfig.manifest.catalogs[0],
+                        id: addonConfigExists ? 'omg_plus_tv' : baseConfig.manifest.catalogs[0].id,
+                        name: addonConfigExists ? 'OMG+ TV' : baseConfig.manifest.catalogs[0].name
+                    }]
                 }
             };
 
