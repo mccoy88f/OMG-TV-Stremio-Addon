@@ -3,6 +3,7 @@ const PlaylistTransformer = require('./playlist-transformer');
 const { catalogHandler, streamHandler } = require('./handlers');
 const metaHandler = require('./meta-handler');
 const EPGManager = require('./epg-manager');
+const baseConfig = require('./config');
 
 async function generateConfig() {
     try {
@@ -11,52 +12,19 @@ async function generateConfig() {
         // Crea un'istanza del transformer
         const transformer = new PlaylistTransformer();
         
-        // Carica e trasforma la playlist
-        const playlistUrl = 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.playlist';
-        const data = await transformer.loadAndTransform(playlistUrl);
+        // Carica e trasforma la playlist usando l'URL dalla configurazione
+        const data = await transformer.loadAndTransform(baseConfig.M3U_URL);
         console.log(`Trovati ${data.genres.length} generi`);
+        console.log('EPG URL configurato:', baseConfig.EPG_URL);
 
-        // Gestione EPG URL - sempre dalla playlist o default
-        const epgUrl = process.env.EPG_URL || 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta/link.epg';
-        console.log('EPG URL configurato:', epgUrl);
-
-        // Crea la configurazione base
+        // Crea la configurazione finale
         const config = {
-            port: process.env.PORT || 10000,
-            M3U_URL: playlistUrl,
-            EPG_URL: epgUrl,
-            enableEPG: true, // EPG attivo di default
-            PROXY_URL: process.env.PROXY_URL || null,
-            PROXY_PASSWORD: process.env.PROXY_PASSWORD || null,
-            FORCE_PROXY: process.env.FORCE_PROXY === 'yes',
-            
-            cacheSettings: {
-                updateInterval: 12 * 60 * 60 * 1000,
-                maxAge: 24 * 60 * 60 * 1000,
-                retryAttempts: 3,
-                retryDelay: 5000
-            },
-            
-            epgSettings: {
-                maxProgramsPerChannel: 50,
-                updateInterval: 12 * 60 * 60 * 1000,
-                cacheExpiry: 24 * 60 * 60 * 1000
-            },
-            
+            ...baseConfig,
             manifest: {
-                id: 'org.mccoy88f.omgtv',
-                version: '1.6.0',
-                name: 'OMG TV',
-                description: 'Un add-on per Stremio con playlist di canali M3U predefinita, senza personalizzazione.',
-                logo: 'https://github.com/mccoy88f/OMG-TV-Stremio-Addon/blob/main/tv.png?raw=true',
-                resources: ['stream', 'catalog', 'meta'],
-                types: ['tv'],
-                idPrefixes: ['tv'],
+                ...baseConfig.manifest,
                 catalogs: [
                     {
-                        type: 'tv',
-                        id: 'omg_tv',
-                        name: 'OMG TV',
+                        ...baseConfig.manifest.catalogs[0],
                         extra: [
                             {
                                 name: 'genre',
