@@ -1,4 +1,6 @@
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
 class PlaylistTransformer {
     constructor() {
@@ -6,6 +8,52 @@ class PlaylistTransformer {
             genres: new Set(),
             channels: []
         };
+        this.remappingRules = new Map(); // Mappa per le regole di remapping
+    }
+
+    /**
+     * Carica le regole di remapping dal file link.epg.remapping
+     */
+    async loadRemappingRules() {
+        const remappingPath = path.join(__dirname, 'link.epg.remapping');
+        console.log('\n=== Caricamento Regole di Remapping ===');
+        console.log('Percorso file remapping:', remappingPath);
+
+        try {
+            const content = await fs.promises.readFile(remappingPath, 'utf8');
+            let ruleCount = 0;
+            let skippedCount = 0;
+
+            content.split('\n').forEach((line, index) => {
+                line = line.trim();
+                // Ignora linee vuote e commenti
+                if (!line || line.startsWith('#')) return;
+
+                const [m3uId, epgId] = line.split('=').map(s => s.trim());
+                if (!m3uId || !epgId) {
+                    console.log(`⚠️  Ignorata regola non valida alla linea ${index + 1}`);
+                    skippedCount++;
+                    return;
+                }
+
+                // Aggiungi la regola alla mappa
+                this.remappingRules.set(m3uId, epgId);
+                ruleCount++;
+            });
+
+            console.log(`✓ Caricate ${ruleCount} regole di remapping`);
+            if (skippedCount > 0) {
+                console.log(`⚠️  Ignorate ${skippedCount} regole non valide`);
+            }
+            console.log('=== Regole di Remapping Caricate ===\n');
+
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                console.log('ℹ️  Nessun file di remapping trovato - verrà utilizzato il mapping diretto');
+            } else {
+                console.error('❌ Errore nel caricamento del file di remapping:', error);
+            }
+        }
     }
 
     /**
@@ -31,7 +79,14 @@ class PlaylistTransformer {
      */
     transformChannelToStremio(channel) {
         // Usa tvg-id se disponibile, altrimenti genera un ID dal nome del canale
-        const channelId = channel.tvg?.id || channel.name.trim();
+        let channelId = channel.tvg?.id || channel.name.trim();
+
+        // Applica le regole di remapping se disponibili
+        if (this.remappingRules.has(channelId)) {
+            channelId = this.remappingRules.get(channelId);
+            console.log(`✓ Applicato remapping: ${channel.tvg?.id} -> ${channelId}`);
+        }
+
         const id = `tv|${channelId}`;
         
         // Usa tvg-name se disponibile, altrimenti usa il nome originale
@@ -75,7 +130,7 @@ class PlaylistTransformer {
     /**
      * Parsa una playlist M3U
      */
-    parseM3U(content) {
+    async parseM3U(content) {
         console.log('\n=== Inizio Parsing Playlist M3U ===');
         const lines = content.split('\n');
         let currentChannel = null;
@@ -161,6 +216,7 @@ class PlaylistTransformer {
     async loadAndTransform(url) {
         try {
             console.log(`\nCaricamento playlist da: ${url}`);
+            await this.loadRemappingRules(); // Carica le regole di remapping
             const playlistUrls = await readExternalFile(url);
             const allChannels = [];
             const allGenres = new Set();
@@ -170,7 +226,7 @@ class PlaylistTransformer {
                 const response = await axios.get(playlistUrl);
                 console.log('✓ Playlist scaricata con successo:', playlistUrl);
                 
-                const result = this.parseM3U(response.data);
+                const result = await this.parseM3U(response.data);
                 result.channels.forEach(channel => {
                     if (!allChannels.some(existingChannel => existingChannel.id === channel.id)) {
                         allChannels.push(channel);
