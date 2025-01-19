@@ -83,8 +83,22 @@ class PlaylistTransformer {
 
         // Applica le regole di remapping se disponibili
         if (this.remappingRules.has(channelId)) {
-            channelId = this.remappingRules.get(channelId);
-            console.log(`✓ Applicato remapping: ${channel.tvg?.id} -> ${channelId}`);
+            const remappedId = this.remappingRules.get(channelId);
+
+            // Verifica se il remappedId è già stato utilizzato da un altro canale
+            const isConflict = this.stremioData.channels.some(
+                ch => ch.streamInfo.tvg.id === remappedId
+            );
+
+            if (isConflict) {
+                console.warn(
+                    `⚠️  Attenzione: conflitto di tvg-id per ${channelId} -> ${remappedId}. ` +
+                    `Il tvg-id "${remappedId}" è già stato assegnato a un altro canale.`
+                );
+            }
+
+            channelId = remappedId;
+            console.log(`✓ Applicato remapping: ${channel.tvg?.id || channel.name} -> ${channelId}`);
         }
 
         const id = `tv|${channelId}`;
