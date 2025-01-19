@@ -228,7 +228,10 @@ class PlaylistTransformer {
     /**
      * Log dei canali senza EPG associato
      */
-    logChannelsWithoutEPG(epgChannels) {
+    logChannelsWithoutEPG() {
+        // Ottieni la lista degli tvg-id dei canali con EPG dall'EPGManager
+        const epgChannels = Array.from(EPGManager.programGuide.keys());
+
         const channelsWithoutEPG = this.stremioData.channels
             .filter(channel => {
                 const tvgId = channel.streamInfo.tvg.id;
@@ -244,8 +247,6 @@ class PlaylistTransformer {
                 console.log(`- ${tvgId}`);
             });
             console.log('===================================\n');
-        } else {
-            console.log('\n✓ Tutti i canali hanno una corrispondenza EPG.\n');
         }
     }
 
@@ -283,11 +284,13 @@ class PlaylistTransformer {
             // Unisci tutti gli URL EPG trovati
             const combinedEpgUrl = allEpgUrls.length > 0 ? allEpgUrls.join(',') : null;
 
-            // Ottieni la lista degli tvg-id dei canali con EPG
-            const epgChannels = await this.getEpgChannels(combinedEpgUrl);
+            // Inizializza l'EPGManager e scarica i dati EPG
+            if (combinedEpgUrl) {
+                await EPGManager.initializeEPG(combinedEpgUrl);
+            }
 
             // Log dei canali senza EPG
-            this.logChannelsWithoutEPG(epgChannels);
+            this.logChannelsWithoutEPG();
 
             return {
                 genres: Array.from(allGenres),
@@ -298,20 +301,6 @@ class PlaylistTransformer {
             console.error('Errore nel caricamento della playlist:', error);
             throw error;
         }
-    }
-
-    /**
-     * Ottieni la lista degli tvg-id dei canali con EPG
-     */
-    async getEpgChannels(epgUrl) {
-        if (!epgUrl) return []; // Se non c'è un URL EPG, restituisci una lista vuota
-
-        // Inizializza l'EPGManager e scarica i dati EPG
-        await EPGManager.initializeEPG(epgUrl);
-
-        // Ottieni la lista degli tvg-id dei canali con EPG
-        const epgChannels = Array.from(EPGManager.programGuide.keys());
-        return epgChannels;
     }
 }
 
