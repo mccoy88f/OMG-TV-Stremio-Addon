@@ -3,7 +3,8 @@
 An add-on for Stremio to add M3U channel playlists with EPG to the catalog.
 FOR THE PLUS VERSION TO INSERT YOUR OWN LIST, visit this repository: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
 
-## LEGGIMI IN ITALIANO QUI: https://github.com/mccoy88f/OMG-TV-Stremio-Addon/readme.it.md
+## LEGGIMI IN ITALIANO QUI 
+https://github.com/mccoy88f/OMG-TV-Stremio-Addon/blob/main/readme.it.md
 
 ## 🚀 What's New in This Version
 
