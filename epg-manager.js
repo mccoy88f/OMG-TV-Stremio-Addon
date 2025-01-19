@@ -14,6 +14,7 @@ class EPGManager {
         this.lastUpdate = null;
         this.isUpdating = false;
         this.CHUNK_SIZE = 10000;
+        this.remappingRules = new Map(); // Mappa per memorizzare le regole di mappatura
         this.validateAndSetTimezone();
     }
 
@@ -65,6 +66,7 @@ class EPGManager {
                 console.log(`⚠️  Skipped ${skippedCount} invalid rules`);
             }
             console.log('=== Remapping Rules Loaded ===\n');
+            this.remappingRules = rules; // Memorizza le regole di mappatura
             return rules;
 
         } catch (error) {
@@ -274,7 +276,10 @@ class EPGManager {
     }
 
     getCurrentProgram(channelId) {
-        const programs = this.programGuide.get(channelId);
+        // Verifica se esiste una mappatura per il channelId
+        const mappedChannelId = this.remappingRules.get(channelId) || channelId;
+
+        const programs = this.programGuide.get(mappedChannelId);
         if (!programs?.length) return null;
 
         const now = new Date();
@@ -292,7 +297,10 @@ class EPGManager {
     }
 
     getUpcomingPrograms(channelId) {
-        const programs = this.programGuide.get(channelId);
+        // Verifica se esiste una mappatura per il channelId
+        const mappedChannelId = this.remappingRules.get(channelId) || channelId;
+
+        const programs = this.programGuide.get(mappedChannelId);
         if (!programs?.length) return [];
 
         const now = new Date();
