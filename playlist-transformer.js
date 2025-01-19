@@ -30,7 +30,7 @@ class PlaylistTransformer {
                 // Ignora linee vuote e commenti
                 if (!line || line.startsWith('#')) return;
 
-                const [m3uId, epgId] = line.split('=').map(s => s.trim());
+                const [m3uId, epgId] = line.split('=').map(s => s.trim().toLowerCase()); // Normalizza gli ID
                 if (!m3uId || !epgId) {
                     console.log(`⚠️  Ignorata regola non valida alla linea ${index + 1}`);
                     skippedCount++;
@@ -79,16 +79,14 @@ class PlaylistTransformer {
      * Converte un canale nel formato Stremio
      */
     transformChannelToStremio(channel) {
-        // Usa tvg-id se disponibile, altrimenti genera un ID dal nome del canale
-        let channelId = channel.tvg?.id || channel.name.trim();
+        // Normalizza il tvg-id (converti in minuscolo)
+        let channelId = (channel.tvg?.id || channel.name.trim()).toLowerCase();
 
         // Applica le regole di remapping se disponibili
         if (this.remappingRules.has(channelId)) {
-            const remappedId = this.remappingRules.get(channelId);
-
-            // Verifica se il remappedId è già stato utilizzato da un altro canale
+            const remappedId = this.remappingRules.get(channelId).toLowerCase(); // Normalizza anche l'ID remappato
             const isConflict = this.stremioData.channels.some(
-                ch => ch.streamInfo.tvg.id === remappedId
+                ch => ch.streamInfo.tvg.id.toLowerCase() === remappedId
             );
 
             if (isConflict) {
@@ -133,7 +131,7 @@ class PlaylistTransformer {
                 headers: channel.headers,
                 tvg: {
                     ...channel.tvg,
-                    id: channelId,
+                    id: channelId, // Usa l'ID normalizzato
                     name: name
                 }
             }
@@ -263,7 +261,6 @@ class PlaylistTransformer {
             if (combinedEpgUrl) {
                 await EPGManager.initializeEPG(combinedEpgUrl); // Attendiamo il completamento
             }
-
 
             return {
                 genres: Array.from(allGenres),
