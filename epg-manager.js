@@ -261,9 +261,10 @@ class EPGManager {
     }
 
     /**
-     * Log dei canali M3U senza EPG
+     * Verifica quali canali della playlist non hanno dati EPG associati
+     * @param {Array} m3uChannels - Lista dei canali dalla playlist M3U
      */
-    logChannelsWithoutEPG(m3uChannels) {
+    checkMissingEPG(m3uChannels) {
         const epgChannels = Array.from(this.programGuide.keys());
         const m3uIds = new Set(m3uChannels.map(ch => ch.streamInfo?.tvg?.id));
 
