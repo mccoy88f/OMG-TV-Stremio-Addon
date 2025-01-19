@@ -2,6 +2,8 @@ const axios = require('axios');
 const { parseStringPromise } = require('xml2js');
 const zlib = require('zlib');
 const { promisify } = require('util');
+const fs = require('fs');
+const path = require('path');
 const gunzip = promisify(zlib.gunzip);
 
 // Funzione per leggere un file esterno (playlist o EPG)
@@ -12,6 +14,27 @@ async function readExternalFile(url) {
     } catch (error) {
         console.error('Errore nel leggere il file esterno:', error);
         throw error;
+    }
+}
+
+// Funzione per caricare il file di remapping
+async function loadRemappingFile() {
+    const remappingFilePath = path.join(__dirname, 'link.epg.remapping');
+    try {
+        const data = await fs.promises.readFile(remappingFilePath, 'utf8');
+        const remapping = {};
+        data.split('\n').forEach(line => {
+            if (line.trim() && !line.startsWith('#')) { // Ignora righe vuote e commenti
+                const [tvgId, channelId] = line.split('=');
+                if (tvgId && channelId) {
+                    remapping[tvgId.trim()] = channelId.trim();
+                }
+            }
+        });
+        return remapping;
+    } catch (error) {
+        console.error('Errore nel caricamento del file di remapping:', error);
+        return {};
     }
 }
 
@@ -55,7 +78,7 @@ async function parsePlaylist(url) {
                     // Estrai i metadati del canale
                     const metadata = line.substring(8).trim();
                     const tvgData = {};
-                    
+
                     // Estrai attributi tvg
                     const tvgMatches = metadata.match(/([a-zA-Z-]+)="([^"]+)"/g) || [];
                     tvgMatches.forEach(match => {
@@ -110,9 +133,9 @@ async function parsePlaylist(url) {
         const uniqueGroups = Array.from(allGroups).sort();
         console.log('Gruppi unici trovati nel parser:', uniqueGroups);
         console.log('Playlist M3U caricate correttamente. Numero di canali:', allItems.length);
-        
-        return { 
-            items: allItems, 
+
+        return {
+            items: allItems,
             groups: uniqueGroups.map(group => ({
                 name: group,
                 value: group
@@ -125,35 +148,8 @@ async function parsePlaylist(url) {
     }
 }
 
-// Funzione per parsare l'EPG
-async function parseEPG(url) {
-    try {
-        const epgUrls = await readExternalFile(url);
-        const allProgrammes = new Map();
-
-        for (const epgUrl of epgUrls) {
-            console.log('Scaricamento EPG da:', epgUrl);
-            const response = await axios.get(epgUrl, { responseType: 'arraybuffer' });
-            const decompressed = await gunzip(response.data);
-            const xmlData = await parseStringPromise(decompressed.toString());
-            
-            const programmes = processEPGData(xmlData);
-            programmes.forEach((value, key) => {
-                if (!allProgrammes.has(key)) {
-                    allProgrammes.set(key, value);
-                }
-            });
-        }
-
-        return allProgrammes;
-    } catch (error) {
-        console.error('Errore nel parsing dell\'EPG:', error);
-        throw error;
-    }
-}
-
-// Funzione per processare i dati EPG
-function processEPGData(data) {
+// Funzione per processare i dati EPG con remapping
+function processEPGData(data, remapping) {
     const programmes = new Map();
 
     if (!data.tv || !data.tv.programme) {
@@ -161,7 +157,13 @@ function processEPGData(data) {
     }
 
     for (const programme of data.tv.programme) {
-        const channelId = programme.$.channel;
+        let channelId = programme.$.channel;
+
+        // Applica il remapping se il channelId non è trovato direttamente
+        if (remapping[channelId]) {
+            channelId = remapping[channelId];
+        }
+
         if (!programmes.has(channelId)) {
             programmes.set(channelId, []);
         }
@@ -176,6 +178,34 @@ function processEPGData(data) {
     }
 
     return programmes;
+}
+
+// Funzione per parsare l'EPG
+async function parseEPG(url) {
+    try {
+        const remapping = await loadRemappingFile(); // Carica il remapping
+        const epgUrls = await readExternalFile(url);
+        const allProgrammes = new Map();
+
+        for (const epgUrl of epgUrls) {
+            console.log('Scaricamento EPG da:', epgUrl);
+            const response = await axios.get(epgUrl, { responseType: 'arraybuffer' });
+            const decompressed = await gunzip(response.data);
+            const xmlData = await parseStringPromise(decompressed.toString());
+
+            const programmes = processEPGData(xmlData, remapping); // Passa il remapping
+            programmes.forEach((value, key) => {
+                if (!allProgrammes.has(key)) {
+                    allProgrammes.set(key, value);
+                }
+            });
+        }
+
+        return allProgrammes;
+    } catch (error) {
+        console.error('Errore nel parsing dell\'EPG:', error);
+        throw error;
+    }
 }
 
 // Funzione per ottenere le informazioni del canale dall'EPG
@@ -197,14 +227,14 @@ function getChannelInfo(epgData, channelName) {
 
     // Trova il programma corrente
     const now = new Date();
-    const currentProgram = channel.find(program => 
+    const currentProgram = channel.find(program =>
         program.start <= now && program.stop >= now
     );
 
     return {
         icon: null, // L'EPG Italia non fornisce icone
-        description: currentProgram ? 
-            `${currentProgram.title}\n${currentProgram.description || ''}` : 
+        description: currentProgram ?
+            `${currentProgram.title}\n${currentProgram.description || ''}` :
             null
     };
 }
