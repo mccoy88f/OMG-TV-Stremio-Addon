@@ -14,7 +14,6 @@ class EPGManager {
         this.lastUpdate = null;
         this.isUpdating = false;
         this.CHUNK_SIZE = 10000;
-        this.remappingCache = null;
         this.validateAndSetTimezone();
     }
 
@@ -56,11 +55,7 @@ class EPGManager {
                     return;
                 }
 
-                // Store IDs without 'tv|' prefix
-                const cleanEpgId = epgId.replace('tv|', '');
-                const cleanTvgId = tvgId.replace('tv|', '');
-                rules.set(cleanEpgId, cleanTvgId);
-                console.log(`Loaded rule: ${cleanEpgId} -> ${cleanTvgId}`);
+                rules.set(epgId, tvgId);
                 ruleCount++;
             });
 
@@ -167,7 +162,6 @@ class EPGManager {
             
             // Load remapping rules
             const remappingRules = await this.loadRemappingRules();
-            this.remappingCache = remappingRules;
             
             // Support multiple URLs separated by comma or from file
             const epgUrls = typeof url === 'string' && url.includes(',') 
@@ -195,7 +189,7 @@ class EPGManager {
         }
     }
 
-    async processEPGInChunks(data) {
+    async processEPGInChunks(data, remappingRules) {
         if (!data.tv || !data.tv.programme) {
             console.warn('⚠️  No programme data found in EPG');
             return;
@@ -205,7 +199,7 @@ class EPGManager {
         let totalProcessed = 0;
         let remappedCount = 0;
         const unmappedChannels = new Set();
-        const remappedLog = new Map(); // To track unique remappings
+        const remappedChannels = new Set();
         
         console.log(`\nProcessing ${programmes.length} EPG entries in chunks of ${this.CHUNK_SIZE}`);
         
@@ -214,24 +208,15 @@ class EPGManager {
             
             for (const programme of chunk) {
                 let channelId = programme.$.channel;
-                // Remove 'tv|' prefix if present for comparison
-                channelId = channelId.replace('tv|', '');
                 let mappedChannelId = channelId;
 
                 // Apply remapping if available
-                if (this.remappingCache && this.remappingCache.has(channelId)) {
-                    mappedChannelId = this.remappingCache.get(channelId);
+                if (remappingRules && remappingRules.has(channelId)) {
+                    mappedChannelId = remappingRules.get(channelId);
+                    remappedChannels.add(`${channelId} -> ${mappedChannelId}`);
                     remappedCount++;
-                    if (!remappedLog.has(channelId)) {
-                        remappedLog.set(channelId, mappedChannelId);
-                    }
                 } else {
                     unmappedChannels.add(channelId);
-                }
-
-                // Add 'tv|' prefix back if not present
-                if (!mappedChannelId.startsWith('tv|')) {
-                    mappedChannelId = `tv|${mappedChannelId}`;
                 }
 
                 if (!this.programGuide.has(mappedChannelId)) {
@@ -269,22 +254,22 @@ class EPGManager {
         // Log remapping statistics
         console.log('\nEPG Processing Summary:');
         console.log(`✓ Total entries processed: ${totalProcessed}`);
-        console.log(`✓ Unique channels remapped: ${remappedLog.size}`);
+        console.log(`✓ Channels remapped: ${remappedCount}`);
 
-        if (remappedLog.size > 0) {
+        if (remappedChannels.size > 0) {
             console.log('\nSuccessful Remappings:');
-            for (const [from, to] of remappedLog) {
-                console.log(`✓ ${from} -> ${to}`);
-            }
+            Array.from(remappedChannels).sort().forEach(mapping => {
+                console.log(`✓ ${mapping}`);
+            });
         }
 
         if (unmappedChannels.size > 0) {
             console.log(`\nℹ️  Channels without remapping: ${unmappedChannels.size}`);
             if (unmappedChannels.size < 20) {
                 console.log('Unmapped channels:');
-                for (const channel of unmappedChannels) {
+                Array.from(unmappedChannels).sort().forEach(channel => {
                     console.log(`• ${channel}`);
-                }
+                });
             }
         }
     }
@@ -350,8 +335,7 @@ class EPGManager {
             channelsCount: this.programGuide.size,
             programsCount: Array.from(this.programGuide.values())
                           .reduce((acc, progs) => acc + progs.length, 0),
-            timezone: this.timeZoneOffset,
-            remappingRules: this.remappingCache ? this.remappingCache.size : 0
+            timezone: this.timeZoneOffset
         };
     }
 }
