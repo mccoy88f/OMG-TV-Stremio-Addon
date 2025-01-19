@@ -161,7 +161,9 @@ function processEPGData(data, remapping) {
 
         // Applica il remapping se il channelId non è trovato direttamente
         if (remapping[channelId]) {
-            channelId = remapping[channelId];
+            const originalChannelId = channelId; // Memorizza l'ID originale per il log
+            channelId = remapping[channelId]; // Applica il remapping
+            console.log(`Remapping applicato: ${originalChannelId} -> ${channelId}`);
         }
 
         if (!programmes.has(channelId)) {
