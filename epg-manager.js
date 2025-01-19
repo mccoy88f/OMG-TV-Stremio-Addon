@@ -56,7 +56,11 @@ class EPGManager {
                     return;
                 }
 
-                rules.set(epgId, tvgId);
+                // Store IDs without 'tv|' prefix
+                const cleanEpgId = epgId.replace('tv|', '');
+                const cleanTvgId = tvgId.replace('tv|', '');
+                rules.set(cleanEpgId, cleanTvgId);
+                console.log(`Loaded rule: ${cleanEpgId} -> ${cleanTvgId}`);
                 ruleCount++;
             });
 
@@ -201,6 +205,7 @@ class EPGManager {
         let totalProcessed = 0;
         let remappedCount = 0;
         const unmappedChannels = new Set();
+        const remappedLog = new Map(); // To track unique remappings
         
         console.log(`\nProcessing ${programmes.length} EPG entries in chunks of ${this.CHUNK_SIZE}`);
         
@@ -209,14 +214,24 @@ class EPGManager {
             
             for (const programme of chunk) {
                 let channelId = programme.$.channel;
+                // Remove 'tv|' prefix if present for comparison
+                channelId = channelId.replace('tv|', '');
                 let mappedChannelId = channelId;
 
                 // Apply remapping if available
                 if (this.remappingCache && this.remappingCache.has(channelId)) {
                     mappedChannelId = this.remappingCache.get(channelId);
                     remappedCount++;
+                    if (!remappedLog.has(channelId)) {
+                        remappedLog.set(channelId, mappedChannelId);
+                    }
                 } else {
                     unmappedChannels.add(channelId);
+                }
+
+                // Add 'tv|' prefix back if not present
+                if (!mappedChannelId.startsWith('tv|')) {
+                    mappedChannelId = `tv|${mappedChannelId}`;
                 }
 
                 if (!this.programGuide.has(mappedChannelId)) {
@@ -254,11 +269,22 @@ class EPGManager {
         // Log remapping statistics
         console.log('\nEPG Processing Summary:');
         console.log(`✓ Total entries processed: ${totalProcessed}`);
-        console.log(`✓ Channels remapped: ${remappedCount}`);
+        console.log(`✓ Unique channels remapped: ${remappedLog.size}`);
+
+        if (remappedLog.size > 0) {
+            console.log('\nSuccessful Remappings:');
+            for (const [from, to] of remappedLog) {
+                console.log(`✓ ${from} -> ${to}`);
+            }
+        }
+
         if (unmappedChannels.size > 0) {
-            console.log(`ℹ️  Channels without remapping: ${unmappedChannels.size}`);
-            if (unmappedChannels.size < 10) {
-                console.log('Unmapped channels:', Array.from(unmappedChannels).join(', '));
+            console.log(`\nℹ️  Channels without remapping: ${unmappedChannels.size}`);
+            if (unmappedChannels.size < 20) {
+                console.log('Unmapped channels:');
+                for (const channel of unmappedChannels) {
+                    console.log(`• ${channel}`);
+                }
             }
         }
     }
