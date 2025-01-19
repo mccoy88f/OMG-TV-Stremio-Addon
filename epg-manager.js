@@ -14,7 +14,6 @@ class EPGManager {
         this.lastUpdate = null;
         this.isUpdating = false;
         this.CHUNK_SIZE = 10000;
-        this.remappingRules = new Map(); // Mappa per memorizzare le regole di mappatura
         this.validateAndSetTimezone();
     }
 
@@ -31,52 +30,6 @@ class EPGManager {
         const [hours, minutes] = this.timeZoneOffset.substring(1).split(':');
         this.offsetMinutes = (parseInt(hours) * 60 + parseInt(minutes)) * 
                            (this.timeZoneOffset.startsWith('+') ? 1 : -1);
-    }
-
-    async loadRemappingRules() {
-        const remappingPath = path.join(__dirname, 'link.epg.remapping');
-        console.log('\n=== Loading EPG Remapping Rules ===');
-        console.log('Looking for remapping file at:', remappingPath);
-        
-        try {
-            const content = await fs.promises.readFile(remappingPath, 'utf8');
-            const rules = new Map();
-            let ruleCount = 0;
-            let skippedCount = 0;
-
-            content.split('\n').forEach((line, index) => {
-                line = line.trim();
-                // Skip empty lines and comments
-                if (!line || line.startsWith('#')) return;
-
-                const [m3uId, epgId] = line.split('=').map(s => s.trim());
-                if (!m3uId || !epgId) {
-                    console.log(`⚠️  Skipping invalid rule at line ${index + 1}`);
-                    skippedCount++;
-                    return;
-                }
-
-                // Mappa l'ID della playlist M3U all'ID dell'EPG
-                rules.set(m3uId, epgId);
-                ruleCount++;
-            });
-
-            console.log(`✓ Loaded ${ruleCount} remapping rules`);
-            if (skippedCount > 0) {
-                console.log(`⚠️  Skipped ${skippedCount} invalid rules`);
-            }
-            console.log('=== Remapping Rules Loaded ===\n');
-            this.remappingRules = rules; // Memorizza le regole di mappatura
-            return rules;
-
-        } catch (error) {
-            if (error.code === 'ENOENT') {
-                console.log('ℹ️  No remapping file found - using direct channel mapping');
-                return new Map();
-            }
-            console.error('❌ Error loading remapping file:', error);
-            return new Map();
-        }
     }
 
     formatDateIT(date) {
@@ -105,7 +58,7 @@ class EPGManager {
             const date = new Date(isoString);
             return isNaN(date.getTime()) ? null : date;
         } catch (error) {
-            console.error('Error parsing EPG date:', error);
+            console.error('Errore nel parsing della data EPG:', error);
             return null;
         }
     }
@@ -118,7 +71,7 @@ class EPGManager {
     }
 
     async downloadAndProcessEPG(epgUrl) {
-        console.log('Downloading EPG from:', epgUrl.trim());
+        console.log('Download EPG da:', epgUrl.trim());
         try {
             const response = await axios.get(epgUrl.trim(), { 
                 responseType: 'arraybuffer',
@@ -132,95 +85,87 @@ class EPGManager {
             let xmlString;
             try {
                 xmlString = await gunzip(response.data);
-                console.log('✓ Successfully decompressed gzipped EPG data');
+                console.log('✓ Dati EPG decompressi con successo');
             } catch (gzipError) {
                 try {
                     xmlString = zlib.inflateSync(response.data);
-                    console.log('✓ Successfully decompressed inflated EPG data');
+                    console.log('✓ Dati EPG decompressi con successo');
                 } catch (zlibError) {
-                    console.log('ℹ️  Using raw EPG data (not compressed)');
+                    console.log('ℹ️  Utilizzo dati EPG non compressi');
                     xmlString = response.data.toString();
                 }
             }
 
             const xmlData = await parseStringPromise(xmlString);
             await this.processEPGInChunks(xmlData);
-            console.log('✓ Successfully processed EPG data');
+            console.log('✓ Dati EPG processati con successo');
         } catch (error) {
-            console.error(`❌ Error downloading EPG from ${epgUrl}:`, error.message);
+            console.error(`❌ Errore nel download dell'EPG da ${epgUrl}:`, error.message);
         }
     }
 
     async startEPGUpdate(url) {
         if (this.isUpdating) {
-            console.log('⚠️  EPG update already in progress, skipping...');
+            console.log('⚠️  Aggiornamento EPG già in corso, skip...');
             return;
         }
 
-        console.log('\n=== Starting EPG Update ===');
+        console.log('\n=== Inizio Aggiornamento EPG ===');
         const startTime = Date.now();
 
         try {
             this.isUpdating = true;
             
-            // Load remapping rules
-            const remappingRules = await this.loadRemappingRules();
-            
-            // Support multiple URLs separated by comma or from file
+            // Supporto per più URL separati da virgola o da file
             const epgUrls = typeof url === 'string' && url.includes(',') 
                 ? url.split(',').map(u => u.trim()) 
                 : await this.readExternalFile(url);
 
-            // Clear existing program guide
+            // Pulisci la guida programmi esistente
             this.programGuide.clear();
 
-            // Process each EPG URL
+            // Processa ogni URL EPG
             for (const epgUrl of epgUrls) {
                 await this.downloadAndProcessEPG(epgUrl);
             }
 
+            // Log dei canali M3U senza EPG
+            const m3uChannels = this.getM3UChannels(); // Ottieni i canali M3U
+            const epgChannels = Array.from(this.programGuide.keys()); // Ottieni i canali EPG
+            this.logChannelsWithoutEPG(m3uChannels, epgChannels);
+
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-            console.log(`\n✓ EPG update completed in ${duration} seconds`);
-            console.log(`✓ Total channels with EPG data: ${this.programGuide.size}`);
-            console.log('=== EPG Update Complete ===\n');
+            console.log(`\n✓ Aggiornamento EPG completato in ${duration} secondi`);
+            console.log(`✓ Totale canali con dati EPG: ${this.programGuide.size}`);
+            console.log('=== Aggiornamento EPG Completato ===\n');
 
         } catch (error) {
-            console.error('❌ EPG update error:', error);
+            console.error('❌ Errore durante l\'aggiornamento EPG:', error);
         } finally {
             this.isUpdating = false;
             this.lastUpdate = Date.now();
         }
     }
 
-    async processEPGInChunks(data, remappingRules) {
+    async processEPGInChunks(data) {
         if (!data.tv || !data.tv.programme) {
-            console.warn('⚠️  No programme data found in EPG');
+            console.warn('⚠️  Nessun dato programma trovato nell\'EPG');
             return;
         }
 
         const programmes = data.tv.programme;
         let totalProcessed = 0;
-        let remappedCount = 0;
-        const remappedChannels = new Set();
         
-        console.log(`\nProcessing ${programmes.length} EPG entries in chunks of ${this.CHUNK_SIZE}`);
+        console.log(`\nProcessamento di ${programmes.length} voci EPG in blocchi di ${this.CHUNK_SIZE}`);
         
         for (let i = 0; i < programmes.length; i += this.CHUNK_SIZE) {
             const chunk = programmes.slice(i, i + this.CHUNK_SIZE);
             
             for (const programme of chunk) {
-                let channelId = programme.$.channel;
-                let mappedChannelId = channelId;
+                const channelId = programme.$.channel;
 
-                // Apply remapping if available
-                if (remappingRules && remappingRules.has(channelId)) {
-                    mappedChannelId = remappingRules.get(channelId);
-                    remappedChannels.add(`${channelId} -> ${mappedChannelId}`);
-                    remappedCount++;
-                }
-
-                if (!this.programGuide.has(mappedChannelId)) {
-                    this.programGuide.set(mappedChannelId, []);
+                if (!this.programGuide.has(channelId)) {
+                    this.programGuide.set(channelId, []);
                 }
 
                 const start = this.parseEPGDate(programme.$.start);
@@ -231,37 +176,28 @@ class EPGManager {
                 const programData = {
                     start,
                     stop,
-                    title: programme.title?.[0]?._ || programme.title?.[0]?.$?.text || programme.title?.[0] || 'No Title',
+                    title: programme.title?.[0]?._ || programme.title?.[0]?.$?.text || programme.title?.[0] || 'Nessun Titolo',
                     description: programme.desc?.[0]?._ || programme.desc?.[0]?.$?.text || programme.desc?.[0] || '',
                     category: programme.category?.[0]?._ || programme.category?.[0]?.$?.text || programme.category?.[0] || ''
                 };
 
-                this.programGuide.get(mappedChannelId).push(programData);
+                this.programGuide.get(channelId).push(programData);
                 totalProcessed++;
             }
 
-            // Progress update for large datasets
+            // Aggiornamento progresso per grandi dataset
             if ((i + this.CHUNK_SIZE) % 50000 === 0) {
-                console.log(`Progress: processed ${i + this.CHUNK_SIZE} entries...`);
+                console.log(`Progresso: processate ${i + this.CHUNK_SIZE} voci...`);
             }
         }
 
-        // Sort programs for each channel
+        // Ordina i programmi per ogni canale
         for (const [channelId, programs] of this.programGuide.entries()) {
             this.programGuide.set(channelId, programs.sort((a, b) => a.start - b.start));
         }
 
-        // Log remapping statistics
-        console.log('\nEPG Processing Summary:');
-        console.log(`✓ Total entries processed: ${totalProcessed}`);
-        console.log(`✓ Channels remapped: ${remappedCount}`);
-
-        if (remappedChannels.size > 0) {
-            console.log('\nSuccessful Remappings:');
-            Array.from(remappedChannels).sort().forEach(mapping => {
-                console.log(`✓ ${mapping}`);
-            });
-        }
+        console.log('\nRiepilogo Processamento EPG:');
+        console.log(`✓ Totale voci processate: ${totalProcessed}`);
     }
 
     async readExternalFile(url) {
@@ -270,16 +206,13 @@ class EPGManager {
             return response.data.split('\n')
                 .filter(line => line.trim() !== '' && line.startsWith('http'));
         } catch (error) {
-            console.error('Error reading external file:', error);
-            return [url]; // Return original URL if reading fails
+            console.error('Errore nella lettura del file esterno:', error);
+            return [url]; // Restituisce l'URL originale se la lettura fallisce
         }
     }
 
     getCurrentProgram(channelId) {
-        // Verifica se esiste una mappatura per il channelId
-        const mappedChannelId = this.remappingRules.get(channelId) || channelId;
-
-        const programs = this.programGuide.get(mappedChannelId);
+        const programs = this.programGuide.get(channelId);
         if (!programs?.length) return null;
 
         const now = new Date();
@@ -297,10 +230,7 @@ class EPGManager {
     }
 
     getUpcomingPrograms(channelId) {
-        // Verifica se esiste una mappatura per il channelId
-        const mappedChannelId = this.remappingRules.get(channelId) || channelId;
-
-        const programs = this.programGuide.get(mappedChannelId);
+        const programs = this.programGuide.get(channelId);
         if (!programs?.length) return [];
 
         const now = new Date();
@@ -327,7 +257,7 @@ class EPGManager {
     getStatus() {
         return {
             isUpdating: this.isUpdating,
-            lastUpdate: this.lastUpdate ? this.formatDateIT(new Date(this.lastUpdate)) : 'Never',
+            lastUpdate: this.lastUpdate ? this.formatDateIT(new Date(this.lastUpdate)) : 'Mai',
             channelsCount: this.programGuide.size,
             programsCount: Array.from(this.programGuide.values())
                           .reduce((acc, progs) => acc + progs.length, 0),
@@ -339,6 +269,30 @@ class EPGManager {
     getM3UChannels() {
         // Esempio: return CacheManager.getCachedData().channels;
         return []; // Sostituisci con l'implementazione reale
+    }
+
+    // Log dei canali M3U senza EPG
+    logChannelsWithoutEPG(m3uChannels, epgChannels) {
+        const m3uIds = new Set(m3uChannels.map(ch => ch.streamInfo?.tvg?.id));
+        const epgIds = new Set(epgChannels);
+
+        const missingEPG = [];
+        m3uChannels.forEach(ch => {
+            if (!epgIds.has(ch.streamInfo?.tvg?.id)) {
+                missingEPG.push(ch);
+            }
+        });
+
+        if (missingEPG.length > 0) {
+            console.log('\n=== Canali M3U senza EPG ===');
+            console.log(`✓ Totale canali M3U senza EPG: ${missingEPG.length}`);
+            missingEPG.forEach(ch => {
+                console.log(`- ${ch.name} (ID: ${ch.streamInfo?.tvg?.id})`);
+            });
+            console.log('=============================\n');
+        } else {
+            console.log('\n✓ Tutti i canali M3U hanno una corrispondenza EPG.\n');
+        }
     }
 }
 
