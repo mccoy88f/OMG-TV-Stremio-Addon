@@ -177,11 +177,6 @@ class EPGManager {
                 await this.downloadAndProcessEPG(epgUrl);
             }
 
-            // Log canali M3U senza EPG
-            const m3uChannels = this.getM3UChannels(); // Ottieni i canali M3U
-            const epgChannels = Array.from(this.programGuide.keys()); // Ottieni i canali EPG
-            this.logChannelsWithoutEPG(m3uChannels, epgChannels);
-
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             console.log(`\n✓ EPG update completed in ${duration} seconds`);
             console.log(`✓ Total channels with EPG data: ${this.programGuide.size}`);
@@ -336,30 +331,6 @@ class EPGManager {
     getM3UChannels() {
         // Esempio: return CacheManager.getCachedData().channels;
         return []; // Sostituisci con l'implementazione reale
-    }
-
-    // Log dei canali M3U senza EPG
-    logChannelsWithoutEPG(m3uChannels, epgChannels) {
-        const m3uIds = new Set(m3uChannels.map(ch => ch.streamInfo?.tvg?.id));
-        const epgIds = new Set(epgChannels);
-
-        const missingEPG = [];
-        m3uChannels.forEach(ch => {
-            if (!epgIds.has(ch.streamInfo?.tvg?.id)) {
-                missingEPG.push(ch);
-            }
-        });
-
-        if (missingEPG.length > 0) {
-            console.log('\n=== Canali M3U senza EPG ===');
-            console.log(`✓ Totale canali M3U senza EPG: ${missingEPG.length}`);
-            missingEPG.forEach(ch => {
-                console.log(`- ${ch.name} (ID: ${ch.streamInfo?.tvg?.id})`);
-            });
-            console.log('=============================\n');
-        } else {
-            console.log('\n✓ Tutti i canali M3U hanno una corrispondenza EPG.\n');
-        }
     }
 }
 
