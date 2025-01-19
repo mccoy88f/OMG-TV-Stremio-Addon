@@ -13,7 +13,7 @@ const REMAPPING_CACHE = {
 };
 
 /**
- * Reads and parses external files (playlist or EPG)
+ * Reads an external file (playlist or EPG)
  */
 async function readExternalFile(url) {
     try {
@@ -26,22 +26,7 @@ async function readExternalFile(url) {
 }
 
 /**
- * Validates tvgId and channelId format
- */
-function validateMappingIds(tvgId, channelId) {
-    // Basic validation - can be extended based on specific requirements
-    return (
-        typeof tvgId === 'string' && 
-        typeof channelId === 'string' && 
-        tvgId.length > 0 && 
-        channelId.length > 0 &&
-        !tvgId.includes(' ') &&  // No spaces in IDs
-        !channelId.includes(' ')
-    );
-}
-
-/**
- * Loads and parses the remapping configuration file with enhanced error handling and validation
+ * Loads and parses the remapping configuration file
  */
 async function loadRemappingFile() {
     const remappingFilePath = path.join(__dirname, 'link.epg.remapping');
@@ -55,50 +40,41 @@ async function loadRemappingFile() {
             return REMAPPING_CACHE.data;
         }
 
+        console.log('\n=== Loading Remapping File ===');
         const data = await fs.promises.readFile(remappingFilePath, 'utf8');
         const remapping = new Map();
-        const reverseMapping = new Map();
         const errors = [];
         
         data.split('\n').forEach((line, index) => {
             line = line.trim();
             if (!line || line.startsWith('#')) return;
             
-            const [tvgId, channelId] = line.split('=').map(s => s.trim());
+            const [epgId, tvgId] = line.split('=').map(s => s.trim());
             
-            // Validation
-            if (!tvgId || !channelId) {
+            if (!epgId || !tvgId) {
                 errors.push(`Line ${index + 1}: Invalid format`);
                 return;
             }
-
-            if (!validateMappingIds(tvgId, channelId)) {
-                errors.push(`Line ${index + 1}: Invalid ID format`);
+            
+            if (remapping.has(epgId)) {
+                errors.push(`Line ${index + 1}: Duplicate mapping for ${epgId}`);
                 return;
             }
             
-            if (remapping.has(tvgId)) {
-                errors.push(`Line ${index + 1}: Duplicate mapping for ${tvgId}`);
-                return;
-            }
-
-            if (reverseMapping.has(channelId)) {
-                errors.push(`Line ${index + 1}: Multiple mappings for channel ${channelId}`);
-                return;
-            }
-            
-            remapping.set(tvgId, channelId);
-            reverseMapping.set(channelId, tvgId);
+            remapping.set(epgId, tvgId);
         });
 
         if (errors.length > 0) {
             console.warn('Warnings in remapping file:\n' + errors.join('\n'));
         }
 
+        console.log(`✓ Loaded ${remapping.size} remapping rules`);
+        console.log('=== Remapping File Loaded ===\n');
+
         // Update cache
         REMAPPING_CACHE.data = {
             forward: remapping,
-            reverse: reverseMapping
+            reverse: new Map([...remapping].map(([k, v]) => [v, k]))
         };
         REMAPPING_CACHE.lastRead = Date.now();
         
@@ -131,7 +107,7 @@ function extractEPGUrl(m3uContent) {
 }
 
 /**
- * Processes EPG data with enhanced remapping support
+ * Processes EPG data with enhanced logging
  */
 function processEPGData(data, remappings) {
     const programmes = new Map();
@@ -141,8 +117,12 @@ function processEPGData(data, remappings) {
         return programmes;
     }
 
+    console.log('\n=== EPG Remapping Report ===');
+    console.log('Loaded remapping rules:', remappings.forward.size);
+    
     const { forward: remapping, reverse: reverseRemapping } = remappings;
     const unmappedChannels = new Set();
+    const remappedChannels = new Set();
 
     for (const programme of data.tv.programme) {
         let channelId = programme.$.channel;
@@ -151,14 +131,14 @@ function processEPGData(data, remappings) {
         // Try direct mapping
         if (remapping.has(channelId)) {
             mappedChannelId = remapping.get(channelId);
-            console.debug(`Applied direct mapping: ${channelId} -> ${mappedChannelId}`);
+            remappedChannels.add(`${channelId} -> ${mappedChannelId}`);
         }
         // Try reverse mapping
         else if (reverseRemapping.has(channelId)) {
             const originalId = reverseRemapping.get(channelId);
             mappedChannelId = channelId;
             channelId = originalId;
-            console.debug(`Applied reverse mapping: ${channelId} -> ${mappedChannelId}`);
+            remappedChannels.add(`${channelId} -> ${mappedChannelId}`);
         }
         // Track unmapped channels
         else {
@@ -195,17 +175,33 @@ function processEPGData(data, remappings) {
         programmes.set(channelId, programs.sort((a, b) => a.start - b.start));
     }
 
-    // Log statistics
-    console.log(`Processed ${programmes.size} channels with EPG data`);
-    if (unmappedChannels.size > 0) {
-        console.warn(`Found ${unmappedChannels.size} unmapped channels:`, Array.from(unmappedChannels).join(', '));
+    // Log detailed statistics
+    console.log('\nRemapping Summary:');
+    console.log(`✓ Total channels processed: ${programmes.size}`);
+    console.log(`✓ Channels remapped: ${remappedChannels.size}`);
+    console.log(`✓ Channels without remapping: ${unmappedChannels.size}`);
+
+    if (remappedChannels.size > 0) {
+        console.log('\nSuccessful Remappings:');
+        Array.from(remappedChannels).sort().forEach(mapping => {
+            console.log(`✓ ${mapping}`);
+        });
     }
+
+    if (unmappedChannels.size > 0) {
+        console.log('\nChannels Without Remapping:');
+        Array.from(unmappedChannels).sort().forEach(channel => {
+            console.log(`• ${channel}`);
+        });
+    }
+    
+    console.log('\n=== End EPG Remapping Report ===\n');
 
     return programmes;
 }
 
 /**
- * Parses M3U playlist with enhanced error handling
+ * Parses M3U playlist
  */
 async function parsePlaylist(url) {
     try {
@@ -214,12 +210,13 @@ async function parsePlaylist(url) {
         const allGroups = new Set();
         let epgUrl = null;
 
+        console.log('\n=== Starting Playlist Processing ===');
+
         for (const playlistUrl of playlistUrls) {
             console.log(`Processing playlist: ${playlistUrl}`);
             const m3uResponse = await axios.get(playlistUrl);
             const m3uContent = m3uResponse.data;
 
-            // Extract EPG URL from first playlist that has it
             if (!epgUrl) {
                 epgUrl = extractEPGUrl(m3uContent);
                 if (epgUrl) {
@@ -271,6 +268,10 @@ async function parsePlaylist(url) {
                                 'User-Agent': 'HbbTV/1.6.1'
                             }
                         };
+
+                        if (currentItem.tvg.id) {
+                            console.log(`Found channel: ${name} (tvg-id: ${currentItem.tvg.id})`);
+                        }
                     } catch (error) {
                         console.error(`Error parsing EXTINF line ${i + 1}:`, error);
                         currentItem = null;
@@ -296,8 +297,11 @@ async function parsePlaylist(url) {
         }
 
         const uniqueGroups = Array.from(allGroups).sort();
-        console.log('Unique groups found:', uniqueGroups);
-        console.log('Total channels loaded:', allItems.length);
+        
+        console.log('\nPlaylist Processing Summary:');
+        console.log(`✓ Total channels loaded: ${allItems.length}`);
+        console.log(`✓ Groups found: ${uniqueGroups.length}`);
+        console.log('=== Playlist Processing Complete ===\n');
 
         return {
             items: allItems,
@@ -322,8 +326,10 @@ async function parseEPG(url) {
         const epgUrls = await readExternalFile(url);
         const allProgrammes = new Map();
 
+        console.log('\n=== Starting EPG Processing ===');
+
         for (const epgUrl of epgUrls) {
-            console.log('Downloading EPG from:', epgUrl);
+            console.log(`Processing EPG from: ${epgUrl}`);
             
             try {
                 const response = await axios.get(epgUrl, { 
@@ -334,8 +340,9 @@ async function parseEPG(url) {
                 let decompressed;
                 try {
                     decompressed = await gunzip(response.data);
+                    console.log('Successfully decompressed gzipped EPG data');
                 } catch (error) {
-                    console.log('Not gzipped, using raw data');
+                    console.log('Using raw EPG data (not gzipped)');
                     decompressed = response.data;
                 }
 
@@ -356,11 +363,16 @@ async function parseEPG(url) {
                         allProgrammes.set(key, uniqueMerged.sort((a, b) => a.start - b.start));
                     }
                 });
+
+                console.log(`✓ Successfully processed EPG from: ${epgUrl}`);
             } catch (error) {
                 console.error(`Error processing EPG URL ${epgUrl}:`, error);
-                // Continue with next URL
             }
         }
+
+        console.log('\nEPG Processing Summary:');
+        console.log(`✓ Total channels with EPG data: ${allProgrammes.size}`);
+        console.log('=== EPG Processing Complete ===\n');
 
         return allProgrammes;
     } catch (error) {
