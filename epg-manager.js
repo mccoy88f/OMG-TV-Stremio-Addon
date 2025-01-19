@@ -157,7 +157,7 @@ class EPGManager {
             const chunk = programmes.slice(i, i + this.CHUNK_SIZE);
             
             for (const programme of chunk) {
-                const channelId = programme.$.channel;
+                const channelId = programme.$.channel.toLowerCase(); // Normalizza l'ID del canale
 
                 if (!this.programGuide.has(channelId)) {
                     this.programGuide.set(channelId, []);
@@ -207,7 +207,8 @@ class EPGManager {
     }
 
     getCurrentProgram(channelId) {
-        const programs = this.programGuide.get(channelId);
+        const normalizedChannelId = channelId.toLowerCase(); // Normalizza l'ID del canale
+        const programs = this.programGuide.get(normalizedChannelId);
         if (!programs?.length) return null;
 
         const now = new Date();
@@ -225,7 +226,8 @@ class EPGManager {
     }
 
     getUpcomingPrograms(channelId) {
-        const programs = this.programGuide.get(channelId);
+        const normalizedChannelId = channelId.toLowerCase(); // Normalizza l'ID del canale
+        const programs = this.programGuide.get(normalizedChannelId);
         if (!programs?.length) return [];
 
         const now = new Date();
@@ -266,11 +268,12 @@ class EPGManager {
      */
     checkMissingEPG(m3uChannels) {
         const epgChannels = Array.from(this.programGuide.keys());
-        const m3uIds = new Set(m3uChannels.map(ch => ch.streamInfo?.tvg?.id));
+        const m3uIds = new Set(m3uChannels.map(ch => ch.streamInfo?.tvg?.id?.toLowerCase())); // Normalizza gli ID M3U
 
         const missingEPG = [];
         m3uChannels.forEach(ch => {
-            if (!epgChannels.includes(ch.streamInfo?.tvg?.id)) {
+            const tvgId = ch.streamInfo?.tvg?.id?.toLowerCase(); // Normalizza l'ID del canale M3U
+            if (!epgChannels.includes(tvgId)) {
                 missingEPG.push(ch);
             }
         });
