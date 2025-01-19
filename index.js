@@ -166,10 +166,16 @@ async function startAddon() {
         // Inizializza l'EPG dopo l'avvio del server se è abilitata
         if (generatedConfig.enableEPG) {
             await EPGManager.initializeEPG(generatedConfig.EPG_URL);
+
+            // Ottieni i canali dalla cache
+            const cachedData = CacheManager.getCachedData();
+
+            // Verifica i canali senza EPG
+            EPGManager.checkMissingEPG(cachedData.channels);
         } else {
             console.log('EPG disabilitata, skip inizializzazione');
         }
-
+        
     } catch (error) {
         console.error('Failed to start addon:', error);
         process.exit(1);
