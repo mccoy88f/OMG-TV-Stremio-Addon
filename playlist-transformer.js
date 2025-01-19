@@ -226,31 +226,6 @@ class PlaylistTransformer {
     }
 
     /**
-     * Log dei canali senza EPG associato
-     */
-    logChannelsWithoutEPG() {
-        // Ottieni la lista degli tvg-id dei canali con EPG dall'EPGManager
-        const epgChannels = Array.from(EPGManager.programGuide.keys());
-
-        const channelsWithoutEPG = this.stremioData.channels
-            .filter(channel => {
-                const tvgId = channel.streamInfo.tvg.id;
-                // Verifica se il canale ha un EPG associato
-                return !epgChannels.includes(tvgId);
-            })
-            .map(channel => channel.streamInfo.tvg.id); // Estrae solo gli tvg-id
-
-        if (channelsWithoutEPG.length > 0) {
-            console.log('\n=== Canali senza EPG associato ===');
-            console.log(`✓ Totale canali senza EPG: ${channelsWithoutEPG.length}`);
-            channelsWithoutEPG.forEach(tvgId => {
-                console.log(`- ${tvgId}`);
-            });
-            console.log('===================================\n');
-        }
-    }
-
-    /**
      * Carica e trasforma una playlist da URL
      */
     async loadAndTransform(url) {
@@ -289,8 +264,8 @@ class PlaylistTransformer {
                 await EPGManager.initializeEPG(combinedEpgUrl);
             }
 
-            // Log dei canali senza EPG
-            this.logChannelsWithoutEPG();
+            // Log dei canali senza EPG (dopo aver scaricato l'EPG)
+            EPGManager.logChannelsWithoutEPG(allChannels);
 
             return {
                 genres: Array.from(allGenres),
