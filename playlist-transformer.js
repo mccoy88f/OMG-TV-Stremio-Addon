@@ -1,6 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const EPGManager = require('./epg-manager'); // Importa l'EPGManager
 
 class PlaylistTransformer {
     constructor() {
@@ -225,6 +226,30 @@ class PlaylistTransformer {
     }
 
     /**
+     * Log dei canali senza EPG associato
+     */
+    logChannelsWithoutEPG(epgChannels) {
+        const channelsWithoutEPG = this.stremioData.channels
+            .filter(channel => {
+                const tvgId = channel.streamInfo.tvg.id;
+                // Verifica se il canale ha un EPG associato
+                return !epgChannels.includes(tvgId);
+            })
+            .map(channel => channel.streamInfo.tvg.id); // Estrae solo gli tvg-id
+
+        if (channelsWithoutEPG.length > 0) {
+            console.log('\n=== Canali senza EPG associato ===');
+            console.log(`✓ Totale canali senza EPG: ${channelsWithoutEPG.length}`);
+            channelsWithoutEPG.forEach(tvgId => {
+                console.log(`- ${tvgId}`);
+            });
+            console.log('===================================\n');
+        } else {
+            console.log('\n✓ Tutti i canali hanno una corrispondenza EPG.\n');
+        }
+    }
+
+    /**
      * Carica e trasforma una playlist da URL
      */
     async loadAndTransform(url) {
@@ -258,6 +283,12 @@ class PlaylistTransformer {
             // Unisci tutti gli URL EPG trovati
             const combinedEpgUrl = allEpgUrls.length > 0 ? allEpgUrls.join(',') : null;
 
+            // Ottieni la lista degli tvg-id dei canali con EPG
+            const epgChannels = await this.getEpgChannels(combinedEpgUrl);
+
+            // Log dei canali senza EPG
+            this.logChannelsWithoutEPG(epgChannels);
+
             return {
                 genres: Array.from(allGenres),
                 channels: allChannels,
@@ -267,6 +298,20 @@ class PlaylistTransformer {
             console.error('Errore nel caricamento della playlist:', error);
             throw error;
         }
+    }
+
+    /**
+     * Ottieni la lista degli tvg-id dei canali con EPG
+     */
+    async getEpgChannels(epgUrl) {
+        if (!epgUrl) return []; // Se non c'è un URL EPG, restituisci una lista vuota
+
+        // Inizializza l'EPGManager e scarica i dati EPG
+        await EPGManager.initializeEPG(epgUrl);
+
+        // Ottieni la lista degli tvg-id dei canali con EPG
+        const epgChannels = Array.from(EPGManager.programGuide.keys());
+        return epgChannels;
     }
 }
 
