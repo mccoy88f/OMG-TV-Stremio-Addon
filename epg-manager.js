@@ -48,14 +48,15 @@ class EPGManager {
                 // Skip empty lines and comments
                 if (!line || line.startsWith('#')) return;
 
-                const [epgId, tvgId] = line.split('=').map(s => s.trim());
-                if (!epgId || !tvgId) {
+                const [m3uId, epgId] = line.split('=').map(s => s.trim());
+                if (!m3uId || !epgId) {
                     console.log(`⚠️  Skipping invalid rule at line ${index + 1}`);
                     skippedCount++;
                     return;
                 }
 
-                rules.set(epgId, tvgId);
+                // Mappa l'ID della playlist M3U all'ID dell'EPG
+                rules.set(m3uId, epgId);
                 ruleCount++;
             });
 
@@ -176,6 +177,11 @@ class EPGManager {
                 await this.downloadAndProcessEPG(epgUrl);
             }
 
+            // Log canali M3U senza EPG
+            const m3uChannels = this.getM3UChannels(); // Ottieni i canali M3U
+            const epgChannels = Array.from(this.programGuide.keys()); // Ottieni i canali EPG
+            this.logChannelsWithoutEPG(m3uChannels, epgChannels);
+
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             console.log(`\n✓ EPG update completed in ${duration} seconds`);
             console.log(`✓ Total channels with EPG data: ${this.programGuide.size}`);
@@ -198,7 +204,6 @@ class EPGManager {
         const programmes = data.tv.programme;
         let totalProcessed = 0;
         let remappedCount = 0;
-        const unmappedChannels = new Set();
         const remappedChannels = new Set();
         
         console.log(`\nProcessing ${programmes.length} EPG entries in chunks of ${this.CHUNK_SIZE}`);
@@ -215,8 +220,6 @@ class EPGManager {
                     mappedChannelId = remappingRules.get(channelId);
                     remappedChannels.add(`${channelId} -> ${mappedChannelId}`);
                     remappedCount++;
-                } else {
-                    unmappedChannels.add(channelId);
                 }
 
                 if (!this.programGuide.has(mappedChannelId)) {
@@ -261,16 +264,6 @@ class EPGManager {
             Array.from(remappedChannels).sort().forEach(mapping => {
                 console.log(`✓ ${mapping}`);
             });
-        }
-
-        if (unmappedChannels.size > 0) {
-            console.log(`\nℹ️  Channels without remapping: ${unmappedChannels.size}`);
-            if (unmappedChannels.size < 20) {
-                console.log('Unmapped channels:');
-                Array.from(unmappedChannels).sort().forEach(channel => {
-                    console.log(`• ${channel}`);
-                });
-            }
         }
     }
 
@@ -337,6 +330,36 @@ class EPGManager {
                           .reduce((acc, progs) => acc + progs.length, 0),
             timezone: this.timeZoneOffset
         };
+    }
+
+    // Ottieni i canali M3U (da integrare con il tuo sistema)
+    getM3UChannels() {
+        // Esempio: return CacheManager.getCachedData().channels;
+        return []; // Sostituisci con l'implementazione reale
+    }
+
+    // Log dei canali M3U senza EPG
+    logChannelsWithoutEPG(m3uChannels, epgChannels) {
+        const m3uIds = new Set(m3uChannels.map(ch => ch.streamInfo?.tvg?.id));
+        const epgIds = new Set(epgChannels);
+
+        const missingEPG = [];
+        m3uChannels.forEach(ch => {
+            if (!epgIds.has(ch.streamInfo?.tvg?.id)) {
+                missingEPG.push(ch);
+            }
+        });
+
+        if (missingEPG.length > 0) {
+            console.log('\n=== Canali M3U senza EPG ===');
+            console.log(`✓ Totale canali M3U senza EPG: ${missingEPG.length}`);
+            missingEPG.forEach(ch => {
+                console.log(`- ${ch.name} (ID: ${ch.streamInfo?.tvg?.id})`);
+            });
+            console.log('=============================\n');
+        } else {
+            console.log('\n✓ Tutti i canali M3U hanno una corrispondenza EPG.\n');
+        }
     }
 }
 
