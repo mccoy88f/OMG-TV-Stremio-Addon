@@ -1,4 +1,9 @@
 # Formato: channel_id=epg_id
 # Linee che iniziano con # sono commenti
 
-rds=Rai1.it
+20mediaset.it=20.it
+cielotv.it=Cielo.it
+twentyseven.it=Twentyseven.it
+rtl102.5tv.it=RTL1025TV.it
+giallotv.it=giallo.it
+rds=rdssocialtv.it
