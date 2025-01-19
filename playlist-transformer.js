@@ -264,8 +264,6 @@ class PlaylistTransformer {
                 await EPGManager.initializeEPG(combinedEpgUrl); // Attendiamo il completamento
             }
 
-            // Log dei canali senza EPG (dopo aver scaricato l'EPG)
-            EPGManager.logChannelsWithoutEPG(allChannels);
 
             return {
                 genres: Array.from(allGenres),
