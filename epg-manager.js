@@ -73,7 +73,7 @@ class EPGManager {
         try {
             const response = await axios.get(epgUrl.trim(), { 
                 responseType: 'arraybuffer',
-                timeout: 30000,
+                timeout: 60000,
                 headers: {
                     'User-Agent': 'Mozilla/5.0',
                     'Accept-Encoding': 'gzip, deflate, br'
