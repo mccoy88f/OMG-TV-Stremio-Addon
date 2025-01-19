@@ -261,7 +261,7 @@ class PlaylistTransformer {
 
             // Inizializza l'EPGManager e scarica i dati EPG
             if (combinedEpgUrl) {
-                await EPGManager.initializeEPG(combinedEpgUrl);
+                await EPGManager.initializeEPG(combinedEpgUrl); // Attendiamo il completamento
             }
 
             // Log dei canali senza EPG (dopo aver scaricato l'EPG)
