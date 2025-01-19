@@ -61,7 +61,6 @@ class EPGManager {
             });
 
             console.log(`✓ Loaded ${ruleCount} remapping rules`);
-            console.log('Remapping rules:', rules); // Log delle regole di remapping
             if (skippedCount > 0) {
                 console.log(`⚠️  Skipped ${skippedCount} invalid rules`);
             }
@@ -143,7 +142,6 @@ class EPGManager {
             }
 
             const xmlData = await parseStringPromise(xmlString);
-            console.log('EPG XML data:', xmlData); // Log dei dati EPG parsati
             await this.processEPGInChunks(xmlData);
             console.log('✓ Successfully processed EPG data');
         } catch (error) {
@@ -181,11 +179,7 @@ class EPGManager {
 
             // Log canali M3U senza EPG
             const m3uChannels = this.getM3UChannels(); // Ottieni i canali M3U
-            console.log('Canali M3U ottenuti:', m3uChannels); // Log dei canali M3U
-
             const epgChannels = Array.from(this.programGuide.keys()); // Ottieni i canali EPG
-            console.log('Canali EPG ottenuti:', epgChannels); // Log dei canali EPG
-
             this.logChannelsWithoutEPG(m3uChannels, epgChannels);
 
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -341,18 +335,13 @@ class EPGManager {
     // Ottieni i canali M3U (da integrare con il tuo sistema)
     getM3UChannels() {
         // Esempio: return CacheManager.getCachedData().channels;
-        const channels = CacheManager.getCachedData().channels;
-        console.log('Canali M3U dalla cache:', channels); // Log dei canali M3U
-        return channels;
+        return []; // Sostituisci con l'implementazione reale
     }
 
     // Log dei canali M3U senza EPG
     logChannelsWithoutEPG(m3uChannels, epgChannels) {
         const m3uIds = new Set(m3uChannels.map(ch => ch.streamInfo?.tvg?.id));
-        console.log('M3U IDs:', Array.from(m3uIds)); // Log degli ID M3U
-
         const epgIds = new Set(epgChannels);
-        console.log('EPG IDs:', Array.from(epgIds)); // Log degli ID EPG
 
         const missingEPG = [];
         m3uChannels.forEach(ch => {
@@ -371,10 +360,6 @@ class EPGManager {
         } else {
             console.log('\n✓ Tutti i canali M3U hanno una corrispondenza EPG.\n');
         }
-
-        // Log aggiuntivo per debug
-        console.log('Canali M3U:', m3uChannels); // Mostra tutti i canali M3U
-        console.log('Canali EPG:', epgChannels); // Mostra tutti i canali EPG
     }
 }
 
