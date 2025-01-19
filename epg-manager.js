@@ -65,9 +65,9 @@ class EPGManager {
 
     async initializeEPG(url) {
         if (!this.programGuide.size) {
-            await this.startEPGUpdate(url);
+            await this.startEPGUpdate(url); // Attendiamo il completamento dell'aggiornamento EPG
         }
-        cron.schedule('0 3 * * *', () => this.startEPGUpdate(url));
+        cron.schedule('0 3 * * *', () => this.startEPGUpdate(url)); // Pianifica aggiornamenti futuri
     }
 
     async downloadAndProcessEPG(epgUrl) {
