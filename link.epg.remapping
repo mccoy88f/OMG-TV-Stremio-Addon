@@ -1,4 +1,4 @@
-# Formato: epg_id=channel_id
+# Formato: channel_id=epg_id
 # Linee che iniziano con # sono commenti
 
-RDSSocialTV.it=rds
+rds=RDSSocialTV.it
