@@ -3,47 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const EPGManager = require('./epg-manager');
 
-/**
- * Scarica un file utilizzando wget o curl.
- * @param {string} url - L'URL del file da scaricare.
- * @param {string} outputPath - Il percorso in cui salvare il file scaricato.
- * @returns {Promise<void>}
- */
-function downloadFileWithWgetOrCurl(url, outputPath) {
-    return new Promise((resolve, reject) => {
-        // Usa wget se disponibile, altrimenti usa curl
-        const command = `wget -O "${outputPath}" "${url}" || curl -o "${outputPath}" "${url}"`;
-
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`Errore durante il download del file: ${stderr}`);
-                reject(error);
-            } else {
-                console.log(`File scaricato con successo: ${outputPath}`);
-                resolve();
-            }
-        });
-    });
-}
-
-/**
- * Legge il contenuto di un file locale.
- * @param {string} filePath - Il percorso del file locale.
- * @returns {Promise<string>}
- */
-function readLocalFile(filePath) {
-    return new Promise((resolve, reject) => {
-        fs.readFile(filePath, 'utf8', (err, data) => {
-            if (err) {
-                console.error(`Errore durante la lettura del file locale: ${err.message}`);
-                reject(err);
-            } else {
-                resolve(data);
-            }
-        });
-    });
-}
-
 class PlaylistTransformer {
     constructor() {
         this.stremioData = {
@@ -297,14 +256,8 @@ class PlaylistTransformer {
     }
 }
 
-/**
- * Scarica il file M3U dall'URL specificato o utilizza un file locale come fallback.
- * @param {string} url - L'URL del file M3U.
- * @returns {Promise<string[]>} - Restituisce un array di URL o percorsi locali.
- */
 async function readExternalFile(url) {
     try {
-        // Prova a scaricare il file tramite axios
         const response = await axios.get(url);
         const content = response.data;
 
@@ -316,25 +269,8 @@ async function readExternalFile(url) {
         console.log('Rilevato file con lista di URL');
         return content.split('\n').filter(line => line.trim() !== '');
     } catch (error) {
-        console.error('Errore durante il download tramite axios:', error.message);
-
-        // Se axios fallisce, scarica il file localmente con wget/curl
-        const localFilePath = path.join(__dirname, 'local-playlist.m3u');
-        try {
-            await downloadFileWithWgetOrCurl(url, localFilePath);
-            const content = await readLocalFile(localFilePath);
-
-            if (content.trim().startsWith('#EXTM3U')) {
-                console.log('Rilevata playlist M3U locale');
-                return [localFilePath];
-            }
-
-            console.log('Rilevato file con lista di URL');
-            return content.split('\n').filter(line => line.trim() !== '');
-        } catch (downloadError) {
-            console.error('Errore durante il download del file locale:', downloadError.message);
-            throw downloadError;
-        }
+        console.error('Errore nel leggere il file esterno:', error);
+        throw error;
     }
 }
 
