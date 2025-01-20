@@ -117,11 +117,11 @@ async function streamHandler({ id }) {
 
         // Se il canale ha più URL, crea un flusso per ciascuno
         if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
-            channel.streamInfo.urls.forEach(url => {
+            channel.streamInfo.urls.forEach(stream => {
                 streams.push({
-                    name: channel.name,
-                    title: channel.name,
-                    url: url,
+                    name: stream.name, // Usa il nome specifico del flusso
+                    title: stream.name, // Usa il nome specifico del flusso
+                    url: stream.url,
                     behaviorHints: {
                         notWebReady: false,
                         bingeGroup: "tv"
@@ -154,7 +154,7 @@ async function streamHandler({ id }) {
         const meta = {
             id: channel.id,
             type: 'tv',
-            name: channel.name,
+            name: channel.name, // Nome principale del canale (tvg-id)
             poster: channel.poster,
             background: channel.background,
             logo: channel.logo,
