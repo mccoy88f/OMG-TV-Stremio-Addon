@@ -6,13 +6,11 @@ async function readExternalFile(url) {
         const response = await axios.get(url);
         const content = response.data;
 
-        // Check if content is a direct M3U file
         if (content.trim().startsWith('#EXTM3U')) {
             console.log('Detected direct M3U playlist');
             return [url];
         }
 
-        // Otherwise treat as URL list
         console.log('Detected URL list file');
         return content.split('\n').filter(line => line.trim() !== '');
     } catch (error) {
@@ -45,17 +43,10 @@ class PlaylistTransformer {
     }
 
     transformChannelToStremio(channel) {
-        // Use tvg-id if available, otherwise generate ID from channel name
         const channelId = channel.tvg?.id || channel.name.trim();
         const id = `tv|${channelId}`;
-        
-        // Use tvg-name if available, otherwise use original name
         const name = channel.tvg?.name || channel.name;
-        
-        // Use group if available, otherwise use "Other Channels"
         const group = channel.group || "Other Channels";
-        
-        // Add genre to genres list
         this.stremioData.genres.add(group);
 
         return {
@@ -90,12 +81,10 @@ class PlaylistTransformer {
         const lines = content.split('\n');
         let currentChannel = null;
         
-        // Reset data
         this.stremioData.genres.clear();
         this.stremioData.channels = [];
         this.stremioData.genres.add("Other Channels");
         
-        // Extract EPG URL from playlist header
         let epgUrl = null;
         if (lines[0].includes('url-tvg=')) {
             const match = lines[0].match(/url-tvg="([^"]+)"/);
@@ -110,11 +99,9 @@ class PlaylistTransformer {
             
             if (line.startsWith('#EXTINF:')) {
                 try {
-                    // Extract channel metadata
                     const metadata = line.substring(8).trim();
                     const tvgData = {};
                     
-                    // Extract tvg attributes
                     const tvgMatches = metadata.match(/([a-zA-Z-]+)="([^"]+)"/g) || [];
                     tvgMatches.forEach(match => {
                         const [key, value] = match.split('=');
@@ -122,15 +109,12 @@ class PlaylistTransformer {
                         tvgData[cleanKey] = value.replace(/"/g, '');
                     });
 
-                    // Extract group
                     const groupMatch = metadata.match(/group-title="([^"]+)"/);
                     const group = groupMatch ? groupMatch[1] : 'Other Channels';
 
-                    // Extract channel name
                     const nameParts = metadata.split(',');
                     const name = nameParts[nameParts.length - 1].trim();
 
-                    // Check for VLC options
                     const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1);
                     i = nextIndex - 1;
 
@@ -191,17 +175,14 @@ class PlaylistTransformer {
                     
                     const result = this.parseM3U(response.data);
 
-                    // Merge channels (avoid duplicates)
                     result.channels.forEach(channel => {
                         if (!allChannels.some(existingChannel => existingChannel.id === channel.id)) {
                             allChannels.push(channel);
                         }
                     });
 
-                    // Merge genres
                     result.genres.forEach(genre => allGenres.add(genre));
                     
-                    // Collect EPG URLs
                     if (result.epgUrl && !allEpgUrls.includes(result.epgUrl)) {
                         allEpgUrls.push(result.epgUrl);
                     }
@@ -210,7 +191,6 @@ class PlaylistTransformer {
                 }
             }
 
-            // Final result
             const combinedEpgUrl = allEpgUrls.length > 0 ? allEpgUrls.join(',') : null;
             const sortedChannels = allChannels.sort((a, b) => {
                 const numA = parseInt(a.streamInfo?.tvg?.chno) || Number.MAX_SAFE_INTEGER;
