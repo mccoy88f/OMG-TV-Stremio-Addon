@@ -65,9 +65,9 @@ class EPGManager {
 
     async initializeEPG(url) {
         if (!this.programGuide.size) {
-            await this.startEPGUpdate(url); // Attendiamo il completamento dell'aggiornamento EPG
+            await this.startEPGUpdate(url);
         }
-        cron.schedule('0 3 * * *', () => this.startEPGUpdate(url)); // Pianifica aggiornamenti futuri
+        cron.schedule('0 3 * * *', () => this.startEPGUpdate(url));
     }
 
     async downloadAndProcessEPG(epgUrl) {
@@ -116,15 +116,12 @@ class EPGManager {
         try {
             this.isUpdating = true;
             
-            // Supporto per più URL separati da virgola o da file
             const epgUrls = typeof url === 'string' && url.includes(',') 
                 ? url.split(',').map(u => u.trim()) 
                 : await this.readExternalFile(url);
 
-            // Pulisci la guida programmi esistente
             this.programGuide.clear();
 
-            // Processa ogni URL EPG
             for (const epgUrl of epgUrls) {
                 await this.downloadAndProcessEPG(epgUrl);
             }
@@ -157,7 +154,7 @@ class EPGManager {
             const chunk = programmes.slice(i, i + this.CHUNK_SIZE);
             
             for (const programme of chunk) {
-                const channelId = programme.$.channel.toLowerCase(); // Normalizza l'ID del canale
+                const channelId = programme.$.channel.toLowerCase();
 
                 if (!this.programGuide.has(channelId)) {
                     this.programGuide.set(channelId, []);
@@ -180,13 +177,11 @@ class EPGManager {
                 totalProcessed++;
             }
 
-            // Aggiornamento progresso per grandi dataset
             if ((i + this.CHUNK_SIZE) % 50000 === 0) {
                 console.log(`Progresso: processate ${i + this.CHUNK_SIZE} voci...`);
             }
         }
 
-        // Ordina i programmi per ogni canale
         for (const [channelId, programs] of this.programGuide.entries()) {
             this.programGuide.set(channelId, programs.sort((a, b) => a.start - b.start));
         }
@@ -202,17 +197,17 @@ class EPGManager {
                 .filter(line => line.trim() !== '' && line.startsWith('http'));
         } catch (error) {
             console.error('Errore nella lettura del file esterno:', error);
-            return [url]; // Restituisce l'URL originale se la lettura fallisce
+            return [url];
         }
     }
 
     getCurrentProgram(channelId) {
-        const normalizedChannelId = channelId.toLowerCase(); // Normalizza l'ID del canale
+        const normalizedChannelId = channelId.toLowerCase();
         const programs = this.programGuide.get(normalizedChannelId);
         if (!programs?.length) return null;
 
         const now = new Date();
-        const currentProgram = programs.find(program => program.start <= now && program.stop >= now);
+        const currentProgram = programmes.find(program => program.start <= now && program.stop >= now);
         
         if (currentProgram) {
             return {
@@ -226,13 +221,13 @@ class EPGManager {
     }
 
     getUpcomingPrograms(channelId) {
-        const normalizedChannelId = channelId.toLowerCase(); // Normalizza l'ID del canale
+        const normalizedChannelId = channelId.toLowerCase();
         const programs = this.programGuide.get(normalizedChannelId);
         if (!programs?.length) return [];
 
         const now = new Date();
         
-        return programs
+        return programmes
             .filter(program => program.start >= now)
             .slice(0, 2)
             .map(program => ({
@@ -262,17 +257,13 @@ class EPGManager {
         };
     }
 
-    /**
-     * Verifica quali canali della playlist non hanno dati EPG associati
-     * @param {Array} m3uChannels - Lista dei canali dalla playlist M3U
-     */
     checkMissingEPG(m3uChannels) {
         const epgChannels = Array.from(this.programGuide.keys());
-        const m3uIds = new Set(m3uChannels.map(ch => ch.streamInfo?.tvg?.id?.toLowerCase())); // Normalizza gli ID M3U
+        const m3uIds = new Set(m3uChannels.map(ch => ch.streamInfo?.tvg?.id?.toLowerCase()));
 
         const missingEPG = [];
         m3uChannels.forEach(ch => {
-            const tvgId = ch.streamInfo?.tvg?.id?.toLowerCase(); // Normalizza l'ID del canale M3U
+            const tvgId = ch.streamInfo?.tvg?.id?.toLowerCase();
             if (!epgChannels.includes(tvgId)) {
                 missingEPG.push(ch);
             }
