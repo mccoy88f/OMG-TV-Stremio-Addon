@@ -1,7 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const EPGManager = require('./epg-manager'); // Importa l'EPGManager
+const EPGManager = require('./epg-manager');
 
 class PlaylistTransformer {
     constructor() {
@@ -9,12 +9,10 @@ class PlaylistTransformer {
             genres: new Set(),
             channels: []
         };
-        this.remappingRules = new Map(); // Mappa per le regole di remapping
+        this.remappingRules = new Map();
+        this.processedIds = new Map();
     }
 
-    /**
-     * Carica le regole di remapping dal file link.epg.remapping
-     */
     async loadRemappingRules() {
         const remappingPath = path.join(__dirname, 'link.epg.remapping');
         console.log('\n=== Caricamento Regole di Remapping ===');
@@ -27,17 +25,15 @@ class PlaylistTransformer {
 
             content.split('\n').forEach((line, index) => {
                 line = line.trim();
-                // Ignora linee vuote e commenti
                 if (!line || line.startsWith('#')) return;
 
-                const [m3uId, epgId] = line.split('=').map(s => s.trim().toLowerCase()); // Normalizza gli ID
+                const [m3uId, epgId] = line.split('=').map(s => s.trim().toLowerCase());
                 if (!m3uId || !epgId) {
                     console.log(`⚠️  Ignorata regola non valida alla linea ${index + 1}`);
                     skippedCount++;
                     return;
                 }
 
-                // Aggiungi la regola alla mappa
                 this.remappingRules.set(m3uId, epgId);
                 ruleCount++;
             });
@@ -57,9 +53,6 @@ class PlaylistTransformer {
         }
     }
 
-    /**
-     * Estrae gli headers dalle opzioni VLC
-     */
     parseVLCOpts(lines, currentIndex) {
         const headers = {};
         let i = currentIndex;
@@ -75,16 +68,11 @@ class PlaylistTransformer {
         return { headers, nextIndex: i };
     }
 
-    /**
-     * Converte un canale nel formato Stremio
-     */
     transformChannelToStremio(channel) {
-        // Normalizza il tvg-id (converti in minuscolo)
         let channelId = (channel.tvg?.id || channel.name.trim()).toLowerCase();
 
-        // Applica le regole di remapping se disponibili
         if (this.remappingRules.has(channelId)) {
-            const remappedId = this.remappingRules.get(channelId).toLowerCase(); // Normalizza anche l'ID remappato
+            const remappedId = this.remappingRules.get(channelId).toLowerCase();
             const isConflict = this.stremioData.channels.some(
                 ch => ch.streamInfo.tvg.id.toLowerCase() === remappedId
             );
@@ -100,15 +88,19 @@ class PlaylistTransformer {
             console.log(`✓ Applicato remapping: ${channel.tvg?.id || channel.name} -> ${channelId}`);
         }
 
+        if (this.processedIds.has(channelId)) {
+            console.log(`ℹ️  Canale con ID duplicato: ${channelId}`);
+            const existingChannel = this.processedIds.get(channelId);
+
+            existingChannel.streamInfo.urls.push(channel.url);
+            console.log(`✓ Aggiunto flusso aggiuntivo per il canale: ${channelId}`);
+            console.log(`Flussi attuali per ${channelId}:`, existingChannel.streamInfo.urls);
+            return null;
+        }
+
         const id = `tv|${channelId}`;
-        
-        // Usa tvg-name se disponibile, altrimenti usa il nome originale
         const name = channel.tvg?.name || channel.name;
-        
-        // Usa il gruppo se disponibile, altrimenti usa "Altri canali"
         const group = channel.group || "Altri canali";
-        
-        // Aggiungi il genere alla lista dei generi
         this.stremioData.genres.add(group);
 
         const transformedChannel = {
@@ -127,35 +119,31 @@ class PlaylistTransformer {
                 isLive: true
             },
             streamInfo: {
-                url: channel.url,
+                urls: [channel.url],
                 headers: channel.headers,
                 tvg: {
                     ...channel.tvg,
-                    id: channelId, // Usa l'ID normalizzato
+                    id: channelId,
                     name: name
                 }
             }
         };
 
+        this.processedIds.set(channelId, transformedChannel);
+
         return transformedChannel;
     }
 
-    /**
-     * Parsa una playlist M3U
-     */
     async parseM3U(content) {
         console.log('\n=== Inizio Parsing Playlist M3U ===');
         const lines = content.split('\n');
         let currentChannel = null;
         
-        // Reset dei dati
         this.stremioData.genres.clear();
         this.stremioData.channels = [];
-
-        // Aggiungi "Altri canali" manualmente al Set dei generi
+        this.processedIds.clear();
         this.stremioData.genres.add("Altri canali");
         
-        // Estrai l'URL dell'EPG dall'header della playlist
         let epgUrl = null;
         if (lines[0].includes('url-tvg=')) {
             const match = lines[0].match(/url-tvg="([^"]+)"/);
@@ -169,11 +157,9 @@ class PlaylistTransformer {
             const line = lines[i].trim();
             
             if (line.startsWith('#EXTINF:')) {
-                // Estrai i metadati del canale
                 const metadata = line.substring(8).trim();
                 const tvgData = {};
                 
-                // Estrai attributi tvg
                 const tvgMatches = metadata.match(/([a-zA-Z-]+)="([^"]+)"/g) || [];
                 tvgMatches.forEach(match => {
                     const [key, value] = match.split('=');
@@ -181,17 +167,14 @@ class PlaylistTransformer {
                     tvgData[cleanKey] = value.replace(/"/g, '');
                 });
 
-                // Estrai il gruppo
                 const groupMatch = metadata.match(/group-title="([^"]+)"/);
                 const group = groupMatch ? groupMatch[1] : 'Altri canali';
 
-                // Estrai il nome del canale e puliscilo
                 const nameParts = metadata.split(',');
                 let name = nameParts[nameParts.length - 1].trim();
 
-                // Controlla se ci sono opzioni VLC nelle righe successive
                 const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1);
-                i = nextIndex - 1; // Aggiorna l'indice del ciclo
+                i = nextIndex - 1;
 
                 currentChannel = {
                     name,
@@ -202,9 +185,10 @@ class PlaylistTransformer {
             } else if (line.startsWith('http')) {
                 if (currentChannel) {
                     currentChannel.url = line;
-                    this.stremioData.channels.push(
-                        this.transformChannelToStremio(currentChannel)
-                    );
+                    const transformedChannel = this.transformChannelToStremio(currentChannel);
+                    if (transformedChannel) {
+                        this.stremioData.channels.push(transformedChannel);
+                    }
                     currentChannel = null;
                 }
             }
@@ -223,17 +207,14 @@ class PlaylistTransformer {
         return result;
     }
 
-    /**
-     * Carica e trasforma una playlist da URL
-     */
     async loadAndTransform(url) {
         try {
             console.log(`\nCaricamento playlist da: ${url}`);
-            await this.loadRemappingRules(); // Carica le regole di remapping
+            await this.loadRemappingRules();
             const playlistUrls = await readExternalFile(url);
             const allChannels = [];
             const allGenres = new Set();
-            const allEpgUrls = []; // Array per memorizzare tutti gli URL EPG
+            const allEpgUrls = [];
 
             for (const playlistUrl of playlistUrls) {
                 const response = await axios.get(playlistUrl);
@@ -247,19 +228,16 @@ class PlaylistTransformer {
                 });
                 result.genres.forEach(genre => allGenres.add(genre));
                 
-                // Aggiungi l'URL EPG solo se non è già presente
                 if (result.epgUrl && !allEpgUrls.includes(result.epgUrl)) {
                     allEpgUrls.push(result.epgUrl);
                     console.log('EPG URL trovato:', result.epgUrl);
                 }
             }
 
-            // Unisci tutti gli URL EPG trovati
             const combinedEpgUrl = allEpgUrls.length > 0 ? allEpgUrls.join(',') : null;
 
-            // Inizializza l'EPGManager e scarica i dati EPG
             if (combinedEpgUrl) {
-                await EPGManager.initializeEPG(combinedEpgUrl); // Attendiamo il completamento
+                await EPGManager.initializeEPG(combinedEpgUrl);
             }
 
             return {
@@ -274,19 +252,16 @@ class PlaylistTransformer {
     }
 }
 
-// Funzione per leggere un file esterno (playlist o EPG)
 async function readExternalFile(url) {
     try {
         const response = await axios.get(url);
         const content = response.data;
 
-        // Verifica se il contenuto inizia con #EXTM3U (indicatore di una playlist M3U diretta)
         if (content.trim().startsWith('#EXTM3U')) {
             console.log('Rilevata playlist M3U diretta');
-            return [url]; // Restituisce un array con solo l'URL diretto
+            return [url];
         }
 
-        // Altrimenti tratta il contenuto come una lista di URL
         console.log('Rilevato file con lista di URL');
         return content.split('\n').filter(line => line.trim() !== '');
     } catch (error) {
