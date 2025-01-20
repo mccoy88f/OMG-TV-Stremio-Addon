@@ -13,6 +13,10 @@ class CacheManager extends EventEmitter {
         };
     }
 
+    normalizeId(id) {
+        return id?.toLowerCase().trim().replace(/\s+/g, '') || '';
+    }
+
     async updateCache(force = false) {
         if (this.cache.updateInProgress) {
             console.log('⚠️  Aggiornamento cache già in corso, skip...');
@@ -68,9 +72,13 @@ class CacheManager extends EventEmitter {
     }
 
     getChannel(channelId) {
-        console.log('[CacheManager] Ricerca canale con ID:', channelId);
+        const normalizedId = this.normalizeId(channelId);
+        console.log('[CacheManager] Ricerca canale con ID:', normalizedId);
+        
         const channel = this.cache.stremioData?.channels.find(ch => {
-            const match = ch.id === `tv|${channelId}`;
+            const match = this.normalizeId(ch.id) === `tv|${normalizedId}` || 
+                         this.normalizeId(ch.streamInfo?.tvg?.id) === normalizedId;
+            
             if (match) {
                 console.log('[CacheManager] Trovata corrispondenza per canale:', ch.name);
             }
@@ -78,8 +86,10 @@ class CacheManager extends EventEmitter {
         });
 
         if (!channel) {
-            console.log('[CacheManager] Nessun canale trovato per ID:', channelId);
-            return this.cache.stremioData?.channels.find(ch => ch.name === channelId);
+            console.log('[CacheManager] Tentativo di ricerca per nome del canale');
+            return this.cache.stremioData?.channels.find(ch => 
+                this.normalizeId(ch.name) === normalizedId
+            );
         }
 
         return channel;
@@ -87,16 +97,19 @@ class CacheManager extends EventEmitter {
 
     getChannelsByGenre(genre) {
         if (!genre) return this.cache.stremioData?.channels || [];
+        
+        const normalizedGenre = genre.toLowerCase().trim();
         return this.cache.stremioData?.channels.filter(
-            channel => channel.genre?.includes(genre)
+            channel => channel.genre?.some(g => g.toLowerCase().trim() === normalizedGenre)
         ) || [];
     }
 
     searchChannels(query) {
         if (!query) return this.cache.stremioData?.channels || [];
-        const searchLower = query.toLowerCase();
+        
+        const searchLower = query.toLowerCase().trim();
         return this.cache.stremioData?.channels.filter(channel => 
-            channel.name.toLowerCase().includes(searchLower)
+            this.normalizeId(channel.name).includes(searchLower)
         ) || [];
     }
 
