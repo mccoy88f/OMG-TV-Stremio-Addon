@@ -2,8 +2,6 @@ const axios = require('axios');
 const { parseStringPromise } = require('xml2js');
 const zlib = require('zlib');
 const { promisify } = require('util');
-const fs = require('fs');
-const path = require('path');
 const gunzip = promisify(zlib.gunzip);
 const cron = require('node-cron');
 
@@ -15,6 +13,11 @@ class EPGManager {
         this.isUpdating = false;
         this.CHUNK_SIZE = 10000;
         this.validateAndSetTimezone();
+    }
+
+    normalizeId(id) {
+        // Solo conversione lowercase, mantiene spazi, punti e trattini
+        return id?.toLowerCase() || '';
     }
 
     validateAndSetTimezone() {
@@ -154,10 +157,11 @@ class EPGManager {
             const chunk = programs.slice(i, i + this.CHUNK_SIZE);
             
             for (const program of chunk) {
-                const channelId = program.$.channel.toLowerCase();
+                const channelId = program.$.channel;
+                const normalizedChannelId = this.normalizeId(channelId);
 
-                if (!this.programGuide.has(channelId)) {
-                    this.programGuide.set(channelId, []);
+                if (!this.programGuide.has(normalizedChannelId)) {
+                    this.programGuide.set(normalizedChannelId, []);
                 }
 
                 const start = this.parseEPGDate(program.$.start);
@@ -173,7 +177,7 @@ class EPGManager {
                     category: program.category?.[0]?._ || program.category?.[0]?.$?.text || program.category?.[0] || ''
                 };
 
-                this.programGuide.get(channelId).push(programData);
+                this.programGuide.get(normalizedChannelId).push(programData);
                 totalProcessed++;
             }
 
@@ -202,8 +206,10 @@ class EPGManager {
     }
 
     getCurrentProgram(channelId) {
-        const normalizedChannelId = channelId.toLowerCase();
+        if (!channelId) return null;
+        const normalizedChannelId = this.normalizeId(channelId);
         const programs = this.programGuide.get(normalizedChannelId);
+        
         if (!programs?.length) return null;
 
         const now = new Date();
@@ -221,8 +227,10 @@ class EPGManager {
     }
 
     getUpcomingPrograms(channelId) {
-        const normalizedChannelId = channelId.toLowerCase();
+        if (!channelId) return [];
+        const normalizedChannelId = this.normalizeId(channelId);
         const programs = this.programGuide.get(normalizedChannelId);
+        
         if (!programs?.length) return [];
 
         const now = new Date();
@@ -259,22 +267,24 @@ class EPGManager {
 
     checkMissingEPG(m3uChannels) {
         const epgChannels = Array.from(this.programGuide.keys());
-        const m3uIds = new Set(m3uChannels.map(ch => ch.streamInfo?.tvg?.id?.toLowerCase()));
-
         const missingEPG = [];
+
         m3uChannels.forEach(ch => {
-            const tvgId = ch.streamInfo?.tvg?.id?.toLowerCase();
-            if (!epgChannels.includes(tvgId)) {
-                missingEPG.push(ch);
+            const tvgId = ch.streamInfo?.tvg?.id;
+            if (tvgId) {
+                const normalizedTvgId = this.normalizeId(tvgId);
+                if (!epgChannels.some(epgId => this.normalizeId(epgId) === normalizedTvgId)) {
+                    missingEPG.push(ch);
+                }
             }
         });
 
         if (missingEPG.length > 0) {
             console.log('\n=== Canali M3U senza EPG ===');
             console.log(`✓ Totale canali M3U senza EPG: ${missingEPG.length}`);
-//            missingEPG.forEach(ch => {
-//                console.log(`- ${ch.name} (ID: ${ch.streamInfo?.tvg?.id})`);
-//            });
+            missingEPG.forEach(ch => {
+                console.log(`- ${ch.name} (ID: ${ch.streamInfo?.tvg?.id})`);
+            });
             console.log('=============================\n');
         }
     }
