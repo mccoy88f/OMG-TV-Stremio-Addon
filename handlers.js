@@ -115,14 +115,21 @@ async function streamHandler({ id }) {
 
         let streams = [];
 
-        if (config.FORCE_PROXY && config.PROXY_URL && config.PROXY_PASSWORD) {
-            const proxyStreams = await ProxyManager.getProxyStreams({
-                name: channel.name,
-                url: channel.streamInfo.url,
-                headers: channel.streamInfo.headers
+        // Se il canale ha più URL, crea un flusso per ciascuno
+        if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
+            channel.streamInfo.urls.forEach(url => {
+                streams.push({
+                    name: channel.name,
+                    title: channel.name,
+                    url: url,
+                    behaviorHints: {
+                        notWebReady: false,
+                        bingeGroup: "tv"
+                    }
+                });
             });
-            streams.push(...proxyStreams);
         } else {
+            // Se il canale ha un solo URL, usa quello
             streams.push({
                 name: channel.name,
                 title: channel.name,
@@ -132,15 +139,16 @@ async function streamHandler({ id }) {
                     bingeGroup: "tv"
                 }
             });
+        }
 
-            if (config.PROXY_URL && config.PROXY_PASSWORD) {
-                const proxyStreams = await ProxyManager.getProxyStreams({
-                    name: channel.name,
-                    url: channel.streamInfo.url,
-                    headers: channel.streamInfo.headers
-                });
-                streams.push(...proxyStreams);
-            }
+        // Aggiungi i flussi proxy se configurati
+        if (config.FORCE_PROXY && config.PROXY_URL && config.PROXY_PASSWORD) {
+            const proxyStreams = await ProxyManager.getProxyStreams({
+                name: channel.name,
+                url: channel.streamInfo.url,
+                headers: channel.streamInfo.headers
+            });
+            streams.push(...proxyStreams);
         }
 
         const meta = {
