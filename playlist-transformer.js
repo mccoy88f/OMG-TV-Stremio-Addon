@@ -84,7 +84,9 @@ class PlaylistTransformer {
         const channelId = this.applyRemapping(channel);
 
         // Controlla se il canale esiste già
-        const existingChannel = this.stremioData.channels.find(ch => ch.streamInfo.tvg.id.toLowerCase() === channelId);
+        const existingChannel = this.stremioData.channels.find(ch => 
+            ch.streamInfo.tvg.id.toLowerCase() === channelId.toLowerCase()
+        );
 
         if (existingChannel) {
             // Se il canale esiste, aggiungi il nuovo URL alla lista dei flussi
