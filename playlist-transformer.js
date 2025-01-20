@@ -98,7 +98,6 @@ class PlaylistTransformer {
                 name: channel.name // Mantieni il nome specifico del flusso
             });
             console.log(`✓ Aggiunto flusso aggiuntivo per il canale: ${channelId}`);
-            console.log(`Flussi attuali per ${channelId}:`, existingChannel.streamInfo.urls);
             return null; // Non creare un nuovo canale
         }
 
