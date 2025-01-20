@@ -73,6 +73,24 @@ async function startAddon() {
             console.error('Error updating cache on startup:', error);
         });
 
+        // Ottieni i dati della cache (inclusi gli URL EPG dai file M3U)
+        const cachedData = CacheManager.getCachedData();
+
+        // Combina l'URL EPG da link.epg con quelli trovati nei file M3U
+        const allEpgUrls = [];
+        if (generatedConfig.EPG_URL) {
+            allEpgUrls.push(generatedConfig.EPG_URL); // Aggiungi l'URL EPG da link.epg
+        }
+        if (cachedData.epgUrls) {
+            allEpgUrls.push(...cachedData.epgUrls); // Aggiungi gli URL EPG dai file M3U
+        }
+
+        // Inizializza l'EPGManager con tutti gli URL EPG combinati
+        if (allEpgUrls.length > 0) {
+            const combinedEpgUrl = allEpgUrls.join(','); // Combina gli URL EPG in una stringa separata da virgole
+            await EPGManager.initializeEPG(combinedEpgUrl);
+        }
+
         const landingTemplate = landing => `
 <!DOCTYPE html>
 <html style="background: #000">
@@ -152,10 +170,7 @@ async function startAddon() {
         console.log('Aggiungi il seguente URL a Stremio:', `http://localhost:${generatedConfig.port}/manifest.json`);
 
         if (generatedConfig.enableEPG) {
-            await EPGManager.initializeEPG(generatedConfig.EPG_URL);
-
             const cachedData = CacheManager.getCachedData();
-
             EPGManager.checkMissingEPG(cachedData.channels);
         } else {
             console.log('EPG disabilitata, skip inizializzazione');
