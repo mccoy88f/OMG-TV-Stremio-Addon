@@ -134,7 +134,7 @@ class PlaylistTransformer {
         const lines = content.split('\n');
         let currentChannel = null;
         let headers = {};
-        const genres = new Set(['Altri canali']);
+        const genres = ['Altri canali']; // Array invece di Set
         
         let epgUrl = null;
         if (lines[0].includes('url-tvg=')) {
@@ -167,10 +167,12 @@ class PlaylistTransformer {
                 const normalizedId = this.normalizeId(remappedId);
                 
                 if (!this.channelsMap.has(normalizedId)) {
-                    console.log(`✓ Nuovo canale: ${currentChannel.name}`);
                     const channelObj = this.createChannelObject(currentChannel, remappedId);
                     this.channelsMap.set(normalizedId, channelObj);
-                    genres.add(currentChannel.group);
+                    // Aggiungi il genere solo se non è già presente
+                    if (!genres.includes(currentChannel.group)) {
+                        genres.push(currentChannel.group);
+                    }
                 }
                 
                 const channelObj = this.channelsMap.get(normalizedId);
@@ -183,7 +185,7 @@ class PlaylistTransformer {
         console.log(`✓ Canali processati: ${this.channelsMap.size}`);
 
         return {
-            genres: Array.from(genres),
+            genres, // Array già nell'ordine corretto
             epgUrl
         };
     }
@@ -201,7 +203,7 @@ class PlaylistTransformer {
                 ? [url] 
                 : content.split('\n').filter(line => line.trim() && line.startsWith('http'));
 
-            const genres = new Set();
+            const allGenres = []; // Array invece di Set
             const epgUrls = new Set();
             
             for (const playlistUrl of playlistUrls) {
@@ -209,14 +211,20 @@ class PlaylistTransformer {
                 const playlistResponse = await axios.get(playlistUrl);
                 const result = await this.parseM3UContent(playlistResponse.data);
                 
-                result.genres.forEach(genre => genres.add(genre));
+                // Aggiungi solo i generi non ancora presenti
+                result.genres.forEach(genre => {
+                    if (!allGenres.includes(genre)) {
+                        allGenres.push(genre);
+                    }
+                });
+                
                 if (result.epgUrl) {
                     epgUrls.add(result.epgUrl);
                 }
             }
 
             const finalResult = {
-                genres: Array.from(genres).sort(),
+                genres: allGenres, // Non ordiniamo più alfabeticamente
                 channels: Array.from(this.channelsMap.values()),
                 epgUrls: Array.from(epgUrls)
             };
