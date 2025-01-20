@@ -88,16 +88,18 @@ class PlaylistTransformer {
             console.log(`✓ Applicato remapping: ${channel.tvg?.id || channel.name} -> ${channelId}`);
         }
 
-        if (this.processedIds.has(channelId)) {
-            console.log(`ℹ️  Canale con ID duplicato: ${channelId}`);
-            const existingChannel = this.processedIds.get(channelId);
+        // Controlla se il canale esiste già
+        const existingChannel = this.stremioData.channels.find(ch => ch.streamInfo.tvg.id.toLowerCase() === channelId);
 
+        if (existingChannel) {
+            // Se il canale esiste, aggiungi il nuovo URL alla lista dei flussi
             existingChannel.streamInfo.urls.push(channel.url);
             console.log(`✓ Aggiunto flusso aggiuntivo per il canale: ${channelId}`);
             console.log(`Flussi attuali per ${channelId}:`, existingChannel.streamInfo.urls);
-            return null;
+            return null; // Non creare un nuovo canale
         }
 
+        // Se il canale non esiste, crea un nuovo canale
         const id = `tv|${channelId}`;
         const name = channel.tvg?.name || channel.name;
         const group = channel.group || "Altri canali";
@@ -119,7 +121,7 @@ class PlaylistTransformer {
                 isLive: true
             },
             streamInfo: {
-                urls: [channel.url],
+                urls: [channel.url], // Inizializza con il primo URL
                 headers: channel.headers,
                 tvg: {
                     ...channel.tvg,
@@ -129,8 +131,7 @@ class PlaylistTransformer {
             }
         };
 
-        this.processedIds.set(channelId, transformedChannel);
-
+        this.stremioData.channels.push(transformedChannel);
         return transformedChannel;
     }
 
