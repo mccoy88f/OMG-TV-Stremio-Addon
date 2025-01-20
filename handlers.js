@@ -3,11 +3,16 @@ const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
 const ProxyManager = new (require('./proxy-manager'))(config);
 
-function enrichWithEPG(meta, channelId) {
-    if (!config.enableEPG) return meta;
+function normalizeId(id) {
+    return id?.toLowerCase().trim().replace(/\s+/g, '') || '';
+}
 
-    const currentProgram = EPGManager.getCurrentProgram(channelId);
-    const upcomingPrograms = EPGManager.getUpcomingPrograms(channelId);
+function enrichWithEPG(meta, channelId) {
+    if (!config.enableEPG || !channelId) return meta;
+
+    const normalizedId = normalizeId(channelId);
+    const currentProgram = EPGManager.getCurrentProgram(normalizedId);
+    const upcomingPrograms = EPGManager.getUpcomingPrograms(normalizedId);
 
     if (currentProgram) {
         meta.description = `IN ONDA ORA:\n${currentProgram.title}`;
@@ -47,14 +52,9 @@ async function catalogHandler({ type, id, extra }) {
 
         let channels = [];
         if (genre) {
-            channels = cachedData.channels.filter(channel => 
-                channel.genre && channel.genre.includes(genre)
-            );
+            channels = CacheManager.getChannelsByGenre(genre);
         } else if (search) {
-            const searchLower = search.toLowerCase();
-            channels = cachedData.channels.filter(channel => 
-                channel.name.toLowerCase().includes(searchLower)
-            );
+            channels = CacheManager.searchChannels(search);
         } else {
             channels = cachedData.channels;
         }
@@ -110,26 +110,24 @@ async function streamHandler({ id }) {
         const channel = CacheManager.getChannel(channelId);
 
         if (!channel) {
+            console.log('[Handlers] Nessun canale trovato per ID:', channelId);
             return { streams: [] };
         }
 
         let streams = [];
 
-        // Se il canale ha più URL, crea un flusso per ciascuno
+        // Gestione multi-stream
         if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
-            channel.streamInfo.urls.forEach(stream => {
-                streams.push({
-                    name: stream.name, // Usa il nome specifico del flusso
-                    title: stream.name, // Usa il nome specifico del flusso
-                    url: stream.url,
-                    behaviorHints: {
-                        notWebReady: false,
-                        bingeGroup: "tv"
-                    }
-                });
-            });
-        } else {
-            // Se il canale ha un solo URL, usa quello
+            streams = channel.streamInfo.urls.map(stream => ({
+                name: stream.name || channel.name,
+                title: stream.name || channel.name,
+                url: stream.url,
+                behaviorHints: {
+                    notWebReady: false,
+                    bingeGroup: "tv"
+                }
+            }));
+        } else if (channel.streamInfo.url) {
             streams.push({
                 name: channel.name,
                 title: channel.name,
@@ -141,20 +139,31 @@ async function streamHandler({ id }) {
             });
         }
 
-        // Aggiungi i flussi proxy se configurati
+        // Aggiungi stream proxy se configurato
         if (config.FORCE_PROXY && config.PROXY_URL && config.PROXY_PASSWORD) {
-            const proxyStreams = await ProxyManager.getProxyStreams({
-                name: channel.name,
-                url: channel.streamInfo.url,
-                headers: channel.streamInfo.headers
-            });
-            streams.push(...proxyStreams);
+            if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
+                for (const stream of channel.streamInfo.urls) {
+                    const proxyStreams = await ProxyManager.getProxyStreams({
+                        name: stream.name || channel.name,
+                        url: stream.url,
+                        headers: channel.streamInfo.headers
+                    });
+                    streams.push(...proxyStreams);
+                }
+            } else if (channel.streamInfo.url) {
+                const proxyStreams = await ProxyManager.getProxyStreams({
+                    name: channel.name,
+                    url: channel.streamInfo.url,
+                    headers: channel.streamInfo.headers
+                });
+                streams.push(...proxyStreams);
+            }
         }
 
         const meta = {
             id: channel.id,
             type: 'tv',
-            name: channel.name, // Nome principale del canale (tvg-id)
+            name: channel.name,
             poster: channel.poster,
             background: channel.background,
             logo: channel.logo,
