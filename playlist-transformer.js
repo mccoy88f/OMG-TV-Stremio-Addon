@@ -238,16 +238,10 @@ class PlaylistTransformer {
                 }
             }
 
-            const combinedEpgUrl = allEpgUrls.length > 0 ? allEpgUrls.join(',') : null;
-
-            if (combinedEpgUrl) {
-                await EPGManager.initializeEPG(combinedEpgUrl);
-            }
-
             return {
                 genres: Array.from(allGenres),
                 channels: allChannels,
-                epgUrl: combinedEpgUrl
+                epgUrls: allEpgUrls // Restituisci una lista di URL EPG trovati
             };
         } catch (error) {
             console.error('Errore nel caricamento della playlist:', error);
