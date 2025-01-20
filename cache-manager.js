@@ -14,7 +14,8 @@ class CacheManager extends EventEmitter {
     }
 
     normalizeId(id) {
-        return id?.toLowerCase().trim().replace(/\s+/g, '') || '';
+        // Solo conversione lowercase, mantiene spazi, punti e trattini
+        return id?.toLowerCase() || '';
     }
 
     async updateCache(force = false) {
@@ -26,12 +27,15 @@ class CacheManager extends EventEmitter {
         try {
             this.cache.updateInProgress = true;
             console.log('\n=== Inizio Aggiornamento Cache ===');
+            console.log(`Forza aggiornamento: ${force ? 'Sì' : 'No'}`);
+            console.log(`Ultimo aggiornamento: ${this.cache.lastUpdated ? new Date(this.cache.lastUpdated).toLocaleString() : 'Mai'}`);
 
             const needsUpdate = force || !this.cache.lastUpdated || 
                 (Date.now() - this.cache.lastUpdated) > this.config.cacheSettings.updateInterval;
 
             if (!needsUpdate) {
                 console.log('ℹ️  Cache ancora valida, skip aggiornamento');
+                this.cache.updateInProgress = false;
                 return;
             }
 
@@ -72,23 +76,30 @@ class CacheManager extends EventEmitter {
     }
 
     getChannel(channelId) {
-        const normalizedId = this.normalizeId(channelId);
-        console.log('[CacheManager] Ricerca canale con ID:', normalizedId);
+        if (!channelId) return null;
+        const normalizedSearchId = this.normalizeId(channelId);
+        console.log('[CacheManager] Ricerca canale con ID:', normalizedSearchId);
         
         const channel = this.cache.stremioData?.channels.find(ch => {
-            const match = this.normalizeId(ch.id) === `tv|${normalizedId}` || 
-                         this.normalizeId(ch.streamInfo?.tvg?.id) === normalizedId;
+            const normalizedChannelId = this.normalizeId(ch.id);
+            const normalizedTvgId = this.normalizeId(ch.streamInfo?.tvg?.id);
             
-            if (match) {
+            const matchId = normalizedChannelId === `tv|${normalizedSearchId}`;
+            const matchTvgId = normalizedTvgId === normalizedSearchId;
+            
+            if (matchId || matchTvgId) {
                 console.log('[CacheManager] Trovata corrispondenza per canale:', ch.name);
+                console.log(`  ID: ${ch.id}`);
+                console.log(`  TVG-ID: ${ch.streamInfo?.tvg?.id}`);
+                return true;
             }
-            return match;
+            return false;
         });
 
         if (!channel) {
             console.log('[CacheManager] Tentativo di ricerca per nome del canale');
             return this.cache.stremioData?.channels.find(ch => 
-                this.normalizeId(ch.name) === normalizedId
+                this.normalizeId(ch.name) === normalizedSearchId
             );
         }
 
@@ -98,18 +109,18 @@ class CacheManager extends EventEmitter {
     getChannelsByGenre(genre) {
         if (!genre) return this.cache.stremioData?.channels || [];
         
-        const normalizedGenre = genre.toLowerCase().trim();
+        const normalizedGenre = this.normalizeId(genre);
         return this.cache.stremioData?.channels.filter(
-            channel => channel.genre?.some(g => g.toLowerCase().trim() === normalizedGenre)
+            channel => channel.genre?.some(g => this.normalizeId(g) === normalizedGenre)
         ) || [];
     }
 
     searchChannels(query) {
         if (!query) return this.cache.stremioData?.channels || [];
         
-        const searchLower = query.toLowerCase().trim();
+        const normalizedQuery = this.normalizeId(query);
         return this.cache.stremioData?.channels.filter(channel => 
-            this.normalizeId(channel.name).includes(searchLower)
+            this.normalizeId(channel.name).includes(normalizedQuery)
         ) || [];
     }
 
