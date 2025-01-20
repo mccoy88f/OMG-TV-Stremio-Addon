@@ -258,7 +258,11 @@ class PlaylistTransformer {
 
 async function readExternalFile(url) {
     try {
-        const response = await axios.get(url);
+        const response = await axios.get(url, {
+            httpsAgent: new (require('https').Agent)({
+                rejectUnauthorized: false // Ignora gli errori di certificato SSL
+            })
+        });
         const content = response.data;
 
         if (content.trim().startsWith('#EXTM3U')) {
