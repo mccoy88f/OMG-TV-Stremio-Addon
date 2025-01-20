@@ -88,22 +88,19 @@ class EPGManager {
             let xmlString;
             try {
                 xmlString = await gunzip(response.data);
-                console.log('✓ Dati EPG decompressi con successo');
             } catch (gzipError) {
                 try {
                     xmlString = zlib.inflateSync(response.data);
-                    console.log('✓ Dati EPG decompressi con successo');
                 } catch (zlibError) {
-                    console.log('ℹ️  Utilizzo dati EPG non compressi');
                     xmlString = response.data.toString();
                 }
             }
 
             const xmlData = await parseStringPromise(xmlString);
             await this.processEPGInChunks(xmlData);
-            console.log('✓ Dati EPG processati con successo');
+            console.log('✓ EPG processato con successo');
         } catch (error) {
-            console.error(`❌ Errore nel download dell'EPG da ${epgUrl}:`, error.message);
+            console.error(`❌ Errore EPG: ${error.message}`);
         }
     }
 
