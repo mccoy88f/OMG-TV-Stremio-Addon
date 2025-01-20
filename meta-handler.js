@@ -2,9 +2,6 @@ const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
 
-/**
- * Arricchisce i metadati del canale con informazioni EPG dettagliate
- */
 function enrichWithDetailedEPG(meta, channelId) {
     if (!config.enableEPG) return meta;
 
@@ -12,10 +9,8 @@ function enrichWithDetailedEPG(meta, channelId) {
     const upcomingPrograms = EPGManager.getUpcomingPrograms(channelId);
 
     if (currentProgram) {
-        // Crea la descrizione base
         let description = [];
         
-        // Programma corrente
         description.push('📺 IN ONDA ORA:', currentProgram.title);
         
         if (currentProgram.description) {
@@ -28,7 +23,6 @@ function enrichWithDetailedEPG(meta, channelId) {
             description.push(`🏷️ ${currentProgram.category}`);
         }
 
-        // Prossimi programmi
         if (upcomingPrograms?.length > 0) {
             description.push('', '📅 PROSSIMI PROGRAMMI:');
             upcomingPrograms.forEach(program => {
@@ -45,19 +39,14 @@ function enrichWithDetailedEPG(meta, channelId) {
             });
         }
 
-        // Unisci tutto con la descrizione originale
         meta.description = description.join('\n');
         
-        // Aggiorna releaseInfo
         meta.releaseInfo = `${currentProgram.title} (${currentProgram.start})`;
     }
 
     return meta;
 }
 
-/**
- * Handler per i metadati dettagliati di un canale
- */
 async function metaHandler({ type, id }) {
     try {
         if (CacheManager.isStale()) {
@@ -77,7 +66,6 @@ async function metaHandler({ type, id }) {
             return { meta: null };
         }
 
-        // Prepara le informazioni base del canale
         const meta = {
             id: channel.id,
             type: 'tv',
@@ -100,7 +88,6 @@ async function metaHandler({ type, id }) {
             }
         };
 
-        // Prepara la descrizione base
         let baseDescription = [];
         
         if (channel.streamInfo?.tvg?.chno) {
@@ -113,7 +100,6 @@ async function metaHandler({ type, id }) {
 
         meta.description = baseDescription.join('\n');
 
-        // Arricchisci con informazioni EPG
         const enrichedMeta = enrichWithDetailedEPG(meta, channel.streamInfo?.tvg?.id);
 
         return { meta: enrichedMeta };
