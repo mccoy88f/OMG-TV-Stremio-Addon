@@ -145,32 +145,32 @@ class EPGManager {
             return;
         }
 
-        const programmes = data.tv.programme;
+        const programs = data.tv.programme;
         let totalProcessed = 0;
         
-        console.log(`\nProcessamento di ${programmes.length} voci EPG in blocchi di ${this.CHUNK_SIZE}`);
+        console.log(`\nProcessamento di ${programs.length} voci EPG in blocchi di ${this.CHUNK_SIZE}`);
         
-        for (let i = 0; i < programmes.length; i += this.CHUNK_SIZE) {
-            const chunk = programmes.slice(i, i + this.CHUNK_SIZE);
+        for (let i = 0; i < programs.length; i += this.CHUNK_SIZE) {
+            const chunk = programs.slice(i, i + this.CHUNK_SIZE);
             
-            for (const programme of chunk) {
-                const channelId = programme.$.channel.toLowerCase();
+            for (const program of chunk) {
+                const channelId = program.$.channel.toLowerCase();
 
                 if (!this.programGuide.has(channelId)) {
                     this.programGuide.set(channelId, []);
                 }
 
-                const start = this.parseEPGDate(programme.$.start);
-                const stop = this.parseEPGDate(programme.$.stop);
+                const start = this.parseEPGDate(program.$.start);
+                const stop = this.parseEPGDate(program.$.stop);
 
                 if (!start || !stop) continue;
 
                 const programData = {
                     start,
                     stop,
-                    title: programme.title?.[0]?._ || programme.title?.[0]?.$?.text || programme.title?.[0] || 'Nessun Titolo',
-                    description: programme.desc?.[0]?._ || programme.desc?.[0]?.$?.text || programme.desc?.[0] || '',
-                    category: programme.category?.[0]?._ || programme.category?.[0]?.$?.text || programme.category?.[0] || ''
+                    title: program.title?.[0]?._ || program.title?.[0]?.$?.text || program.title?.[0] || 'Nessun Titolo',
+                    description: program.desc?.[0]?._ || program.desc?.[0]?.$?.text || program.desc?.[0] || '',
+                    category: program.category?.[0]?._ || program.category?.[0]?.$?.text || program.category?.[0] || ''
                 };
 
                 this.programGuide.get(channelId).push(programData);
@@ -207,7 +207,7 @@ class EPGManager {
         if (!programs?.length) return null;
 
         const now = new Date();
-        const currentProgram = programmes.find(program => program.start <= now && program.stop >= now);
+        const currentProgram = programs.find(program => program.start <= now && program.stop >= now);
         
         if (currentProgram) {
             return {
@@ -227,7 +227,7 @@ class EPGManager {
 
         const now = new Date();
         
-        return programmes
+        return programs
             .filter(program => program.start >= now)
             .slice(0, 2)
             .map(program => ({
