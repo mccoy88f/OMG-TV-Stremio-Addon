@@ -123,6 +123,8 @@ class PlaylistTransformer {
         let headers = {};
         const genres = new Set(['Altri canali']);
         
+        console.log('\n=== Inizio Parsing Contenuto M3U ===');
+        
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             
@@ -143,17 +145,27 @@ class PlaylistTransformer {
                 // Parse del canale
                 currentChannel = this.parseChannelFromLine(line, headers);
             } else if (line.startsWith('http') && currentChannel) {
-                const channelId = this.getRemappedId(currentChannel);
+                const originalId = this.normalizeId(currentChannel.tvg?.id || currentChannel.name);
+                const remappedId = this.getRemappedId(currentChannel);
                 
-                if (!this.channelsMap.has(channelId)) {
-                    // Crea nuovo canale
-                    const channelObj = this.createChannelObject(currentChannel, channelId);
-                    this.channelsMap.set(channelId, channelObj);
+                console.log(`Processo canale: ${currentChannel.name}`);
+                console.log(`ID Originale: ${originalId}`);
+                console.log(`ID Remappato: ${remappedId}`);
+                
+                // Se l'ID è stato remappato, non creare un nuovo canale con l'ID originale
+                const finalId = remappedId;
+                
+                if (!this.channelsMap.has(finalId)) {
+                    console.log(`✓ Creazione nuovo canale con ID: ${finalId}`);
+                    const channelObj = this.createChannelObject(currentChannel, finalId);
+                    this.channelsMap.set(finalId, channelObj);
                     genres.add(currentChannel.group);
+                } else {
+                    console.log(`✓ Aggiunto stream a canale esistente: ${finalId}`);
                 }
                 
-                // Aggiungi il flusso al canale esistente
-                const channelObj = this.channelsMap.get(channelId);
+                // Aggiungi il flusso al canale remappato
+                const channelObj = this.channelsMap.get(finalId);
                 this.addStreamToChannel(channelObj, line, currentChannel.name);
                 
                 currentChannel = null;
@@ -165,7 +177,9 @@ class PlaylistTransformer {
 
     async loadAndTransform(url) {
         try {
-            console.log(`\nCaricamento playlist da: ${url}`);
+            console.log('\n=== Inizio Caricamento Playlist ===');
+            console.log(`URL Sorgente: ${url}`);
+            console.log('\n=== Caricamento Regole Remapping ===');
             await this.loadRemappingRules();
             
             // Leggi l'URL o la lista di URL
