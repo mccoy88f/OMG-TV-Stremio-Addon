@@ -10,7 +10,6 @@ class PlaylistTransformer {
             channels: []
         };
         this.remappingRules = new Map(); // Mappa per le regole di remapping
-        this.processedIds = new Map(); // Mappa per tracciare gli ID già processati e i loro flussi
     }
 
     /**
@@ -101,18 +100,6 @@ class PlaylistTransformer {
             console.log(`✓ Applicato remapping: ${channel.tvg?.id || channel.name} -> ${channelId}`);
         }
 
-        // Verifica se l'ID è già stato processato
-        if (this.processedIds.has(channelId)) {
-            console.log(`ℹ️  Canale con ID duplicato: ${channelId}`);
-            const existingChannel = this.processedIds.get(channelId);
-
-            // Aggiungi il nuovo flusso ai flussi esistenti
-            existingChannel.streamInfo.urls.push(channel.url);
-            console.log(`✓ Aggiunto flusso aggiuntivo per il canale: ${channelId}`);
-            return null; // Non creare un nuovo canale
-        }
-
-        // Crea un nuovo canale
         const id = `tv|${channelId}`;
         
         // Usa tvg-name se disponibile, altrimenti usa il nome originale
@@ -140,7 +127,7 @@ class PlaylistTransformer {
                 isLive: true
             },
             streamInfo: {
-                urls: [channel.url], // Array di URL per supportare più flussi
+                url: channel.url,
                 headers: channel.headers,
                 tvg: {
                     ...channel.tvg,
@@ -149,9 +136,6 @@ class PlaylistTransformer {
                 }
             }
         };
-
-        // Aggiungi il canale alla mappa degli ID processati
-        this.processedIds.set(channelId, transformedChannel);
 
         return transformedChannel;
     }
@@ -167,7 +151,6 @@ class PlaylistTransformer {
         // Reset dei dati
         this.stremioData.genres.clear();
         this.stremioData.channels = [];
-        this.processedIds.clear(); // Resetta gli ID processati
 
         // Aggiungi "Altri canali" manualmente al Set dei generi
         this.stremioData.genres.add("Altri canali");
@@ -219,10 +202,9 @@ class PlaylistTransformer {
             } else if (line.startsWith('http')) {
                 if (currentChannel) {
                     currentChannel.url = line;
-                    const transformedChannel = this.transformChannelToStremio(currentChannel);
-                    if (transformedChannel) {
-                        this.stremioData.channels.push(transformedChannel);
-                    }
+                    this.stremioData.channels.push(
+                        this.transformChannelToStremio(currentChannel)
+                    );
                     currentChannel = null;
                 }
             }
