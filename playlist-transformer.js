@@ -80,60 +80,6 @@ class PlaylistTransformer {
         return channelId;
     }
 
-    transformChannelToStremio(channel) {
-        const channelId = this.applyRemapping(channel);
-
-        // Controlla se il canale esiste già
-        const existingChannel = this.stremioData.channels.find(ch => 
-            ch.streamInfo.tvg.id.toLowerCase() === channelId.toLowerCase()
-        );
-
-        if (existingChannel) {
-            // Se il canale esiste, aggiungi il nuovo URL alla lista dei flussi
-            existingChannel.streamInfo.urls.push({
-                url: channel.url,
-                name: channel.name // Mantieni il nome specifico del flusso
-            });
-            console.log(`✓ Aggiunto flusso aggiuntivo per il canale: ${channelId}`);
-            return null; // Non creare un nuovo canale
-        }
-
-        // Se il canale non esiste, crea un nuovo canale
-        const id = `tv|${channelId}`;
-        const name = channel.tvg?.name || channel.name; // Usa il nome del tvg-id come nome principale
-        const group = channel.group || "Altri canali";
-        this.stremioData.genres.add(group);
-
-        const transformedChannel = {
-            id,
-            type: 'tv',
-            name: name, // Nome principale del canale (tvg-id)
-            genre: [group],
-            posterShape: 'square',
-            poster: channel.tvg?.logo,
-            background: channel.tvg?.logo,
-            logo: channel.tvg?.logo,
-            description: `Canale: ${name}`,
-            runtime: 'LIVE',
-            behaviorHints: {
-                defaultVideoId: id,
-                isLive: true
-            },
-            streamInfo: {
-                urls: [{ url: channel.url, name: channel.name }], // Inizializza con il primo URL e il nome specifico
-                headers: channel.headers,
-                tvg: {
-                    ...channel.tvg,
-                    id: channelId,
-                    name: name
-                }
-            }
-        };
-
-        this.stremioData.channels.push(transformedChannel);
-        return transformedChannel;
-    }
-
     async parseM3U(content) {
         console.log('\n=== Inizio Parsing Playlist M3U ===');
         const lines = content.split('\n');
@@ -151,6 +97,9 @@ class PlaylistTransformer {
                 console.log('EPG URL trovato nella playlist:', epgUrl);
             }
         }
+
+        // Mappa temporanea per raggruppare i canali per ID
+        const channelsMap = new Map();
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
@@ -184,14 +133,61 @@ class PlaylistTransformer {
             } else if (line.startsWith('http')) {
                 if (currentChannel) {
                     currentChannel.url = line;
-                    const transformedChannel = this.transformChannelToStremio(currentChannel);
-                    if (transformedChannel) {
-                        this.stremioData.channels.push(transformedChannel);
+
+                    // Applica il remapping all'ID del canale
+                    const channelId = this.applyRemapping(currentChannel);
+
+                    // Se il canale esiste già nella mappa, aggiungi il flusso come flusso aggiuntivo
+                    if (channelsMap.has(channelId)) {
+                        const existingChannel = channelsMap.get(channelId);
+                        existingChannel.streamInfo.urls.push({
+                            url: currentChannel.url,
+                            name: currentChannel.name
+                        });
+                        console.log(`✓ Aggiunto flusso aggiuntivo per il canale: ${channelId}`);
+                    } else {
+                        // Se il canale non esiste, crea un nuovo canale
+                        const id = `tv|${channelId}`;
+                        const name = currentChannel.tvg?.name || currentChannel.name;
+                        const group = currentChannel.group || "Altri canali";
+                        this.stremioData.genres.add(group);
+
+                        const transformedChannel = {
+                            id,
+                            type: 'tv',
+                            name: name,
+                            genre: [group],
+                            posterShape: 'square',
+                            poster: currentChannel.tvg?.logo,
+                            background: currentChannel.tvg?.logo,
+                            logo: currentChannel.tvg?.logo,
+                            description: `Canale: ${name}`,
+                            runtime: 'LIVE',
+                            behaviorHints: {
+                                defaultVideoId: id,
+                                isLive: true
+                            },
+                            streamInfo: {
+                                urls: [{ url: currentChannel.url, name: currentChannel.name }],
+                                headers: currentChannel.headers,
+                                tvg: {
+                                    ...currentChannel.tvg,
+                                    id: channelId,
+                                    name: name
+                                }
+                            }
+                        };
+
+                        channelsMap.set(channelId, transformedChannel);
                     }
+
                     currentChannel = null;
                 }
             }
         }
+
+        // Converti la mappa in un array di canali
+        this.stremioData.channels = Array.from(channelsMap.values());
 
         const result = {
             genres: Array.from(this.stremioData.genres),
@@ -236,7 +232,7 @@ class PlaylistTransformer {
             return {
                 genres: Array.from(allGenres),
                 channels: allChannels,
-                epgUrls: allEpgUrls // Restituisci una lista di URL EPG trovati
+                epgUrls: allEpgUrls
             };
         } catch (error) {
             console.error('Errore nel caricamento della playlist:', error);
