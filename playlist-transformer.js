@@ -10,7 +10,6 @@ class PlaylistTransformer {
             channels: []
         };
         this.remappingRules = new Map();
-        this.processedIds = new Map();
     }
 
     async loadRemappingRules() {
@@ -68,15 +67,21 @@ class PlaylistTransformer {
         return { headers, nextIndex: i };
     }
 
-    transformChannelToStremio(channel) {
+    applyRemapping(channel) {
         let channelId = (channel.tvg?.id || channel.name.trim()).toLowerCase();
 
-        // Applica il remapping prima di controllare se il canale esiste già
+        // Applica il remapping se esiste una regola
         if (this.remappingRules.has(channelId)) {
             const remappedId = this.remappingRules.get(channelId).toLowerCase();
             console.log(`✓ Applicato remapping: ${channelId} -> ${remappedId}`);
             channelId = remappedId;
         }
+
+        return channelId;
+    }
+
+    transformChannelToStremio(channel) {
+        const channelId = this.applyRemapping(channel);
 
         // Controlla se il canale esiste già
         const existingChannel = this.stremioData.channels.find(ch => ch.streamInfo.tvg.id.toLowerCase() === channelId);
@@ -134,7 +139,6 @@ class PlaylistTransformer {
         
         this.stremioData.genres.clear();
         this.stremioData.channels = [];
-        this.processedIds.clear();
         this.stremioData.genres.add("Altri canali");
         
         let epgUrl = null;
