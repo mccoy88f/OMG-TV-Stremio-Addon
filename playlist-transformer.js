@@ -93,7 +93,10 @@ class PlaylistTransformer {
 
         if (existingChannel) {
             // Se il canale esiste, aggiungi il nuovo URL alla lista dei flussi
-            existingChannel.streamInfo.urls.push(channel.url);
+            existingChannel.streamInfo.urls.push({
+                url: channel.url,
+                name: channel.name // Mantieni il nome specifico del flusso
+            });
             console.log(`✓ Aggiunto flusso aggiuntivo per il canale: ${channelId}`);
             console.log(`Flussi attuali per ${channelId}:`, existingChannel.streamInfo.urls);
             return null; // Non creare un nuovo canale
@@ -101,14 +104,14 @@ class PlaylistTransformer {
 
         // Se il canale non esiste, crea un nuovo canale
         const id = `tv|${channelId}`;
-        const name = channel.tvg?.name || channel.name;
+        const name = channel.tvg?.name || channel.name; // Usa il nome del tvg-id come nome principale
         const group = channel.group || "Altri canali";
         this.stremioData.genres.add(group);
 
         const transformedChannel = {
             id,
             type: 'tv',
-            name: name,
+            name: name, // Nome principale del canale (tvg-id)
             genre: [group],
             posterShape: 'square',
             poster: channel.tvg?.logo,
@@ -121,7 +124,7 @@ class PlaylistTransformer {
                 isLive: true
             },
             streamInfo: {
-                urls: [channel.url], // Inizializza con il primo URL
+                urls: [{ url: channel.url, name: channel.name }], // Inizializza con il primo URL e il nome specifico
                 headers: channel.headers,
                 tvg: {
                     ...channel.tvg,
