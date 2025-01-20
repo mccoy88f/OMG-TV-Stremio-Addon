@@ -67,16 +67,12 @@ class PlaylistTransformer {
         return { headers, nextIndex: i };
     }
 
-    applyRemapping(channel) {
-        let channelId = (channel.tvg?.id || channel.name.trim()).toLowerCase();
-
-        // Applica il remapping se esiste una regola
+    applyRemapping(channelId) {
         if (this.remappingRules.has(channelId)) {
             const remappedId = this.remappingRules.get(channelId).toLowerCase();
             console.log(`✓ Applicato remapping: ${channelId} -> ${remappedId}`);
-            channelId = remappedId;
+            return remappedId;
         }
-
         return channelId;
     }
 
@@ -135,7 +131,7 @@ class PlaylistTransformer {
                     currentChannel.url = line;
 
                     // Applica il remapping all'ID del canale
-                    const channelId = this.applyRemapping(currentChannel);
+                    const channelId = this.applyRemapping(currentChannel.tvg?.id || currentChannel.name.trim());
 
                     console.log(`\n=== Processamento canale ===`);
                     console.log(`ID canale: ${channelId}`);
