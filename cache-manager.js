@@ -78,26 +78,16 @@ class CacheManager extends EventEmitter {
     getChannel(channelId) {
         if (!channelId) return null;
         const normalizedSearchId = this.normalizeId(channelId);
-        console.log('[CacheManager] Ricerca canale con ID:', normalizedSearchId);
         
         const channel = this.cache.stremioData?.channels.find(ch => {
             const normalizedChannelId = this.normalizeId(ch.id);
             const normalizedTvgId = this.normalizeId(ch.streamInfo?.tvg?.id);
             
-            const matchId = normalizedChannelId === `tv|${normalizedSearchId}`;
-            const matchTvgId = normalizedTvgId === normalizedSearchId;
-            
-            if (matchId || matchTvgId) {
-                console.log('[CacheManager] Trovata corrispondenza per canale:', ch.name);
-                console.log(`  ID: ${ch.id}`);
-                console.log(`  TVG-ID: ${ch.streamInfo?.tvg?.id}`);
-                return true;
-            }
-            return false;
+            return normalizedChannelId === `tv|${normalizedSearchId}` || 
+                   normalizedTvgId === normalizedSearchId;
         });
 
         if (!channel) {
-            console.log('[CacheManager] Tentativo di ricerca per nome del canale');
             return this.cache.stremioData?.channels.find(ch => 
                 this.normalizeId(ch.name) === normalizedSearchId
             );
