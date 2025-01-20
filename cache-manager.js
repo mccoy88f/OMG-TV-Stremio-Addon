@@ -31,18 +31,15 @@ class CacheManager extends EventEmitter {
                 return;
             }
 
-            // Carica e trasforma la playlist
             console.log('Caricamento playlist da:', this.config.M3U_URL);
             const stremioData = await this.transformer.loadAndTransform(this.config.M3U_URL);
             
-            // Aggiorna la cache
             this.cache = {
                 stremioData,
                 lastUpdated: Date.now(),
                 updateInProgress: false
             };
 
-            // Aggiorna i generi nel manifest
             this.config.manifest.catalogs[0].extra[0].options = stremioData.genres;
 
             console.log('\nRiepilogo Cache:');
@@ -82,7 +79,6 @@ class CacheManager extends EventEmitter {
 
         if (!channel) {
             console.log('[CacheManager] Nessun canale trovato per ID:', channelId);
-            // Prova a cercare per nome se la ricerca per ID fallisce
             return this.cache.stremioData?.channels.find(ch => ch.name === channelId);
         }
 
