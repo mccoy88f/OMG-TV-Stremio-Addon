@@ -63,8 +63,12 @@ class PlaylistTransformer {
         };
     }
 
+    normalizeId(id) {
+        return id?.toLowerCase().trim().replace(/\s+/g, '') || '';
+    }
+
     getRemappedId(channel) {
-        const originalId = (channel.tvg?.id || channel.name).toLowerCase().trim();
+        const originalId = this.normalizeId(channel.tvg?.id || channel.name);
         const remappedId = this.remappingRules.get(originalId);
         
         if (remappedId) {
