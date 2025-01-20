@@ -71,21 +71,11 @@ class PlaylistTransformer {
     transformChannelToStremio(channel) {
         let channelId = (channel.tvg?.id || channel.name.trim()).toLowerCase();
 
+        // Applica il remapping prima di controllare se il canale esiste già
         if (this.remappingRules.has(channelId)) {
             const remappedId = this.remappingRules.get(channelId).toLowerCase();
-            const isConflict = this.stremioData.channels.some(
-                ch => ch.streamInfo.tvg.id.toLowerCase() === remappedId
-            );
-
-            if (isConflict) {
-                console.warn(
-                    `⚠️  Attenzione: conflitto di tvg-id per ${channelId} -> ${remappedId}. ` +
-                    `Il tvg-id "${remappedId}" è già stato assegnato a un altro canale.`
-                );
-            }
-
+            console.log(`✓ Applicato remapping: ${channelId} -> ${remappedId}`);
             channelId = remappedId;
-            console.log(`✓ Applicato remapping: ${channel.tvg?.id || channel.name} -> ${channelId}`);
         }
 
         // Controlla se il canale esiste già
