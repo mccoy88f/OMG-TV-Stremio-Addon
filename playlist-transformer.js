@@ -5,7 +5,12 @@ const path = require('path');
 class PlaylistTransformer {
     constructor() {
         this.remappingRules = new Map();
-        this.channelsMap = new Map(); // Mappa principale per tenere traccia di tutti i canali
+        this.channelsMap = new Map();
+    }
+
+    normalizeId(id) {
+        // Solo conversione lowercase, mantiene spazi, punti e trattini
+        return id?.toLowerCase() || '';
     }
 
     async loadRemappingRules() {
@@ -20,9 +25,16 @@ class PlaylistTransformer {
                 line = line.trim();
                 if (!line || line.startsWith('#')) return;
 
-                const [m3uId, epgId] = line.split('=').map(s => s.trim().toLowerCase());
+                const [m3uId, epgId] = line.split('=').map(s => s.trim());
                 if (m3uId && epgId) {
-                    this.remappingRules.set(m3uId, epgId);
+                    const normalizedM3uId = this.normalizeId(m3uId);
+                    const normalizedEpgId = this.normalizeId(epgId);
+                    
+                    console.log(`✓ Regola caricata:
+    Da: "${m3uId}" (normalizzato: "${normalizedM3uId}")
+    A:  "${epgId}" (normalizzato: "${normalizedEpgId}")`);
+
+                    this.remappingRules.set(normalizedM3uId, epgId);  // Mantiene il case originale dell'epgId
                     ruleCount++;
                 }
             });
@@ -33,6 +45,21 @@ class PlaylistTransformer {
                 console.error('❌ Errore nel caricamento del file di remapping:', error);
             }
         }
+    }
+
+    parseVLCOpts(lines, currentIndex) {
+        const headers = {};
+        let i = currentIndex;
+        
+        while (i < lines.length && lines[i].startsWith('#EXTVLCOPT:')) {
+            const opt = lines[i].substring('#EXTVLCOPT:'.length).trim();
+            if (opt.startsWith('http-user-agent=')) {
+                headers['User-Agent'] = opt.substring('http-user-agent='.length);
+            }
+            i++;
+        }
+        
+        return { headers, nextIndex: i };
     }
 
     parseChannelFromLine(line, headers) {
@@ -63,20 +90,21 @@ class PlaylistTransformer {
         };
     }
 
-    normalizeId(id) {
-        return id?.toLowerCase().trim().replace(/\s+/g, '') || '';
-    }
-
     getRemappedId(channel) {
-        const originalId = this.normalizeId(channel.tvg?.id || channel.name);
-        const remappedId = this.remappingRules.get(originalId);
+        const originalId = channel.tvg?.id || channel.name;
+        const normalizedId = this.normalizeId(originalId);
+        
+        const remappedId = this.remappingRules.get(normalizedId);
         
         if (remappedId) {
-            console.log(`✓ Remapping applicato: ${originalId} -> ${remappedId}`);
+            console.log(`✓ Remapping applicato:
+  ID Originale: "${originalId}"
+  ID Normalizzato: "${normalizedId}"
+  ID Remappato: "${remappedId}"`);
             return remappedId;
         }
         
-        return originalId;
+        return originalId; // Mantiene il case originale se non c'è remapping
     }
 
     createChannelObject(channel, channelId) {
@@ -99,7 +127,7 @@ class PlaylistTransformer {
                 isLive: true
             },
             streamInfo: {
-                urls: [], // Array vuoto per i flussi
+                urls: [], // Array per stream multipli
                 headers: channel.headers,
                 tvg: {
                     ...channel.tvg,
@@ -115,15 +143,24 @@ class PlaylistTransformer {
             url,
             name
         });
+        console.log(`  ✓ Aggiunto stream: ${name}`);
     }
 
     async parseM3UContent(content) {
+        console.log('\n=== Inizio Parsing Contenuto M3U ===');
         const lines = content.split('\n');
         let currentChannel = null;
         let headers = {};
         const genres = new Set(['Altri canali']);
         
-        console.log('\n=== Inizio Parsing Contenuto M3U ===');
+        let epgUrl = null;
+        if (lines[0].includes('url-tvg=')) {
+            const match = lines[0].match(/url-tvg="([^"]+)"/);
+            if (match) {
+                epgUrl = match[1];
+                console.log('EPG URL trovato nella playlist:', epgUrl);
+            }
+        }
         
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
@@ -145,75 +182,83 @@ class PlaylistTransformer {
                 // Parse del canale
                 currentChannel = this.parseChannelFromLine(line, headers);
             } else if (line.startsWith('http') && currentChannel) {
-                const originalId = this.normalizeId(currentChannel.tvg?.id || currentChannel.name);
+                const originalId = currentChannel.tvg?.id || currentChannel.name;
                 const remappedId = this.getRemappedId(currentChannel);
+                const normalizedId = this.normalizeId(remappedId);
                 
-                console.log(`Processo canale: ${currentChannel.name}`);
+                console.log(`\nProcesso canale: ${currentChannel.name}`);
                 console.log(`ID Originale: ${originalId}`);
                 console.log(`ID Remappato: ${remappedId}`);
                 
-                // Se l'ID è stato remappato, non creare un nuovo canale con l'ID originale
-                const finalId = remappedId;
-                
-                if (!this.channelsMap.has(finalId)) {
-                    console.log(`✓ Creazione nuovo canale con ID: ${finalId}`);
-                    const channelObj = this.createChannelObject(currentChannel, finalId);
-                    this.channelsMap.set(finalId, channelObj);
+                if (!this.channelsMap.has(normalizedId)) {
+                    console.log(`✓ Creazione nuovo canale con ID: ${remappedId}`);
+                    const channelObj = this.createChannelObject(currentChannel, remappedId);
+                    this.channelsMap.set(normalizedId, channelObj);
                     genres.add(currentChannel.group);
                 } else {
-                    console.log(`✓ Aggiunto stream a canale esistente: ${finalId}`);
+                    console.log(`✓ Aggiunto stream a canale esistente: ${remappedId}`);
                 }
                 
-                // Aggiungi il flusso al canale remappato
-                const channelObj = this.channelsMap.get(finalId);
+                const channelObj = this.channelsMap.get(normalizedId);
                 this.addStreamToChannel(channelObj, line, currentChannel.name);
                 
                 currentChannel = null;
             }
         }
 
-        return Array.from(genres);
+        console.log('\n=== Fine Parsing Contenuto M3U ===');
+        console.log(`✓ Canali trovati: ${this.channelsMap.size}`);
+        console.log(`✓ Generi trovati: ${genres.size}`);
+
+        return {
+            genres: Array.from(genres),
+            epgUrl
+        };
     }
 
     async loadAndTransform(url) {
         try {
             console.log('\n=== Inizio Caricamento Playlist ===');
             console.log(`URL Sorgente: ${url}`);
-            console.log('\n=== Caricamento Regole Remapping ===');
+            
             await this.loadRemappingRules();
             
-            // Leggi l'URL o la lista di URL
             const response = await axios.get(url);
             const content = response.data;
             const playlistUrls = content.startsWith('#EXTM3U') 
                 ? [url] 
                 : content.split('\n').filter(line => line.trim() && line.startsWith('http'));
 
-            // Processa ogni playlist
             const genres = new Set();
+            const epgUrls = new Set();
+            
             for (const playlistUrl of playlistUrls) {
                 console.log(`\nProcesso playlist: ${playlistUrl}`);
                 const playlistResponse = await axios.get(playlistUrl);
-                const playlistGenres = await this.parseM3UContent(playlistResponse.data);
-                playlistGenres.forEach(genre => genres.add(genre));
+                const result = await this.parseM3UContent(playlistResponse.data);
+                
+                result.genres.forEach(genre => genres.add(genre));
+                if (result.epgUrl) {
+                    epgUrls.add(result.epgUrl);
+                }
             }
 
-            // Prepara il risultato finale
-            const result = {
+            const finalResult = {
                 genres: Array.from(genres).sort(),
-                channels: Array.from(this.channelsMap.values())
+                channels: Array.from(this.channelsMap.values()),
+                epgUrls: Array.from(epgUrls)
             };
 
-            // Log del riepilogo
             console.log('\n=== Riepilogo Processamento ===');
-            console.log(`✓ Totale canali: ${result.channels.length}`);
-            console.log(`✓ Totale generi: ${result.genres.length}`);
-            console.log('✓ Totale regole di remapping:', this.remappingRules.size);
-            
+            console.log(`✓ Totale canali: ${finalResult.channels.length}`);
+            console.log(`✓ Totale generi: ${finalResult.genres.length}`);
+            console.log(`✓ Totale URL EPG: ${finalResult.epgUrls.length}`);
+            console.log(`✓ Totale regole remapping applicate: ${this.remappingRules.size}`);
+
             // Clear della mappa dei canali dopo l'uso
             this.channelsMap.clear();
+            return finalResult;
 
-            return result;
         } catch (error) {
             console.error('Errore nel caricamento della playlist:', error);
             throw error;
