@@ -116,27 +116,30 @@ async function streamHandler({ id }) {
 
         let streams = [];
 
-        // Gestione multi-stream
-        if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
-            streams = channel.streamInfo.urls.map(stream => ({
-                name: stream.name || channel.name,
-                title: stream.name || channel.name,
-                url: stream.url,
-                behaviorHints: {
-                    notWebReady: false,
-                    bingeGroup: "tv"
-                }
-            }));
-        } else if (channel.streamInfo.url) {
-            streams.push({
-                name: channel.name,
-                title: channel.name,
-                url: channel.streamInfo.url,
-                behaviorHints: {
-                    notWebReady: false,
-                    bingeGroup: "tv"
-                }
-            });
+        // Se FORCE_PROXY è attivo, ignora i flussi diretti
+        if (!config.FORCE_PROXY) {
+            // Gestione multi-stream (flussi diretti)
+            if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
+                streams = channel.streamInfo.urls.map(stream => ({
+                    name: stream.name || channel.name,
+                    title: stream.name || channel.name,
+                    url: stream.url,
+                    behaviorHints: {
+                        notWebReady: false,
+                        bingeGroup: "tv"
+                    }
+                }));
+            } else if (channel.streamInfo.url) {
+                streams.push({
+                    name: channel.name,
+                    title: channel.name,
+                    url: channel.streamInfo.url,
+                    behaviorHints: {
+                        notWebReady: false,
+                        bingeGroup: "tv"
+                    }
+                });
+            }
         }
 
         // Aggiungi stream proxy se configurato
