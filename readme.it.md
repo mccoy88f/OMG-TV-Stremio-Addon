@@ -88,6 +88,12 @@ IMPORTANTE: Se ancora non l'hai fatto...
 
 ## 🔄 Changelog
 
+### v2.5.0
+- Migliore gestione di playlist ed epg, nuovo logo, mutiplaylist e multiepg anche da siti come pastebin
+- Gestione dei generi/gruppi migliorata
+- I canali con lo stesso id vengono gestiti come un unico canale ma con i flussi provenienti dai vari canali
+- Supporto a file epg più grandi con timeout più lungo per il download
+
 ### v2.0.0
 - 🔒 Playlist aggiornata per la versione base con epg attiva e aggiornata. Manca solo l'epg per i canali Rakuten e Samsung TV
 - 📃 Modalità multiplaylist - multiepg (solo versione plus): invece di linkare direttamente ad una playlist o ad una epg puoi inserire nelle variabili il link ad un file di testo con più link dentro
