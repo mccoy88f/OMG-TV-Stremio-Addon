@@ -279,9 +279,10 @@ class EPGManager {
         if (missingEPG.length > 0) {
             console.log('\n=== Canali M3U senza EPG ===');
             console.log(`✓ Totale canali M3U senza EPG: ${missingEPG.length}`);
-            missingEPG.forEach(ch => {
-                console.log(`- ${ch.name} (ID: ${ch.streamInfo?.tvg?.id})`);
-            });
+    //      Disabilita i commenti delle successive 3 righe per leggere i canali senza epg associata
+//            missingEPG.forEach(ch => {
+//                console.log(`- ${ch.name} (ID: ${ch.streamInfo?.tvg?.id})`);
+//            });
             console.log('=============================\n');
         }
     }
