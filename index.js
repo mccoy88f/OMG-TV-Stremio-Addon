@@ -9,15 +9,11 @@ async function generateConfig() {
     try {
         console.log('\n=== Generazione Configurazione Iniziale ===');
         
-        // Crea un'istanza del transformer
         const transformer = new PlaylistTransformer();
-        
-        // Carica e trasforma la playlist usando l'URL dalla configurazione
         const data = await transformer.loadAndTransform(config.M3U_URL);
         console.log(`Trovati ${data.genres.length} generi`);
         console.log('EPG URL configurato:', config.EPG_URL);
 
-        // Crea la configurazione finale
         const finalConfig = {
             ...config,
             manifest: {
@@ -63,26 +59,38 @@ async function generateConfig() {
 
 async function startAddon() {
     try {
-        // Genera la configurazione dinamicamente
         const generatedConfig = await generateConfig();
 
-        // Create the addon
         const builder = new addonBuilder(generatedConfig.manifest);
 
-        // Define routes
         builder.defineStreamHandler(streamHandler);
         builder.defineCatalogHandler(catalogHandler);
         builder.defineMetaHandler(metaHandler);
 
-        // Initialize the cache manager
         const CacheManager = require('./cache-manager')(generatedConfig);
 
-        // Update cache on startup
         await CacheManager.updateCache(true).catch(error => {
             console.error('Error updating cache on startup:', error);
         });
 
-        // Personalizza la pagina HTML
+        // Ottieni i dati della cache (inclusi gli URL EPG dai file M3U)
+        const cachedData = CacheManager.getCachedData();
+
+        // Combina l'URL EPG da link.epg con quelli trovati nei file M3U
+        const allEpgUrls = [];
+        if (generatedConfig.EPG_URL) {
+            allEpgUrls.push(generatedConfig.EPG_URL); // Aggiungi l'URL EPG da link.epg
+        }
+        if (cachedData.epgUrls) {
+            allEpgUrls.push(...cachedData.epgUrls); // Aggiungi gli URL EPG dai file M3U
+        }
+
+        // Inizializza l'EPGManager con tutti gli URL EPG combinati
+        if (allEpgUrls.length > 0) {
+            const combinedEpgUrl = allEpgUrls.join(','); // Combina gli URL EPG in una stringa separata da virgole
+            await EPGManager.initializeEPG(combinedEpgUrl);
+        }
+
         const landingTemplate = landing => `
 <!DOCTYPE html>
 <html style="background: #000">
@@ -150,11 +158,9 @@ async function startAddon() {
 </body>
 </html>`;
 
-        // Create and start the server
         const addonInterface = builder.getInterface();
         const serveHTTP = require('stremio-addon-sdk/src/serveHTTP');
 
-        // Avvia prima il server
         await serveHTTP(addonInterface, { 
             port: generatedConfig.port, 
             landingTemplate 
@@ -163,18 +169,17 @@ async function startAddon() {
         console.log('Addon attivo su:', `http://localhost:${generatedConfig.port}`);
         console.log('Aggiungi il seguente URL a Stremio:', `http://localhost:${generatedConfig.port}/manifest.json`);
 
-        // Inizializza l'EPG dopo l'avvio del server se è abilitata
         if (generatedConfig.enableEPG) {
-            await EPGManager.initializeEPG(generatedConfig.EPG_URL);
+            const cachedData = CacheManager.getCachedData();
+            EPGManager.checkMissingEPG(cachedData.channels);
         } else {
             console.log('EPG disabilitata, skip inizializzazione');
         }
-
+        
     } catch (error) {
         console.error('Failed to start addon:', error);
         process.exit(1);
     }
 }
 
-// Start the addon
 startAddon();

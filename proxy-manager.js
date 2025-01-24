@@ -40,7 +40,6 @@ class ProxyManager {
             d: streamUrl
         });
 
-        // Aggiungi l'User-Agent alla richiesta
         if (userAgent) {
             params.append('h_User-Agent', userAgent);
         }
@@ -52,7 +51,6 @@ class ProxyManager {
         const streams = [];
         const userAgent = channel.headers?.['User-Agent'] || 'HbbTV/1.6.1';
 
-        // Se il proxy non è configurato, restituisci un array vuoto
         if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
             return streams;
         }
@@ -60,19 +58,17 @@ class ProxyManager {
         try {
             const proxyUrl = this.buildProxyUrl(channel.url, userAgent);
 
-            // Controlla la cache
             const cacheKey = `${channel.name}_${proxyUrl}`;
             const lastCheck = this.lastCheck.get(cacheKey);
-            const cacheValid = lastCheck && (Date.now() - lastCheck) < 5 * 60 * 1000; // 5 minuti di cache
+            const cacheValid = lastCheck && (Date.now() - lastCheck) < 5 * 60 * 1000;
 
             if (cacheValid && this.proxyCache.has(cacheKey)) {
                 return [this.proxyCache.get(cacheKey)];
             }
 
-            // Verifica se il proxy è attivo
             if (!await this.checkProxyHealth(proxyUrl)) {
                 console.log('Proxy non attivo per:', channel.name);
-                return []; // Non aggiungere il flusso di errore
+                return [];
             }
 
             const proxyStream = {
@@ -85,7 +81,6 @@ class ProxyManager {
                 }
             };
 
-            // Aggiorna la cache
             this.proxyCache.set(cacheKey, proxyStream);
             this.lastCheck.set(cacheKey, Date.now());
 

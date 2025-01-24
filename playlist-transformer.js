@@ -1,16 +1,44 @@
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
 class PlaylistTransformer {
     constructor() {
-        this.stremioData = {
-            genres: new Set(),
-            channels: []
-        };
+        this.remappingRules = new Map();
+        this.channelsMap = new Map();
     }
 
-    /**
-     * Estrae gli headers dalle opzioni VLC
-     */
+    normalizeId(id) {
+        return id?.toLowerCase() || '';
+    }
+
+    async loadRemappingRules() {
+        const remappingPath = path.join(__dirname, 'link.epg.remapping');
+        
+        try {
+            const content = await fs.promises.readFile(remappingPath, 'utf8');
+            let ruleCount = 0;
+
+            content.split('\n').forEach(line => {
+                line = line.trim();
+                if (!line || line.startsWith('#')) return;
+
+                const [m3uId, epgId] = line.split('=').map(s => s.trim());
+                if (m3uId && epgId) {
+                    const normalizedM3uId = this.normalizeId(m3uId);
+                    this.remappingRules.set(normalizedM3uId, epgId);
+                    ruleCount++;
+                }
+            });
+
+            console.log(`✓ Caricate ${ruleCount} regole di remapping`);
+        } catch (error) {
+            if (error.code !== 'ENOENT') {
+                console.error('❌ Errore remapping:', error.message);
+            }
+        }
+    }
+
     parseVLCOpts(lines, currentIndex) {
         const headers = {};
         let i = currentIndex;
@@ -26,28 +54,56 @@ class PlaylistTransformer {
         return { headers, nextIndex: i };
     }
 
-    /**
-     * Converte un canale nel formato Stremio
-     */
-    transformChannelToStremio(channel) {
-        // Usa tvg-id se disponibile, altrimenti genera un ID dal nome del canale
-        const channelId = channel.tvg?.id || channel.name.trim();
-        const id = `tv|${channelId}`;
-        
-        // Usa tvg-name se disponibile, altrimenti usa il nome originale
-        const name = channel.tvg?.name || channel.name;
-        
-        // Usa il gruppo se disponibile, altrimenti usa "Altri canali"
-        const group = channel.group || "Altri canali";
-        
-        // Aggiungi il genere alla lista dei generi
-        this.stremioData.genres.add(group);
+    parseChannelFromLine(line, headers) {
+        const metadata = line.substring(8).trim();
+        const tvgData = {};
+    
+        const tvgMatches = metadata.match(/([a-zA-Z-]+)="([^"]+)"/g) || [];
+        tvgMatches.forEach(match => {
+            const [key, value] = match.split('=');
+            const cleanKey = key.replace('tvg-', '');
+            tvgData[cleanKey] = value.replace(/"/g, '');
+        });
 
-        const transformedChannel = {
+        const groupMatch = metadata.match(/group-title="([^"]+)"/);
+        const group = groupMatch ? groupMatch[1] : 'Undefined';
+
+        // Separa i generi se sono presenti più di uno
+        const genres = group.split(';').map(g => g.trim());
+
+        const nameParts = metadata.split(',');
+        const name = nameParts[nameParts.length - 1].trim();
+
+        return {
+            name,
+            group: genres,  // Ora group è un array di generi
+            tvg: tvgData,
+            headers
+        };
+    }
+
+    getRemappedId(channel) {
+        const originalId = channel.tvg?.id || channel.name;
+        const normalizedId = this.normalizeId(originalId);
+        const remappedId = this.remappingRules.get(normalizedId);
+        
+        if (remappedId) {
+            console.log(`✓ Remapping: ${originalId} -> ${remappedId}`);
+            return remappedId;
+        }
+        
+        return originalId;
+    }
+
+    createChannelObject(channel, channelId) {
+        const id = `tv|${channelId}`;
+        const name = channel.tvg?.name || channel.name;
+    
+        return {
             id,
             type: 'tv',
-            name: name,
-            genre: [group],
+            name,
+            genre: channel.group,  // Ora genre è un array di generi
             posterShape: 'square',
             poster: channel.tvg?.logo,
             background: channel.tvg?.logo,
@@ -59,165 +115,134 @@ class PlaylistTransformer {
                 isLive: true
             },
             streamInfo: {
-                url: channel.url,
+                urls: [],
                 headers: channel.headers,
                 tvg: {
                     ...channel.tvg,
                     id: channelId,
-                    name: name
+                    name
                 }
             }
         };
-
-        return transformedChannel;
     }
 
-    /**
-     * Parsa una playlist M3U
-     */
-    parseM3U(content) {
-        console.log('\n=== Inizio Parsing Playlist M3U ===');
+    addStreamToChannel(channel, url, name) {
+        channel.streamInfo.urls.push({
+            url,
+            name
+        });
+    }
+
+    async parseM3UContent(content) {
         const lines = content.split('\n');
         let currentChannel = null;
-        
-        // Reset dei dati
-        this.stremioData.genres.clear();
-        this.stremioData.channels = [];
-
-        // Aggiungi "Altri canali" manualmente al Set dei generi
-        this.stremioData.genres.add("Altri canali");
-        
-        // Estrai l'URL dell'EPG dall'header della playlist
+        let headers = {};
+        const genres = new Set(['Altri canali']);  // Usiamo un Set per evitare duplicati
+    
         let epgUrl = null;
         if (lines[0].includes('url-tvg=')) {
             const match = lines[0].match(/url-tvg="([^"]+)"/);
             if (match) {
                 epgUrl = match[1];
-                console.log('EPG URL trovato nella playlist:', epgUrl);
+                console.log('✓ EPG URL trovato:', epgUrl);
             }
         }
-
+    
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
-            
+        
             if (line.startsWith('#EXTINF:')) {
-                // Estrai i metadati del canale
-                const metadata = line.substring(8).trim();
-                const tvgData = {};
-                
-                // Estrai attributi tvg
-                const tvgMatches = metadata.match(/([a-zA-Z-]+)="([^"]+)"/g) || [];
-                tvgMatches.forEach(match => {
-                    const [key, value] = match.split('=');
-                    const cleanKey = key.replace('tvg-', '');
-                    tvgData[cleanKey] = value.replace(/"/g, '');
-                });
-
-                // Estrai il gruppo
-                const groupMatch = metadata.match(/group-title="([^"]+)"/);
-                const group = groupMatch ? groupMatch[1] : 'Altri canali';
-
-                // Estrai il nome del canale e puliscilo
-                const nameParts = metadata.split(',');
-                let name = nameParts[nameParts.length - 1].trim();
-
-                // Controlla se ci sono opzioni VLC nelle righe successive
-                const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1);
-                i = nextIndex - 1; // Aggiorna l'indice del ciclo
-
-                currentChannel = {
-                    name,
-                    group,
-                    tvg: tvgData,
-                    headers: headers
-                };
-            } else if (line.startsWith('http')) {
-                if (currentChannel) {
-                    currentChannel.url = line;
-                    this.stremioData.channels.push(
-                        this.transformChannelToStremio(currentChannel)
-                    );
-                    currentChannel = null;
+                let nextIndex = i + 1;
+                headers = {};
+            
+                while (nextIndex < lines.length && lines[nextIndex].startsWith('#EXTVLCOPT:')) {
+                    const opt = lines[nextIndex].substring('#EXTVLCOPT:'.length).trim();
+                    if (opt.startsWith('http-user-agent=')) {
+                        headers['User-Agent'] = opt.substring('http-user-agent='.length);
+                    }
+                    nextIndex++;
                 }
+                i = nextIndex - 1;
+            
+                currentChannel = this.parseChannelFromLine(line, headers);
+            } else if (line.startsWith('http') && currentChannel) {
+                const remappedId = this.getRemappedId(currentChannel);
+                const normalizedId = this.normalizeId(remappedId);
+            
+                if (!this.channelsMap.has(normalizedId)) {
+                    const channelObj = this.createChannelObject(currentChannel, remappedId);
+                    this.channelsMap.set(normalizedId, channelObj);
+                
+                    // Aggiungi i generi al Set
+                    currentChannel.group.forEach(genre => genres.add(genre));
+                }
+            
+                const channelObj = this.channelsMap.get(normalizedId);
+                this.addStreamToChannel(channelObj, line, currentChannel.name);
+                
+                currentChannel = null;
             }
         }
 
-        const result = {
-            genres: Array.from(this.stremioData.genres),
-            channels: this.stremioData.channels,
+        console.log(`✓ Canali processati: ${this.channelsMap.size}`);
+
+        return {
+            genres: Array.from(genres),  // Convertiamo il Set in un array
             epgUrl
         };
-
-        console.log(`[PlaylistTransformer] ✓ Canali processati: ${result.channels.length}`);
-        console.log(`[PlaylistTransformer] ✓ Generi trovati: ${result.genres.length}`);
-        console.log('=== Fine Parsing Playlist M3U ===\n');
-
-        return result;
     }
 
-    /**
-     * Carica e trasforma una playlist da URL
-     */
     async loadAndTransform(url) {
         try {
-            console.log(`\nCaricamento playlist da: ${url}`);
-            const playlistUrls = await readExternalFile(url);
-            const allChannels = [];
-            const allGenres = new Set();
-            const allEpgUrls = []; // Array per memorizzare tutti gli URL EPG
+            console.log('=== Inizio Processamento Playlist ===');
+            console.log(`URL: ${url}`);
+            
+            await this.loadRemappingRules();
+            
+            const response = await axios.get(url);
+            const content = response.data;
+            const playlistUrls = content.startsWith('#EXTM3U') 
+                ? [url] 
+                : content.split('\n').filter(line => line.trim() && line.startsWith('http'));
 
+            const allGenres = []; // Array invece di Set
+            const epgUrls = new Set();
+            
             for (const playlistUrl of playlistUrls) {
-                const response = await axios.get(playlistUrl);
-                console.log('✓ Playlist scaricata con successo:', playlistUrl);
+                console.log(`\nProcesso playlist: ${playlistUrl}`);
+                const playlistResponse = await axios.get(playlistUrl);
+                const result = await this.parseM3UContent(playlistResponse.data);
                 
-                const result = this.parseM3U(response.data);
-                result.channels.forEach(channel => {
-                    if (!allChannels.some(existingChannel => existingChannel.id === channel.id)) {
-                        allChannels.push(channel);
+                // Aggiungi solo i generi non ancora presenti
+                result.genres.forEach(genre => {
+                    if (!allGenres.includes(genre)) {
+                        allGenres.push(genre);
                     }
                 });
-                result.genres.forEach(genre => allGenres.add(genre));
                 
-                // Aggiungi l'URL EPG solo se non è già presente
-                if (result.epgUrl && !allEpgUrls.includes(result.epgUrl)) {
-                    allEpgUrls.push(result.epgUrl);
-                    console.log('EPG URL trovato:', result.epgUrl);
+                if (result.epgUrl) {
+                    epgUrls.add(result.epgUrl);
                 }
             }
 
-            // Unisci tutti gli URL EPG trovati
-            const combinedEpgUrl = allEpgUrls.length > 0 ? allEpgUrls.join(',') : null;
-
-            return {
-                genres: Array.from(allGenres),
-                channels: allChannels,
-                epgUrl: combinedEpgUrl
+            const finalResult = {
+                genres: allGenres, // Non ordiniamo più alfabeticamente
+                channels: Array.from(this.channelsMap.values()),
+                epgUrls: Array.from(epgUrls)
             };
+
+            console.log('\n=== Riepilogo ===');
+            console.log(`✓ Canali: ${finalResult.channels.length}`);
+            console.log(`✓ Generi: ${finalResult.genres.length}`);
+            console.log(`✓ URL EPG: ${finalResult.epgUrls.length}`);
+
+            this.channelsMap.clear();
+            return finalResult;
+
         } catch (error) {
-            console.error('Errore nel caricamento della playlist:', error);
+            console.error('❌ Errore playlist:', error.message);
             throw error;
         }
-    }
-}
-
-// Funzione per leggere un file esterno (playlist o EPG)
-async function readExternalFile(url) {
-    try {
-        const response = await axios.get(url);
-        const content = response.data;
-
-        // Verifica se il contenuto inizia con #EXTM3U (indicatore di una playlist M3U diretta)
-        if (content.trim().startsWith('#EXTM3U')) {
-            console.log('Rilevata playlist M3U diretta');
-            return [url]; // Restituisce un array con solo l'URL diretto
-        }
-
-        // Altrimenti tratta il contenuto come una lista di URL
-        console.log('Rilevato file con lista di URL');
-        return content.split('\n').filter(line => line.trim() !== '');
-    } catch (error) {
-        console.error('Errore nel leggere il file esterno:', error);
-        throw error;
     }
 }
 

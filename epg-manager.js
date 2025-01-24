@@ -15,6 +15,11 @@ class EPGManager {
         this.validateAndSetTimezone();
     }
 
+    normalizeId(id) {
+        // Solo conversione lowercase, mantiene spazi, punti e trattini
+        return id?.toLowerCase() || '';
+    }
+
     validateAndSetTimezone() {
         const tzRegex = /^[+-]\d{1,2}:\d{2}$/;
         const timeZone = process.env.TIMEZONE_OFFSET || '+1:00';
@@ -56,7 +61,7 @@ class EPGManager {
             const date = new Date(isoString);
             return isNaN(date.getTime()) ? null : date;
         } catch (error) {
-            console.error('Errore parsing data EPG:', error);
+            console.error('Errore nel parsing della data EPG:', error);
             return null;
         }
     }
@@ -69,11 +74,11 @@ class EPGManager {
     }
 
     async downloadAndProcessEPG(epgUrl) {
-        console.log('Scaricamento EPG da:', epgUrl.trim());
+        console.log('Download EPG da:', epgUrl.trim());
         try {
             const response = await axios.get(epgUrl.trim(), { 
                 responseType: 'arraybuffer',
-                timeout: 10000,
+                timeout: 150000,
                 headers: {
                     'User-Agent': 'Mozilla/5.0',
                     'Accept-Encoding': 'gzip, deflate, br'
@@ -82,57 +87,52 @@ class EPGManager {
 
             let xmlString;
             try {
-                // Prova gzip
                 xmlString = await gunzip(response.data);
             } catch (gzipError) {
                 try {
-                    // Prova zlib
                     xmlString = zlib.inflateSync(response.data);
                 } catch (zlibError) {
-                    // Se non è compresso, prendi direttamente
                     xmlString = response.data.toString();
                 }
             }
 
             const xmlData = await parseStringPromise(xmlString);
             await this.processEPGInChunks(xmlData);
+            console.log('✓ EPG processato con successo');
         } catch (error) {
-            console.error(`Errore scaricamento EPG da ${epgUrl}:`, error.message);
-            console.error('Dettagli errore:', {
-                name: error.name,
-                code: error.code,
-                response: error.response?.data
-            });
+            console.error(`❌ Errore EPG: ${error.message}`);
         }
     }
 
     async startEPGUpdate(url) {
-        if (this.isUpdating) return;
+        if (this.isUpdating) {
+            console.log('⚠️  Aggiornamento EPG già in corso, skip...');
+            return;
+        }
+
         console.log('\n=== Inizio Aggiornamento EPG ===');
         const startTime = Date.now();
 
         try {
             this.isUpdating = true;
             
-            // Supporta URL multipli separati da virgola o da file
             const epgUrls = typeof url === 'string' && url.includes(',') 
                 ? url.split(',').map(u => u.trim()) 
-                : await readExternalFile(url);
+                : await this.readExternalFile(url);
 
-            // Pulisci la guida programmi esistente
             this.programGuide.clear();
 
-            // Processa ogni URL EPG in sequenza
             for (const epgUrl of epgUrls) {
                 await this.downloadAndProcessEPG(epgUrl);
             }
 
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             console.log(`\n✓ Aggiornamento EPG completato in ${duration} secondi`);
-            console.log('=== Fine Aggiornamento EPG ===\n');
+            console.log(`✓ Totale canali con dati EPG: ${this.programGuide.size}`);
+            console.log('=== Aggiornamento EPG Completato ===\n');
 
         } catch (error) {
-            console.error('Errore globale EPG:', error);
+            console.error('❌ Errore durante l\'aggiornamento EPG:', error);
         } finally {
             this.isUpdating = false;
             this.lastUpdate = Date.now();
@@ -140,44 +140,73 @@ class EPGManager {
     }
 
     async processEPGInChunks(data) {
-        if (!data.tv || !data.tv.programme) return;
+        if (!data.tv || !data.tv.programme) {
+            console.warn('⚠️  Nessun dato programma trovato nell\'EPG');
+            return;
+        }
 
-        const programmes = data.tv.programme;
+        const programs = data.tv.programme;
+        let totalProcessed = 0;
         
-        for (let i = 0; i < programmes.length; i += this.CHUNK_SIZE) {
-            const chunk = programmes.slice(i, i + this.CHUNK_SIZE);
+        console.log(`\nProcessamento di ${programs.length} voci EPG in blocchi di ${this.CHUNK_SIZE}`);
+        
+        for (let i = 0; i < programs.length; i += this.CHUNK_SIZE) {
+            const chunk = programs.slice(i, i + this.CHUNK_SIZE);
             
-            for (const programme of chunk) {
-                const channelId = programme.$.channel;
-                if (!this.programGuide.has(channelId)) {
-                    this.programGuide.set(channelId, []);
+            for (const program of chunk) {
+                const channelId = program.$.channel;
+                const normalizedChannelId = this.normalizeId(channelId);
+
+                if (!this.programGuide.has(normalizedChannelId)) {
+                    this.programGuide.set(normalizedChannelId, []);
                 }
 
-                const start = this.parseEPGDate(programme.$.start);
-                const stop = this.parseEPGDate(programme.$.stop);
+                const start = this.parseEPGDate(program.$.start);
+                const stop = this.parseEPGDate(program.$.stop);
 
                 if (!start || !stop) continue;
 
                 const programData = {
                     start,
                     stop,
-                    title: programme.title?.[0]?._ || programme.title?.[0]?.$?.text || programme.title?.[0] || 'Nessun titolo',
-                    description: programme.desc?.[0]?._ || programme.desc?.[0]?.$?.text || programme.desc?.[0] || '',
-                    category: programme.category?.[0]?._ || programme.category?.[0]?.$?.text || programme.category?.[0] || ''
+                    title: program.title?.[0]?._ || program.title?.[0]?.$?.text || program.title?.[0] || 'Nessun Titolo',
+                    description: program.desc?.[0]?._ || program.desc?.[0]?.$?.text || program.desc?.[0] || '',
+                    category: program.category?.[0]?._ || program.category?.[0]?.$?.text || program.category?.[0] || ''
                 };
 
-                this.programGuide.get(channelId).push(programData);
+                this.programGuide.get(normalizedChannelId).push(programData);
+                totalProcessed++;
+            }
+
+            if ((i + this.CHUNK_SIZE) % 50000 === 0) {
+                console.log(`Progresso: processate ${i + this.CHUNK_SIZE} voci...`);
             }
         }
 
-        // Ordina i programmi per ogni canale
         for (const [channelId, programs] of this.programGuide.entries()) {
             this.programGuide.set(channelId, programs.sort((a, b) => a.start - b.start));
+        }
+
+        console.log('\nRiepilogo Processamento EPG:');
+        console.log(`✓ Totale voci processate: ${totalProcessed}`);
+    }
+
+    async readExternalFile(url) {
+        try {
+            const response = await axios.get(url.trim());
+            return response.data.split('\n')
+                .filter(line => line.trim() !== '' && line.startsWith('http'));
+        } catch (error) {
+            console.error('Errore nella lettura del file esterno:', error);
+            return [url];
         }
     }
 
     getCurrentProgram(channelId) {
-        const programs = this.programGuide.get(channelId);
+        if (!channelId) return null;
+        const normalizedChannelId = this.normalizeId(channelId);
+        const programs = this.programGuide.get(normalizedChannelId);
+        
         if (!programs?.length) return null;
 
         const now = new Date();
@@ -195,7 +224,10 @@ class EPGManager {
     }
 
     getUpcomingPrograms(channelId) {
-        const programs = this.programGuide.get(channelId);
+        if (!channelId) return [];
+        const normalizedChannelId = this.normalizeId(channelId);
+        const programs = this.programGuide.get(normalizedChannelId);
+        
         if (!programs?.length) return [];
 
         const now = new Date();
@@ -229,25 +261,30 @@ class EPGManager {
             timezone: this.timeZoneOffset
         };
     }
-}
 
-// Funzione per leggere un file esterno (playlist o EPG)
-async function readExternalFile(url) {
-    try {
-        const response = await axios.get(url);
-        const content = response.data;
+    checkMissingEPG(m3uChannels) {
+        const epgChannels = Array.from(this.programGuide.keys());
+        const missingEPG = [];
 
-        // Verifica se il contenuto è un elenco di URL
-        if (content.includes('http')) {
-            return content.split('\n')
-                .filter(line => line.trim() !== '' && line.startsWith('http'));
+        m3uChannels.forEach(ch => {
+            const tvgId = ch.streamInfo?.tvg?.id;
+            if (tvgId) {
+                const normalizedTvgId = this.normalizeId(tvgId);
+                if (!epgChannels.some(epgId => this.normalizeId(epgId) === normalizedTvgId)) {
+                    missingEPG.push(ch);
+                }
+            }
+        });
+
+        if (missingEPG.length > 0) {
+            console.log('\n=== Canali M3U senza EPG ===');
+            console.log(`✓ Totale canali M3U senza EPG: ${missingEPG.length}`);
+    //      Disabilita i commenti delle successive 3 righe per leggere i canali senza epg associata
+//            missingEPG.forEach(ch => {
+//                console.log(`- ${ch.name} (ID: ${ch.streamInfo?.tvg?.id})`);
+//            });
+            console.log('=============================\n');
         }
-
-        // Se non è un elenco di URL, restituisci l'URL originale
-        return [url];
-    } catch (error) {
-        console.error('Errore nel leggere il file esterno:', error);
-        throw error;
     }
 }
 

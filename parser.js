@@ -1,62 +1,107 @@
 const axios = require('axios');
-const { parseStringPromise } = require('xml2js');
-const zlib = require('zlib');
-const { promisify } = require('util');
-const gunzip = promisify(zlib.gunzip);
+const fs = require('fs');
 
-// Funzione per leggere un file esterno (playlist o EPG)
 async function readExternalFile(url) {
     try {
         const response = await axios.get(url);
-        return response.data.split('\n').filter(line => line.trim() !== '');
+        const content = response.data;
+
+        if (content.trim().startsWith('#EXTM3U')) {
+            console.log('Detected direct M3U playlist');
+            return [url];
+        }
+
+        console.log('Detected URL list file');
+        return content.split('\n').filter(line => line.trim() !== '');
     } catch (error) {
-        console.error('Errore nel leggere il file esterno:', error);
+        console.error('Error reading external file:', error);
         throw error;
     }
 }
 
-// Funzione per estrarre l'URL EPG dalla playlist M3U
-function extractEPGUrl(m3uContent) {
-    const firstLine = m3uContent.split('\n')[0];
-    if (firstLine.includes('url-tvg=')) {
-        const match = firstLine.match(/url-tvg="([^"]+)"/);
-        return match ? match[1] : null;
+class PlaylistTransformer {
+    constructor() {
+        this.stremioData = {
+            genres: new Set(),
+            channels: []
+        };
     }
-    return null;
-}
 
-// Funzione per parsare una playlist M3U
-async function parsePlaylist(url) {
-    try {
-        const playlistUrls = await readExternalFile(url);
-        const allItems = [];
-        const allGroups = new Set();
-        let epgUrl = null;
-
-        for (const playlistUrl of playlistUrls) {
-            const m3uResponse = await axios.get(playlistUrl);
-            const m3uContent = m3uResponse.data;
-
-            // Estrai l'URL dell'EPG dalla prima playlist
-            if (!epgUrl) {
-                epgUrl = extractEPGUrl(m3uContent);
+    parseVLCOpts(lines, currentIndex) {
+        const headers = {};
+        let i = currentIndex;
+        
+        while (i < lines.length && lines[i].startsWith('#EXTVLCOPT:')) {
+            const opt = lines[i].substring('#EXTVLCOPT:'.length).trim();
+            if (opt.startsWith('http-user-agent=')) {
+                headers['User-Agent'] = opt.substring('http-user-agent='.length);
             }
+            i++;
+        }
+        
+        return { headers, nextIndex: i };
+    }
 
-            // Estrai i gruppi unici (generi)
-            const groups = new Set();
-            const items = [];
+    transformChannelToStremio(channel) {
+        const channelId = channel.tvg?.id || channel.name.trim();
+        const id = `tv|${channelId}`;
+        const name = channel.tvg?.name || channel.name;
+        const group = channel.group || "Other Channels";
+        this.stremioData.genres.add(group);
 
-            // Dividi la playlist in righe
-            const lines = m3uContent.split('\n');
-            let currentItem = null;
+        return {
+            id,
+            type: 'tv',
+            name: name,
+            genre: [group],
+            posterShape: 'square',
+            poster: channel.tvg?.logo,
+            background: channel.tvg?.logo,
+            logo: channel.tvg?.logo,
+            description: `Channel: ${name}`,
+            runtime: 'LIVE',
+            behaviorHints: {
+                defaultVideoId: id,
+                isLive: true
+            },
+            streamInfo: {
+                url: channel.url,
+                headers: channel.headers,
+                tvg: {
+                    ...channel.tvg,
+                    id: channelId,
+                    name: name
+                }
+            }
+        };
+    }
 
-            for (const line of lines) {
-                if (line.startsWith('#EXTINF:')) {
-                    // Estrai i metadati del canale
+    parseM3U(content) {
+        console.log('\n=== Starting M3U Playlist Parsing ===');
+        const lines = content.split('\n');
+        let currentChannel = null;
+        
+        this.stremioData.genres.clear();
+        this.stremioData.channels = [];
+        this.stremioData.genres.add("Other Channels");
+        
+        let epgUrl = null;
+        if (lines[0].includes('url-tvg=')) {
+            const match = lines[0].match(/url-tvg="([^"]+)"/);
+            if (match) {
+                epgUrl = match[1];
+                console.log('Found EPG URL in playlist:', epgUrl);
+            }
+        }
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            if (line.startsWith('#EXTINF:')) {
+                try {
                     const metadata = line.substring(8).trim();
                     const tvgData = {};
                     
-                    // Estrai attributi tvg
                     const tvgMatches = metadata.match(/([a-zA-Z-]+)="([^"]+)"/g) || [];
                     tvgMatches.forEach(match => {
                         const [key, value] = match.split('=');
@@ -64,153 +109,112 @@ async function parsePlaylist(url) {
                         tvgData[cleanKey] = value.replace(/"/g, '');
                     });
 
-                    // Estrai il gruppo
                     const groupMatch = metadata.match(/group-title="([^"]+)"/);
-                    const group = groupMatch ? groupMatch[1] : 'Altri';
-                    groups.add(group);
+                    const group = groupMatch ? groupMatch[1] : 'Other Channels';
 
-                    // Estrai il nome del canale (ultima parte dopo la virgola)
                     const nameParts = metadata.split(',');
                     const name = nameParts[nameParts.length - 1].trim();
 
-                    // Crea l'oggetto canale
-                    currentItem = {
-                        name: name,
-                        url: '', // Sarà impostato nella prossima riga
-                        tvg: {
-                            id: tvgData.id || null,
-                            name: tvgData.name || name,
-                            logo: tvgData.logo || null,
-                            chno: tvgData.chno ? parseInt(tvgData.chno, 10) : null
-                        },
-                        group: group,
+                    const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1);
+                    i = nextIndex - 1;
+
+                    currentChannel = {
+                        name,
+                        group,
+                        tvg: tvgData,
                         headers: {
-                            'User-Agent': 'HbbTV/1.6.1'
+                            ...headers,
+                            'User-Agent': headers['User-Agent'] || 'HbbTV/1.6.1'
                         }
                     };
-                } else if (line.trim().startsWith('http')) {
-                    // Imposta l'URL del canale
-                    if (currentItem) {
-                        currentItem.url = line.trim();
-                        items.push(currentItem);
-                        currentItem = null;
+
+                    if (tvgData.id) {
+                        console.log(`Found channel: ${name} (tvg-id: ${tvgData.id})`);
                     }
+                } catch (error) {
+                    console.error(`Error parsing channel at line ${i + 1}:`, error);
+                    currentChannel = null;
+                }
+            } else if (line.startsWith('http')) {
+                if (currentChannel) {
+                    currentChannel.url = line;
+                    this.stremioData.channels.push(
+                        this.transformChannelToStremio(currentChannel)
+                    );
+                    currentChannel = null;
+                }
+            }
+        }
+
+        const result = {
+            genres: Array.from(this.stremioData.genres),
+            channels: this.stremioData.channels,
+            epgUrl
+        };
+
+        console.log('M3U Parsing Summary:');
+        console.log(`✓ Channels processed: ${result.channels.length}`);
+        console.log(`✓ Genres found: ${result.genres.length}`);
+        console.log('=== M3U Parsing Complete ===\n');
+
+        return result;
+    }
+
+    async loadAndTransform(url) {
+        try {
+            console.log(`\nLoading playlist from: ${url}`);
+            const playlistUrls = await readExternalFile(url);
+            const allChannels = [];
+            const allGenres = new Set();
+            const allEpgUrls = [];
+
+            for (const playlistUrl of playlistUrls) {
+                try {
+                    const response = await axios.get(playlistUrl);
+                    console.log('✓ Successfully downloaded playlist:', playlistUrl);
+                    
+                    const result = this.parseM3U(response.data);
+
+                    result.channels.forEach(channel => {
+                        if (!allChannels.some(existingChannel => existingChannel.id === channel.id)) {
+                            allChannels.push(channel);
+                        }
+                    });
+
+                    result.genres.forEach(genre => allGenres.add(genre));
+                    
+                    if (result.epgUrl && !allEpgUrls.includes(result.epgUrl)) {
+                        allEpgUrls.push(result.epgUrl);
+                    }
+                } catch (error) {
+                    console.error(`Error processing playlist ${playlistUrl}:`, error);
                 }
             }
 
-            // Unisci i gruppi e gli elementi
-            items.forEach(item => {
-                if (!allItems.some(existingItem => existingItem.tvg.id === item.tvg.id)) {
-                    allItems.push(item);
-                }
+            const combinedEpgUrl = allEpgUrls.length > 0 ? allEpgUrls.join(',') : null;
+            const sortedChannels = allChannels.sort((a, b) => {
+                const numA = parseInt(a.streamInfo?.tvg?.chno) || Number.MAX_SAFE_INTEGER;
+                const numB = parseInt(b.streamInfo?.tvg?.chno) || Number.MAX_SAFE_INTEGER;
+                return numA - numB || a.name.localeCompare(b.name);
             });
-            groups.forEach(group => allGroups.add(group));
+
+            console.log('\nPlaylist Processing Complete:');
+            console.log(`✓ Total channels: ${sortedChannels.length}`);
+            console.log(`✓ Total genres: ${allGenres.size}`);
+            if (combinedEpgUrl) {
+                console.log(`✓ EPG URLs found: ${allEpgUrls.length}`);
+            }
+
+            return {
+                genres: Array.from(allGenres).sort(),
+                channels: sortedChannels,
+                epgUrl: combinedEpgUrl
+            };
+        } catch (error) {
+            console.error('Error loading playlist:', error);
+            throw error;
         }
-
-        const uniqueGroups = Array.from(allGroups).sort();
-        console.log('Gruppi unici trovati nel parser:', uniqueGroups);
-        console.log('Playlist M3U caricate correttamente. Numero di canali:', allItems.length);
-        
-        return { 
-            items: allItems, 
-            groups: uniqueGroups.map(group => ({
-                name: group,
-                value: group
-            })),
-            epgUrl
-        };
-    } catch (error) {
-        console.error('Errore nel parsing della playlist:', error);
-        throw error;
     }
 }
 
-// Funzione per parsare l'EPG
-async function parseEPG(url) {
-    try {
-        const epgUrls = await readExternalFile(url);
-        const allProgrammes = new Map();
-
-        for (const epgUrl of epgUrls) {
-            console.log('Scaricamento EPG da:', epgUrl);
-            const response = await axios.get(epgUrl, { responseType: 'arraybuffer' });
-            const decompressed = await gunzip(response.data);
-            const xmlData = await parseStringPromise(decompressed.toString());
-            
-            const programmes = processEPGData(xmlData);
-            programmes.forEach((value, key) => {
-                if (!allProgrammes.has(key)) {
-                    allProgrammes.set(key, value);
-                }
-            });
-        }
-
-        return allProgrammes;
-    } catch (error) {
-        console.error('Errore nel parsing dell\'EPG:', error);
-        throw error;
-    }
-}
-
-// Funzione per processare i dati EPG
-function processEPGData(data) {
-    const programmes = new Map();
-
-    if (!data.tv || !data.tv.programme) {
-        return programmes;
-    }
-
-    for (const programme of data.tv.programme) {
-        const channelId = programme.$.channel;
-        if (!programmes.has(channelId)) {
-            programmes.set(channelId, []);
-        }
-
-        programmes.get(channelId).push({
-            start: new Date(programme.$.start),
-            stop: new Date(programme.$.stop),
-            title: programme.title?.[0]?._,
-            description: programme.desc?.[0]?._,
-            category: programme.category?.[0]?._
-        });
-    }
-
-    return programmes;
-}
-
-// Funzione per ottenere le informazioni del canale dall'EPG
-function getChannelInfo(epgData, channelName) {
-    if (!epgData || !channelName) {
-        return {
-            icon: null,
-            description: null
-        };
-    }
-
-    const channel = epgData.get(channelName);
-    if (!channel) {
-        return {
-            icon: null,
-            description: null
-        };
-    }
-
-    // Trova il programma corrente
-    const now = new Date();
-    const currentProgram = channel.find(program => 
-        program.start <= now && program.stop >= now
-    );
-
-    return {
-        icon: null, // L'EPG Italia non fornisce icone
-        description: currentProgram ? 
-            `${currentProgram.title}\n${currentProgram.description || ''}` : 
-            null
-    };
-}
-
-module.exports = {
-    parsePlaylist,
-    parseEPG,
-    getChannelInfo
-};
+module.exports = PlaylistTransformer;
