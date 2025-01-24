@@ -3,6 +3,11 @@
 Un add-on per Stremio per aggiungere al catalogo playlist di canali M3U con EPG.
 PER LA VERSIONE PLUS CON PER INSERIRE LA TUA LISTA visita questa repository: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
 
+IMPORTANTE: Prima di tutto...
+
+<a href="https://www.buymeacoffee.com/mccoy88f"><img src="https://img.buymeacoffee.com/button-api/?text=Offrimi una birra&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" /></a>
+
+
 ## 🚀 Novità in questa Versione
 
 ### Caratteristiche Principali
@@ -75,6 +80,11 @@ PER LA VERSIONE PLUS CON PER INSERIRE LA TUA LISTA visita questa repository: htt
 3. Deploy automatico tramite questo pulsante (è necessario avere account anche gratuito su render.com) - Selezionare la branch su plus per attivare la versione plus
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mccoy88f/OMG-TV-Stremio-Addon)
+
+IMPORTANTE: Se ancora non l'hai fatto...
+
+<a href="https://www.buymeacoffee.com/mccoy88f"><img src="https://img.buymeacoffee.com/button-api/?text=Offrimi una birra&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" /></a>
+
 
 ## 🔄 Changelog
 
