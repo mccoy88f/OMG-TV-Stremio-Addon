@@ -55,7 +55,6 @@ Setting the Timezone Offset
 Format: The TIMEZONE_OFFSET must be in the format ±HH:MM. For example:
 
 +1:00 for Central European Time (CET).
-
 -5:00 for Eastern Standard Time (EST).
 
 Default Value: If the TIMEZONE_OFFSET is not set, the add-on will default to +1:00 (CET).
