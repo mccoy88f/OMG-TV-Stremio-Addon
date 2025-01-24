@@ -48,6 +48,18 @@ https://github.com/mccoy88f/OMG-TV-Stremio-Addon/blob/main/readme.it.md
 - Default: enabled
 - WARNING: EPG with extracted size greater than 5/7 MB may block servers if hosted on Render.com
 
+#### Timezone Configuration
+The EPG (Electronic Program Guide) data is often provided in UTC. To ensure that the program times are displayed correctly in your local timezone, you can configure the timezone offset using the TIMEZONE_OFFSET environment variable.
+
+Setting the Timezone Offset
+Format: The TIMEZONE_OFFSET must be in the format ±HH:MM. For example:
+
++1:00 for Central European Time (CET).
+
+-5:00 for Eastern Standard Time (EST).
+
+Default Value: If the TIMEZONE_OFFSET is not set, the add-on will default to +1:00 (CET).
+
 #### PROXY_URL and PROXY_PASSWORD
 - MediaFlow Proxy configuration
 - Optional for compatibility with Android and Web
