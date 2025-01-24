@@ -7,8 +7,8 @@ const baseConfig = {
     port: process.env.PORT || 10000,
     
     // Content sources
-    M3U_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.playlist',
-    EPG_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.epg',
+    M3U_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta-good/link.playlist',
+    EPG_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta-good/link.epg',
     
     // Feature flags
     enableEPG: true, // EPG attivo di default
