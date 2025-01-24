@@ -98,12 +98,12 @@ class PlaylistTransformer {
     createChannelObject(channel, channelId) {
         const id = `tv|${channelId}`;
         const name = channel.tvg?.name || channel.name;
-        
+    
         return {
             id,
             type: 'tv',
             name,
-            genre: [channel.group],
+            genre: channel.group,  // Ora genre è un array di generi
             posterShape: 'square',
             poster: channel.tvg?.logo,
             background: channel.tvg?.logo,
@@ -137,8 +137,8 @@ class PlaylistTransformer {
         const lines = content.split('\n');
         let currentChannel = null;
         let headers = {};
-        const genres = ['Altri canali']; // Array invece di Set
-        
+        const genres = new Set(['Altri canali']);  // Usiamo un Set per evitare duplicati
+    
         let epgUrl = null;
         if (lines[0].includes('url-tvg=')) {
             const match = lines[0].match(/url-tvg="([^"]+)"/);
@@ -147,14 +147,14 @@ class PlaylistTransformer {
                 console.log('✓ EPG URL trovato:', epgUrl);
             }
         }
-        
+    
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
-            
+        
             if (line.startsWith('#EXTINF:')) {
                 let nextIndex = i + 1;
                 headers = {};
-                
+            
                 while (nextIndex < lines.length && lines[nextIndex].startsWith('#EXTVLCOPT:')) {
                     const opt = lines[nextIndex].substring('#EXTVLCOPT:'.length).trim();
                     if (opt.startsWith('http-user-agent=')) {
@@ -163,21 +163,20 @@ class PlaylistTransformer {
                     nextIndex++;
                 }
                 i = nextIndex - 1;
-                
+            
                 currentChannel = this.parseChannelFromLine(line, headers);
             } else if (line.startsWith('http') && currentChannel) {
                 const remappedId = this.getRemappedId(currentChannel);
                 const normalizedId = this.normalizeId(remappedId);
-                
+            
                 if (!this.channelsMap.has(normalizedId)) {
                     const channelObj = this.createChannelObject(currentChannel, remappedId);
                     this.channelsMap.set(normalizedId, channelObj);
-                    // Aggiungi il genere solo se non è già presente
-                    if (!genres.includes(currentChannel.group)) {
-                        genres.push(currentChannel.group);
-                    }
-                }
                 
+                    // Aggiungi i generi al Set
+                    currentChannel.group.forEach(genre => genres.add(genre));
+                }
+            
                 const channelObj = this.channelsMap.get(normalizedId);
                 this.addStreamToChannel(channelObj, line, currentChannel.name);
                 
@@ -188,7 +187,7 @@ class PlaylistTransformer {
         console.log(`✓ Canali processati: ${this.channelsMap.size}`);
 
         return {
-            genres, // Array già nell'ordine corretto
+            genres: Array.from(genres),  // Convertiamo il Set in un array
             epgUrl
         };
     }
