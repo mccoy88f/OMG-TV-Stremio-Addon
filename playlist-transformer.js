@@ -66,7 +66,7 @@ class PlaylistTransformer {
         });
 
         const groupMatch = metadata.match(/group-title="([^"]+)"/);
-        const group = groupMatch ? groupMatch[1] : 'Altri canali';
+        const group = groupMatch ? groupMatch[1] : 'Undefined';
 
         // Separa i generi se sono presenti più di uno
         const genres = group.split(';').map(g => g.trim());
