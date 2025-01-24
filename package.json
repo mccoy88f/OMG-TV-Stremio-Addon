@@ -1,6 +1,6 @@
 {
   "name": "omg-tv-stremio-addon",
-  "version": "2.0.0",
+  "version": "2.5.0",
   "description": "Un add-on per Stremio con playlist di canali M3U predefinita, senza personalizzazione.",
   "main": "index.js",
   "scripts": {
