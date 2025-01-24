@@ -57,7 +57,7 @@ class PlaylistTransformer {
     parseChannelFromLine(line, headers) {
         const metadata = line.substring(8).trim();
         const tvgData = {};
-        
+    
         const tvgMatches = metadata.match(/([a-zA-Z-]+)="([^"]+)"/g) || [];
         tvgMatches.forEach(match => {
             const [key, value] = match.split('=');
@@ -68,12 +68,15 @@ class PlaylistTransformer {
         const groupMatch = metadata.match(/group-title="([^"]+)"/);
         const group = groupMatch ? groupMatch[1] : 'Altri canali';
 
+        // Separa i generi se sono presenti più di uno
+        const genres = group.split(';').map(g => g.trim());
+
         const nameParts = metadata.split(',');
         const name = nameParts[nameParts.length - 1].trim();
 
         return {
             name,
-            group,
+            group: genres,  // Ora group è un array di generi
             tvg: tvgData,
             headers
         };
