@@ -102,6 +102,12 @@ IMPORTANT: If you haven't done so yet...
 
 ## 🔄 Changelog
 
+### v2.5.0
+- Improved playlist and epg management, new logo, mutiplaylist and multiepg also from sites like pastebin
+- Improved genre/group management
+- Channels with the same id are managed as one channel but with streams from the various channels
+- Support for larger epg files with longer download timeout
+
 ### v2.0.0
 - 🔒 Updated playlist for the base version with active and updated EPG. Only missing EPG for Rakuten and Samsung TV channels
 - 📃 Multiplaylist - multiepg mode (plus version only): instead of directly linking to a playlist or EPG, you can insert in the variables the link to a text file containing multiple links
