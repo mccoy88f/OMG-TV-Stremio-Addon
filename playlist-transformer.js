@@ -137,7 +137,7 @@ class PlaylistTransformer {
         const lines = content.split('\n');
         let currentChannel = null;
         let headers = {};
-        const genres = new Set(['Altri canali']);  // Usiamo un Set per evitare duplicati
+        const genres = new Set(['Undefined']);  // Usiamo un Set per evitare duplicati
     
         let epgUrl = null;
         if (lines[0].includes('url-tvg=')) {
