@@ -76,7 +76,7 @@ async function catalogHandler({ type, id, extra }) {
                 poster: channel.poster,
                 background: channel.background,
                 logo: channel.logo,
-                description: channel.description || `Canale: ${channel.name}`,
+                description: channel.description || `ID Canale: ${channel.streamInfo?.tvg?.id}`,
                 genre: channel.genre,
                 posterShape: channel.posterShape || 'square',
                 releaseInfo: 'LIVE',
@@ -88,6 +88,16 @@ async function catalogHandler({ type, id, extra }) {
 
             if (channel.streamInfo?.tvg?.chno) {
                 meta.name = `${channel.streamInfo.tvg.chno}. ${channel.name}`;
+            }
+
+            // Aggiungi icona EPG se mancano le immagini
+            if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
+                const epgIcon = EPGManager.getChannelIcon(channel.streamInfo.tvg.id);
+                if (epgIcon) {
+                    meta.poster = meta.poster || epgIcon;
+                    meta.background = meta.background || epgIcon;
+                    meta.logo = meta.logo || epgIcon;
+                }
             }
             
             return enrichWithEPG(meta, channel.streamInfo?.tvg?.id);
@@ -116,9 +126,7 @@ async function streamHandler({ id }) {
 
         let streams = [];
 
-        // Se FORCE_PROXY è attivo, ignora i flussi diretti
         if (!config.FORCE_PROXY) {
-            // Gestione multi-stream (flussi diretti)
             if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
                 streams = channel.streamInfo.urls.map(stream => ({
                     name: stream.name || channel.name,
@@ -142,7 +150,6 @@ async function streamHandler({ id }) {
             }
         }
 
-        // Aggiungi stream proxy se configurato
         if (config.FORCE_PROXY && config.PROXY_URL && config.PROXY_PASSWORD) {
             if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
                 for (const stream of channel.streamInfo.urls) {
@@ -170,7 +177,7 @@ async function streamHandler({ id }) {
             poster: channel.poster,
             background: channel.background,
             logo: channel.logo,
-            description: channel.description || `Canale: ${channel.name}`,
+            description: channel.description || `ID Canale: ${channel.streamInfo?.tvg?.id}`,
             genre: channel.genre,
             posterShape: channel.posterShape || 'square',
             releaseInfo: 'LIVE',
@@ -179,6 +186,16 @@ async function streamHandler({ id }) {
                 ...channel.behaviorHints
             }
         };
+
+        // Aggiungi icona EPG se mancano le immagini
+        if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
+            const epgIcon = EPGManager.getChannelIcon(channel.streamInfo.tvg.id);
+            if (epgIcon) {
+                meta.poster = meta.poster || epgIcon;
+                meta.background = meta.background || epgIcon;
+                meta.logo = meta.logo || epgIcon;
+            }
+        }
 
         const enrichedMeta = enrichWithEPG(meta, channel.streamInfo?.tvg?.id);
         streams.forEach(stream => {
