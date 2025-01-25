@@ -108,7 +108,7 @@ class PlaylistTransformer {
             poster: channel.tvg?.logo,
             background: channel.tvg?.logo,
             logo: channel.tvg?.logo,
-            description: `ID Canale: ${channelId}`,
+            description: `Canale: ${name} - ID: ${channelId}`,
             runtime: 'LIVE',
             behaviorHints: {
                 defaultVideoId: id,
