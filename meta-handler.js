@@ -88,6 +88,16 @@ async function metaHandler({ type, id }) {
             }
         };
 
+        // Aggiungi icona EPG se mancano le immagini
+        if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
+            const epgIcon = EPGManager.getChannelIcon(channel.streamInfo.tvg.id);
+            if (epgIcon) {
+                meta.poster = meta.poster || epgIcon;
+                meta.background = meta.background || epgIcon;
+                meta.logo = meta.logo || epgIcon;
+            }
+        }
+
         let baseDescription = [];
         
         if (channel.streamInfo?.tvg?.chno) {
@@ -96,6 +106,8 @@ async function metaHandler({ type, id }) {
 
         if (channel.description) {
             baseDescription.push('', channel.description);
+        } else {
+            baseDescription.push('', `ID Canale: ${channel.streamInfo?.tvg?.id}`);
         }
 
         meta.description = baseDescription.join('\n');
