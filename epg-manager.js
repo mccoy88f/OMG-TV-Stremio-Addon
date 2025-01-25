@@ -9,6 +9,7 @@ class EPGManager {
     constructor() {
         this.epgData = null;
         this.programGuide = new Map();
+        this.channelIcons = new Map();
         this.lastUpdate = null;
         this.isUpdating = false;
         this.CHUNK_SIZE = 10000;
@@ -16,7 +17,6 @@ class EPGManager {
     }
 
     normalizeId(id) {
-        // Solo conversione lowercase, mantiene spazi, punti e trattini
         return id?.toLowerCase() || '';
     }
 
@@ -121,6 +121,7 @@ class EPGManager {
                 : await this.readExternalFile(url);
 
             this.programGuide.clear();
+            this.channelIcons.clear();
 
             for (const epgUrl of epgUrls) {
                 await this.downloadAndProcessEPG(epgUrl);
@@ -129,6 +130,7 @@ class EPGManager {
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             console.log(`\n✓ Aggiornamento EPG completato in ${duration} secondi`);
             console.log(`✓ Totale canali con dati EPG: ${this.programGuide.size}`);
+            console.log(`✓ Totale canali con icone: ${this.channelIcons.size}`);
             console.log('=== Aggiornamento EPG Completato ===\n');
 
         } catch (error) {
@@ -140,6 +142,16 @@ class EPGManager {
     }
 
     async processEPGInChunks(data) {
+        if (data.tv && data.tv.channel) {
+            data.tv.channel.forEach(channel => {
+                const id = channel.$.id;
+                const icon = channel.icon?.[0]?.$?.src;
+                if (id && icon) {
+                    this.channelIcons.set(this.normalizeId(id), icon);
+                }
+            });
+        }
+
         if (!data.tv || !data.tv.programme) {
             console.warn('⚠️  Nessun dato programma trovato nell\'EPG');
             return;
@@ -242,6 +254,10 @@ class EPGManager {
             }));
     }
 
+    getChannelIcon(channelId) {
+        return channelId ? this.channelIcons?.get(this.normalizeId(channelId)) : null;
+    }
+
     needsUpdate() {
         if (!this.lastUpdate) return true;
         return (Date.now() - this.lastUpdate) >= (24 * 60 * 60 * 1000);
@@ -256,6 +272,7 @@ class EPGManager {
             isUpdating: this.isUpdating,
             lastUpdate: this.lastUpdate ? this.formatDateIT(new Date(this.lastUpdate)) : 'Mai',
             channelsCount: this.programGuide.size,
+            iconsCount: this.channelIcons.size,
             programsCount: Array.from(this.programGuide.values())
                           .reduce((acc, progs) => acc + progs.length, 0),
             timezone: this.timeZoneOffset
@@ -278,14 +295,18 @@ class EPGManager {
 
         if (missingEPG.length > 0) {
             console.log('\n=== Canali M3U senza EPG ===');
-            console.log(`✓ Totale canali M3U senza EPG: ${missingEPG.length}`);
     //      Disabilita i commenti delle successive 3 righe per leggere i canali senza epg associata
 //            missingEPG.forEach(ch => {
 //                console.log(`- ${ch.name} (ID: ${ch.streamInfo?.tvg?.id})`);
 //            });
+            console.log(`✓ Totale canali M3U senza EPG: ${missingEPG.length}`);
             console.log('=============================\n');
         }
     }
 }
 
 module.exports = new EPGManager();
+    //      Disabilita i commenti delle successive 3 righe per leggere i canali senza epg associata
+//            missingEPG.forEach(ch => {
+//                console.log(`- ${ch.name} (ID: ${ch.streamInfo?.tvg?.id})`);
+//            });
