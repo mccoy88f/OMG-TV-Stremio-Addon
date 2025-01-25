@@ -76,7 +76,7 @@ async function catalogHandler({ type, id, extra }) {
                 poster: channel.poster,
                 background: channel.background,
                 logo: channel.logo,
-                description: channel.description || `ID Canale: ${channel.streamInfo?.tvg?.id}`,
+                description: channel.description || `Canale: ${channel.name} - ID: ${channel.streamInfo?.tvg?.id}`,
                 genre: channel.genre,
                 posterShape: channel.posterShape || 'square',
                 releaseInfo: 'LIVE',
