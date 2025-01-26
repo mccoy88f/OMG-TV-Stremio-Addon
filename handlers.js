@@ -126,7 +126,21 @@ async function streamHandler({ id }) {
 
         let streams = [];
 
-        if (!config.FORCE_PROXY) {
+        // Gestione dei flussi basata su FORCE_PROXY
+        if (config.FORCE_PROXY === 'yes') {
+            // Mostra SOLO flussi proxy
+            if (config.PROXY_URL && config.PROXY_PASSWORD) {
+                for (const stream of channel.streamInfo.urls) {
+                    const proxyStreams = await ProxyManager.getProxyStreams({
+                        name: stream.name || channel.name,
+                        url: stream.url,
+                        headers: channel.streamInfo.headers
+                    });
+                    streams.push(...proxyStreams);
+                }
+            }
+        } else {
+            // Aggiungi sempre i flussi diretti 
             if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
                 streams = channel.streamInfo.urls.map(stream => ({
                     name: stream.name || channel.name,
@@ -137,21 +151,10 @@ async function streamHandler({ id }) {
                         bingeGroup: "tv"
                     }
                 }));
-            } else if (channel.streamInfo.url) {
-                streams.push({
-                    name: channel.name,
-                    title: channel.name,
-                    url: channel.streamInfo.url,
-                    behaviorHints: {
-                        notWebReady: false,
-                        bingeGroup: "tv"
-                    }
-                });
             }
-        }
 
-        if (config.FORCE_PROXY && config.PROXY_URL && config.PROXY_PASSWORD) {
-            if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
+            // Aggiungi flussi proxy se la configurazione è disponibile
+            if (config.PROXY_URL && config.PROXY_PASSWORD) {
                 for (const stream of channel.streamInfo.urls) {
                     const proxyStreams = await ProxyManager.getProxyStreams({
                         name: stream.name || channel.name,
@@ -160,13 +163,6 @@ async function streamHandler({ id }) {
                     });
                     streams.push(...proxyStreams);
                 }
-            } else if (channel.streamInfo.url) {
-                const proxyStreams = await ProxyManager.getProxyStreams({
-                    name: channel.name,
-                    url: channel.streamInfo.url,
-                    headers: channel.streamInfo.headers
-                });
-                streams.push(...proxyStreams);
             }
         }
 
