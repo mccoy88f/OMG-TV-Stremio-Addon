@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { URL } = require('url');
 
-class ProxyManager {
+class HlsProxyManager {
     constructor(config) {
         this.config = config;
         this.proxyCache = new Map();
