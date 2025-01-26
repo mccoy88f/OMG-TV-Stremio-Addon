@@ -129,7 +129,7 @@ async function streamHandler({ id }) {
         let streams = [];
 
         // Se FORCE_PROXY è attivo, aggiungi solo i flussi proxy
-        if (config.FORCE_PROXY === 'yes') {
+        if (config.FORCE_PROXY === true) {
             if (config.PROXY_URL && config.PROXY_PASSWORD) {
                 for (const stream of channel.streamInfo.urls) {
                     let proxyStreams = [];
