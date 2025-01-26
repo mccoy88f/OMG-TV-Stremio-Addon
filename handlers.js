@@ -128,14 +128,8 @@ async function streamHandler({ id }) {
 
         let streams = [];
 
-        // Funzione per aggiungere il tipo di flusso al nome (solo per i proxy)
-        const addStreamTypeToName = (name, type) => {
-            return `${name} (${type})`;
-        };
-
-        // Gestione dei flussi basata su FORCE_PROXY
+        // Se FORCE_PROXY è attivo, aggiungi solo i flussi proxy
         if (config.FORCE_PROXY === 'yes') {
-            // Mostra SOLO flussi proxy
             if (config.PROXY_URL && config.PROXY_PASSWORD) {
                 for (const stream of channel.streamInfo.urls) {
                     let proxyStreams = [];
@@ -143,21 +137,21 @@ async function streamHandler({ id }) {
                     if (stream.url.endsWith('.m3u8')) {
                         const hlsProxy = new HlsProxyManager(config);
                         proxyStreams = await hlsProxy.getProxyStreams({
-                            name: stream.name || channel.name, // Nome senza "Proxy"
+                            name: stream.name || channel.name,
                             url: stream.url,
                             headers: channel.streamInfo.headers
                         });
                     } else if (stream.url.endsWith('.mpd')) {
                         const dashProxy = new DashProxyManager(config);
                         proxyStreams = await dashProxy.getProxyStreams({
-                            name: stream.name || channel.name, // Nome senza "Proxy"
+                            name: stream.name || channel.name,
                             url: stream.url,
                             headers: channel.streamInfo.headers
                         });
                     } else if (stream.url.startsWith('https://')) {
                         const httpsProxy = new HttpsProxyManager(config);
                         proxyStreams = await httpsProxy.getProxyStreams({
-                            name: stream.name || channel.name, // Nome senza "Proxy"
+                            name: stream.name || channel.name,
                             url: stream.url,
                             headers: channel.streamInfo.headers
                         });
@@ -167,12 +161,12 @@ async function streamHandler({ id }) {
                 }
             }
         } else {
-            // Aggiungi sia flussi diretti che proxy
+            // Se FORCE_PROXY non è attivo, aggiungi sia flussi diretti che proxy
             if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
                 for (const stream of channel.streamInfo.urls) {
-                    // Aggiungi flusso diretto (senza tipo di flusso nel nome)
+                    // Aggiungi flusso diretto
                     streams.push({
-                        name: stream.name || channel.name, // Nome senza tipo di flusso
+                        name: stream.name || channel.name,
                         title: stream.name || channel.name,
                         url: stream.url,
                         behaviorHints: {
@@ -188,21 +182,21 @@ async function streamHandler({ id }) {
                         if (stream.url.endsWith('.m3u8')) {
                             const hlsProxy = new HlsProxyManager(config);
                             proxyStreams = await hlsProxy.getProxyStreams({
-                                name: stream.name || channel.name, // Nome senza "Proxy"
+                                name: stream.name || channel.name,
                                 url: stream.url,
                                 headers: channel.streamInfo.headers
                             });
                         } else if (stream.url.endsWith('.mpd')) {
                             const dashProxy = new DashProxyManager(config);
                             proxyStreams = await dashProxy.getProxyStreams({
-                                name: stream.name || channel.name, // Nome senza "Proxy"
+                                name: stream.name || channel.name,
                                 url: stream.url,
                                 headers: channel.streamInfo.headers
                             });
                         } else if (stream.url.startsWith('https://')) {
                             const httpsProxy = new HttpsProxyManager(config);
                             proxyStreams = await httpsProxy.getProxyStreams({
-                                name: stream.name || channel.name, // Nome senza "Proxy"
+                                name: stream.name || channel.name,
                                 url: stream.url,
                                 headers: channel.streamInfo.headers
                             });
