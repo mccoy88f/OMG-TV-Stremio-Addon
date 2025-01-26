@@ -84,38 +84,31 @@ class EPGManager {
                     'Accept-Encoding': 'gzip, deflate, br'
                 }
             });
-            console.log('Download completato');
-            console.log('Content-Encoding:', response.headers['content-encoding']);
-            console.log('Content-Type:', response.headers['content-type']);
-            console.log('Response size:', response.data.length);
-
+            
             let xmlString;
             try {
-                console.log('Tentativo decompressione gzip...');
+                
                 xmlString = await gunzip(response.data);
-                console.log('Decompressione gzip riuscita');
+                
                 xmlString = xmlString.toString('utf8');
             } catch (gzipError) {
-                console.log('Errore gzip:', gzipError.message);
+                
                 try {
-                    console.log('Tentativo decompressione zlib...');
+                    
                     xmlString = zlib.inflateSync(response.data);
-                    console.log('Decompressione zlib riuscita');
+                    
                     xmlString = xmlString.toString('utf8');
                 } catch (zlibError) {
-                    console.log('Errore zlib:', zlibError.message);
-                    console.log('Uso contenuto non compresso');
+                    
                     xmlString = response.data.toString('utf8');
                 }
             }
 
-            console.log('Lunghezza XML:', xmlString.length);
-            console.log('Primi 200 caratteri XML:', xmlString.substring(0, 200));
             
             console.log('Inizio parsing XML...');
             const xmlData = await parseStringPromise(xmlString);
             console.log('Parsing XML completato');
-            console.log('Struttura dati ricevuta:', Object.keys(xmlData));
+            
             
             if (!xmlData || !xmlData.tv) {
                 throw new Error('Struttura XML EPG non valida');
@@ -124,12 +117,12 @@ class EPGManager {
             await this.processEPGInChunks(xmlData);
         } catch (error) {
             console.error(`❌ Errore EPG: ${error.message}`);
-            console.error('Stack:', error.stack);
+            
         }
     }
 
     async startEPGUpdate(url) {
-        console.log('\n=== Debug EPG ===');
+        
         console.log('URL ricevuto:', url);
 
         if (this.isUpdating) {
@@ -172,15 +165,15 @@ class EPGManager {
 
     async processEPGInChunks(data) {
         console.log('Inizio processamento EPG...');
-        console.log('Struttura data:', Object.keys(data));
+        
         
         if (!data.tv) {
             console.error('❌ Errore: Nessun oggetto tv trovato nel file EPG');
-            console.log('Data ricevuto:', JSON.stringify(data).substring(0, 500) + '...');
+            
             return;
         }
 
-        console.log('Struttura tv:', Object.keys(data.tv));
+        
 
         if (data.tv && data.tv.channel) {
             console.log(`Trovati ${data.tv.channel.length} canali nel file EPG`);
