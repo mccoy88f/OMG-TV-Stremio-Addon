@@ -95,4 +95,4 @@ class HlsProxyManager {
     }
 }
 
-module.exports = ProxyManager;
+module.exports = HlsProxyManager;
