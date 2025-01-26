@@ -44,7 +44,8 @@ class DashProxyManager {
             params.append('h_User-Agent', userAgent);
         }
 
-        return `${this.config.PROXY_URL}/proxy/dash/manifest.mpd?${params.toString()}`;
+        // Usiamo l'endpoint per i manifesti DASH
+        return `${this.config.PROXY_URL}/proxy/mpd/manifest.m3u8?${params.toString()}`;
     }
 
     async getProxyStreams(channel) {
