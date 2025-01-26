@@ -2,6 +2,6 @@
     "addonName": "OMG+ TV",
     "addonId": "org.mccoy88f.omgplustv",
     "addonDescription": "Un add-on per Stremio con playlist di canali M3U predefinita, con personalizzazione di playlist e epg.",
-    "addonVersion": "2.5.0",
+    "addonVersion": "3.0.0",
     "addonLogo": "https://raw.githubusercontent.com/mccoy88f/OMG-Plus-TV-Stremio-Addon/refs/heads/main/tv.png"
 }
