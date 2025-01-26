@@ -128,22 +128,51 @@ async function streamHandler({ id }) {
 
         let streams = [];
 
-        // Gestione dei flussi basata sul formato
-        if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
-            for (const stream of channel.streamInfo.urls) {
-                if (stream.url.endsWith('.m3u8')) {
-                    const hlsProxy = new HlsProxyManager(config);
-                    streams.push(...await hlsProxy.getProxyStreams({ ...channel, url: stream.url }));
-                } else if (stream.url.endsWith('.mpd')) {
-                    const dashProxy = new DashProxyManager(config);
-                    streams.push(...await dashProxy.getProxyStreams({ ...channel, url: stream.url }));
-                } else if (stream.url.startsWith('https://')) {
-                    const httpsProxy = new HttpsProxyManager(config);
-                    streams.push(...await httpsProxy.getProxyStreams({ ...channel, url: stream.url }));
-                } else {
-                    // Flusso diretto (non proxy)
+        // Funzione per aggiungere il tipo di flusso al nome (solo per i proxy)
+        const addStreamTypeToName = (name, type) => {
+            return `${name} (${type})`;
+        };
+
+        // Gestione dei flussi basata su FORCE_PROXY
+        if (config.FORCE_PROXY === 'yes') {
+            // Mostra SOLO flussi proxy
+            if (config.PROXY_URL && config.PROXY_PASSWORD) {
+                for (const stream of channel.streamInfo.urls) {
+                    let proxyStreams = [];
+
+                    if (stream.url.endsWith('.m3u8')) {
+                        const hlsProxy = new HlsProxyManager(config);
+                        proxyStreams = await hlsProxy.getProxyStreams({
+                            name: addStreamTypeToName(stream.name || channel.name, 'HLS Proxy'),
+                            url: stream.url,
+                            headers: channel.streamInfo.headers
+                        });
+                    } else if (stream.url.endsWith('.mpd')) {
+                        const dashProxy = new DashProxyManager(config);
+                        proxyStreams = await dashProxy.getProxyStreams({
+                            name: addStreamTypeToName(stream.name || channel.name, 'DASH Proxy'),
+                            url: stream.url,
+                            headers: channel.streamInfo.headers
+                        });
+                    } else if (stream.url.startsWith('https://')) {
+                        const httpsProxy = new HttpsProxyManager(config);
+                        proxyStreams = await httpsProxy.getProxyStreams({
+                            name: addStreamTypeToName(stream.name || channel.name, 'HTTPS Proxy'),
+                            url: stream.url,
+                            headers: channel.streamInfo.headers
+                        });
+                    }
+
+                    streams.push(...proxyStreams);
+                }
+            }
+        } else {
+            // Aggiungi sia flussi diretti che proxy
+            if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
+                for (const stream of channel.streamInfo.urls) {
+                    // Aggiungi flusso diretto (senza tipo di flusso nel nome)
                     streams.push({
-                        name: stream.name || channel.name,
+                        name: stream.name || channel.name, // Nome senza tipo di flusso
                         title: stream.name || channel.name,
                         url: stream.url,
                         behaviorHints: {
@@ -151,6 +180,36 @@ async function streamHandler({ id }) {
                             bingeGroup: "tv"
                         }
                     });
+
+                    // Aggiungi flussi proxy se la configurazione è disponibile
+                    if (config.PROXY_URL && config.PROXY_PASSWORD) {
+                        let proxyStreams = [];
+
+                        if (stream.url.endsWith('.m3u8')) {
+                            const hlsProxy = new HlsProxyManager(config);
+                            proxyStreams = await hlsProxy.getProxyStreams({
+                                name: addStreamTypeToName(stream.name || channel.name, 'HLS Proxy'),
+                                url: stream.url,
+                                headers: channel.streamInfo.headers
+                            });
+                        } else if (stream.url.endsWith('.mpd')) {
+                            const dashProxy = new DashProxyManager(config);
+                            proxyStreams = await dashProxy.getProxyStreams({
+                                name: addStreamTypeToName(stream.name || channel.name, 'DASH Proxy'),
+                                url: stream.url,
+                                headers: channel.streamInfo.headers
+                            });
+                        } else if (stream.url.startsWith('https://')) {
+                            const httpsProxy = new HttpsProxyManager(config);
+                            proxyStreams = await httpsProxy.getProxyStreams({
+                                name: addStreamTypeToName(stream.name || channel.name, 'HTTPS Proxy'),
+                                url: stream.url,
+                                headers: channel.streamInfo.headers
+                            });
+                        }
+
+                        streams.push(...proxyStreams);
+                    }
                 }
             }
         }
@@ -191,7 +250,7 @@ async function streamHandler({ id }) {
         return { streams };
     } catch (error) {
         console.error('[Handlers] Errore nel caricamento dello stream:', error);
-        return { 
+        return {
             streams: [{
                 name: 'Errore',
                 title: 'Errore nel caricamento dello stream',
