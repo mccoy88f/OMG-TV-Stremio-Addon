@@ -53,6 +53,9 @@ IMPORTANT: First of all...
 - Default: enabled
 - WARNING: EPG with extracted size greater than 5/7 MB may block servers if hosted on Render.com
 
+### EPG_URL
+- Set a specific EPG url (xml o compressed)
+
 #### Timezone Configuration
 The EPG (Electronic Program Guide) data is often provided in UTC. To ensure that the program times are displayed correctly in your local timezone, you can configure the timezone offset using the TIMEZONE_OFFSET environment variable.
 
