@@ -11,7 +11,7 @@ IMPORTANT: First of all...
 <a href="https://www.buymeacoffee.com/mccoy88f"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a beer&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" /></a>
 
 
-## 🚀 What's New in This Version
+## 🚀 What's New in This Version (see below)
 
 ### Key Features
 - 🔒 Base Version: **Static Playlist**: Fully hardcoded URL
@@ -101,6 +101,11 @@ IMPORTANT: If you haven't done so yet...
 
 
 ## 🔄 Changelog
+
+### v3.0.0
+- Enhanced epg management
+- Management of unencrypted dash mpd streams via proxy
+- Remapper: file link.epg.remapper sync channel id from m3u to channel id from epg
 
 ### v2.5.0
 - Improved playlist and epg management, new logo, mutiplaylist and multiepg also from sites like pastebin
