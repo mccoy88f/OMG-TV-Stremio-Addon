@@ -9,6 +9,7 @@ class EPGManager {
     constructor() {
         this.epgData = null;
         this.programGuide = new Map();
+        this.channelIcons = new Map();
         this.lastUpdate = null;
         this.isUpdating = false;
         this.CHUNK_SIZE = 10000;
@@ -16,7 +17,6 @@ class EPGManager {
     }
 
     normalizeId(id) {
-        // Solo conversione lowercase, mantiene spazi, punti e trattini
         return id?.toLowerCase() || '';
     }
 
@@ -74,7 +74,7 @@ class EPGManager {
     }
 
     async downloadAndProcessEPG(epgUrl) {
-        console.log('Download EPG da:', epgUrl.trim());
+        console.log('\nDownload EPG da:', epgUrl.trim());
         try {
             const response = await axios.get(epgUrl.trim(), { 
                 responseType: 'arraybuffer',
@@ -84,27 +84,47 @@ class EPGManager {
                     'Accept-Encoding': 'gzip, deflate, br'
                 }
             });
-
+            
             let xmlString;
             try {
+                
                 xmlString = await gunzip(response.data);
+                
+                xmlString = xmlString.toString('utf8');
             } catch (gzipError) {
+                
                 try {
+                    
                     xmlString = zlib.inflateSync(response.data);
+                    
+                    xmlString = xmlString.toString('utf8');
                 } catch (zlibError) {
-                    xmlString = response.data.toString();
+                    
+                    xmlString = response.data.toString('utf8');
                 }
             }
 
+            
+            console.log('Inizio parsing XML...');
             const xmlData = await parseStringPromise(xmlString);
+            console.log('Parsing XML completato');
+            
+            
+            if (!xmlData || !xmlData.tv) {
+                throw new Error('Struttura XML EPG non valida');
+            }
+            
             await this.processEPGInChunks(xmlData);
-            console.log('✓ EPG processato con successo');
         } catch (error) {
             console.error(`❌ Errore EPG: ${error.message}`);
+            
         }
     }
 
     async startEPGUpdate(url) {
+        
+        console.log('URL ricevuto:', url);
+
         if (this.isUpdating) {
             console.log('⚠️  Aggiornamento EPG già in corso, skip...');
             return;
@@ -115,24 +135,28 @@ class EPGManager {
 
         try {
             this.isUpdating = true;
+            console.log('Inizio lettura URLs EPG...');
             
-            const epgUrls = typeof url === 'string' && url.includes(',') 
-                ? url.split(',').map(u => u.trim()) 
-                : await this.readExternalFile(url);
+            const epgUrls = await this.readExternalFile(url);
+            console.log('URLs trovati:', epgUrls);
 
             this.programGuide.clear();
+            this.channelIcons.clear();
 
             for (const epgUrl of epgUrls) {
+                console.log('\nProcesso URL EPG:', epgUrl);
                 await this.downloadAndProcessEPG(epgUrl);
             }
 
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             console.log(`\n✓ Aggiornamento EPG completato in ${duration} secondi`);
             console.log(`✓ Totale canali con dati EPG: ${this.programGuide.size}`);
+            console.log(`✓ Totale canali con icone: ${this.channelIcons.size}`);
             console.log('=== Aggiornamento EPG Completato ===\n');
 
         } catch (error) {
-            console.error('❌ Errore durante l\'aggiornamento EPG:', error);
+            console.error('❌ Errore dettagliato durante l\'aggiornamento EPG:', error);
+            console.error('Stack:', error.stack);
         } finally {
             this.isUpdating = false;
             this.lastUpdate = Date.now();
@@ -140,8 +164,32 @@ class EPGManager {
     }
 
     async processEPGInChunks(data) {
+        console.log('Inizio processamento EPG...');
+        
+        
+        if (!data.tv) {
+            console.error('❌ Errore: Nessun oggetto tv trovato nel file EPG');
+            
+            return;
+        }
+
+        
+
+        if (data.tv && data.tv.channel) {
+            console.log(`Trovati ${data.tv.channel.length} canali nel file EPG`);
+            data.tv.channel.forEach(channel => {
+                const id = channel.$.id;
+                const icon = channel.icon?.[0]?.$?.src;
+                if (id && icon) {
+                    this.channelIcons.set(this.normalizeId(id), icon);
+                }
+            });
+        } else {
+            console.error('❌ Errore: Nessun canale trovato nel file EPG');
+        }
+
         if (!data.tv || !data.tv.programme) {
-            console.warn('⚠️  Nessun dato programma trovato nell\'EPG');
+            console.error('❌ Errore: Nessun programma trovato nel file EPG');
             return;
         }
 
@@ -193,11 +241,40 @@ class EPGManager {
 
     async readExternalFile(url) {
         try {
+            console.log('Tentativo lettura file:', url);
+            
+            // Se l'URL termina con .gz, trattalo come file EPG diretto
+            if (url.endsWith('.gz')) {
+                console.log('File gzipped EPG trovato');
+                return [url];
+            }
+            
+            // Altrimenti, prova a leggerlo come lista di URL
             const response = await axios.get(url.trim());
-            return response.data.split('\n')
+            const content = response.data;
+            
+            // Se sembra XML, è un file EPG diretto
+            if (typeof content === 'string' && 
+                (content.includes('<?xml') || content.includes('<tv'))) {
+                console.log('File EPG trovato direttamente');
+                return [url];
+            }
+            
+            // Prova a interpretarlo come lista di URL
+            const urls = content.split('\n')
                 .filter(line => line.trim() !== '' && line.startsWith('http'));
+                
+            if (urls.length > 0) {
+                console.log('Lista URLs trovata:', urls);
+                return urls;
+            }
+            
+            // Se non sono stati trovati URL validi, usa l'URL originale
+            console.log('Nessun URL trovato, uso URL originale');
+            return [url];
+            
         } catch (error) {
-            console.error('Errore nella lettura del file esterno:', error);
+            console.error('Errore nella lettura del file:', error);
             return [url];
         }
     }
@@ -242,6 +319,10 @@ class EPGManager {
             }));
     }
 
+    getChannelIcon(channelId) {
+        return channelId ? this.channelIcons?.get(this.normalizeId(channelId)) : null;
+    }
+
     needsUpdate() {
         if (!this.lastUpdate) return true;
         return (Date.now() - this.lastUpdate) >= (24 * 60 * 60 * 1000);
@@ -256,6 +337,7 @@ class EPGManager {
             isUpdating: this.isUpdating,
             lastUpdate: this.lastUpdate ? this.formatDateIT(new Date(this.lastUpdate)) : 'Mai',
             channelsCount: this.programGuide.size,
+            iconsCount: this.channelIcons.size,
             programsCount: Array.from(this.programGuide.values())
                           .reduce((acc, progs) => acc + progs.length, 0),
             timezone: this.timeZoneOffset
@@ -279,10 +361,6 @@ class EPGManager {
         if (missingEPG.length > 0) {
             console.log('\n=== Canali M3U senza EPG ===');
             console.log(`✓ Totale canali M3U senza EPG: ${missingEPG.length}`);
-    //      Disabilita i commenti delle successive 3 righe per leggere i canali senza epg associata
-//            missingEPG.forEach(ch => {
-//                console.log(`- ${ch.name} (ID: ${ch.streamInfo?.tvg?.id})`);
-//            });
             console.log('=============================\n');
         }
     }

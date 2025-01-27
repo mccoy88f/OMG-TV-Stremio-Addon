@@ -1,7 +1,9 @@
 const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
-const ProxyManager = new (require('./proxy-manager'))(config);
+const HlsProxyManager = require('./hls-proxy-manager');
+const DashProxyManager = require('./dash-proxy-manager');
+const HttpsProxyManager = require('./https-proxy-manager');
 
 function normalizeId(id) {
     return id?.toLowerCase().trim().replace(/\s+/g, '') || '';
@@ -76,7 +78,7 @@ async function catalogHandler({ type, id, extra }) {
                 poster: channel.poster,
                 background: channel.background,
                 logo: channel.logo,
-                description: channel.description || `Canale: ${channel.name}`,
+                description: channel.description || `Canale: ${channel.name} - ID: ${channel.streamInfo?.tvg?.id}`,
                 genre: channel.genre,
                 posterShape: channel.posterShape || 'square',
                 releaseInfo: 'LIVE',
@@ -89,7 +91,17 @@ async function catalogHandler({ type, id, extra }) {
             if (channel.streamInfo?.tvg?.chno) {
                 meta.name = `${channel.streamInfo.tvg.chno}. ${channel.name}`;
             }
-            
+
+            // Aggiungi icona EPG se mancano le immagini
+            if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
+                const epgIcon = EPGManager.getChannelIcon(channel.streamInfo.tvg.id);
+                if (epgIcon) {
+                    meta.poster = meta.poster || epgIcon;
+                    meta.background = meta.background || epgIcon;
+                    meta.logo = meta.logo || epgIcon;
+                }
+            }
+
             return enrichWithEPG(meta, channel.streamInfo?.tvg?.id);
         });
 
@@ -116,53 +128,87 @@ async function streamHandler({ id }) {
 
         let streams = [];
 
-        // Se FORCE_PROXY è attivo, ignora i flussi diretti
-        if (!config.FORCE_PROXY) {
-            // Gestione multi-stream (flussi diretti)
-            if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
-                streams = channel.streamInfo.urls.map(stream => ({
-                    name: stream.name || channel.name,
-                    title: stream.name || channel.name,
-                    url: stream.url,
-                    behaviorHints: {
-                        notWebReady: false,
-                        bingeGroup: "tv"
-                    }
-                }));
-            } else if (channel.streamInfo.url) {
-                streams.push({
-                    name: channel.name,
-                    title: channel.name,
-                    url: channel.streamInfo.url,
-                    behaviorHints: {
-                        notWebReady: false,
-                        bingeGroup: "tv"
-                    }
-                });
-            }
-        }
-
-        // Aggiungi stream proxy se configurato
-        if (config.FORCE_PROXY && config.PROXY_URL && config.PROXY_PASSWORD) {
-            if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
+        // Se FORCE_PROXY è attivo, aggiungi solo i flussi proxy
+        if (config.FORCE_PROXY === true) {
+            if (config.PROXY_URL && config.PROXY_PASSWORD) {
                 for (const stream of channel.streamInfo.urls) {
-                    const proxyStreams = await ProxyManager.getProxyStreams({
-                        name: stream.name || channel.name,
-                        url: stream.url,
-                        headers: channel.streamInfo.headers
-                    });
+                    let proxyStreams = [];
+
+                    if (stream.url.endsWith('.m3u8')) {
+                        const hlsProxy = new HlsProxyManager(config);
+                        proxyStreams = await hlsProxy.getProxyStreams({
+                            name: stream.name || channel.name,
+                            url: stream.url,
+                            headers: channel.streamInfo.headers
+                        });
+                    } else if (stream.url.endsWith('.mpd')) {
+                        const dashProxy = new DashProxyManager(config);
+                        proxyStreams = await dashProxy.getProxyStreams({
+                            name: stream.name || channel.name,
+                            url: stream.url,
+                            headers: channel.streamInfo.headers
+                        });
+                    } else if (stream.url.startsWith('https://')) {
+                        const httpsProxy = new HttpsProxyManager(config);
+                        proxyStreams = await httpsProxy.getProxyStreams({
+                            name: stream.name || channel.name,
+                            url: stream.url,
+                            headers: channel.streamInfo.headers
+                        });
+                    }
+
                     streams.push(...proxyStreams);
                 }
-            } else if (channel.streamInfo.url) {
-                const proxyStreams = await ProxyManager.getProxyStreams({
-                    name: channel.name,
-                    url: channel.streamInfo.url,
-                    headers: channel.streamInfo.headers
-                });
-                streams.push(...proxyStreams);
+            }
+        } else {
+            // Se FORCE_PROXY non è attivo, aggiungi sia flussi diretti che proxy
+            if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
+                for (const stream of channel.streamInfo.urls) {
+                    // Aggiungi flusso diretto
+                    streams.push({
+                        name: stream.name || channel.name,
+                        title: stream.name || channel.name,
+                        url: stream.url,
+                        behaviorHints: {
+                            notWebReady: false,
+                            bingeGroup: "tv"
+                        }
+                    });
+
+                    // Aggiungi flussi proxy se la configurazione è disponibile
+                    if (config.PROXY_URL && config.PROXY_PASSWORD) {
+                        let proxyStreams = [];
+
+                        if (stream.url.endsWith('.m3u8')) {
+                            const hlsProxy = new HlsProxyManager(config);
+                            proxyStreams = await hlsProxy.getProxyStreams({
+                                name: stream.name || channel.name,
+                                url: stream.url,
+                                headers: channel.streamInfo.headers
+                            });
+                        } else if (stream.url.endsWith('.mpd')) {
+                            const dashProxy = new DashProxyManager(config);
+                            proxyStreams = await dashProxy.getProxyStreams({
+                                name: stream.name || channel.name,
+                                url: stream.url,
+                                headers: channel.streamInfo.headers
+                            });
+                        } else if (stream.url.startsWith('https://')) {
+                            const httpsProxy = new HttpsProxyManager(config);
+                            proxyStreams = await httpsProxy.getProxyStreams({
+                                name: stream.name || channel.name,
+                                url: stream.url,
+                                headers: channel.streamInfo.headers
+                            });
+                        }
+
+                        streams.push(...proxyStreams);
+                    }
+                }
             }
         }
 
+        // Aggiungi meta dati ai flussi
         const meta = {
             id: channel.id,
             type: 'tv',
@@ -170,7 +216,7 @@ async function streamHandler({ id }) {
             poster: channel.poster,
             background: channel.background,
             logo: channel.logo,
-            description: channel.description || `Canale: ${channel.name}`,
+            description: channel.description || `ID Canale: ${channel.streamInfo?.tvg?.id}`,
             genre: channel.genre,
             posterShape: channel.posterShape || 'square',
             releaseInfo: 'LIVE',
@@ -180,6 +226,16 @@ async function streamHandler({ id }) {
             }
         };
 
+        // Aggiungi icona EPG se mancano le immagini
+        if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
+            const epgIcon = EPGManager.getChannelIcon(channel.streamInfo.tvg.id);
+            if (epgIcon) {
+                meta.poster = meta.poster || epgIcon;
+                meta.background = meta.background || epgIcon;
+                meta.logo = meta.logo || epgIcon;
+            }
+        }
+
         const enrichedMeta = enrichWithEPG(meta, channel.streamInfo?.tvg?.id);
         streams.forEach(stream => {
             stream.meta = enrichedMeta;
@@ -188,7 +244,7 @@ async function streamHandler({ id }) {
         return { streams };
     } catch (error) {
         console.error('[Handlers] Errore nel caricamento dello stream:', error);
-        return { 
+        return {
             streams: [{
                 name: 'Errore',
                 title: 'Errore nel caricamento dello stream',

@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { URL } = require('url');
 
-class ProxyManager {
+class HttpsProxyManager {
     constructor(config) {
         this.config = config;
         this.proxyCache = new Map();
@@ -12,7 +12,7 @@ class ProxyManager {
         if (!url) return false;
         try {
             const parsed = new URL(url);
-            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+            return parsed.protocol === 'https:';
         } catch {
             return false;
         }
@@ -44,12 +44,13 @@ class ProxyManager {
             params.append('h_User-Agent', userAgent);
         }
 
-        return `${this.config.PROXY_URL}/proxy/hls/manifest.m3u8?${params.toString()}`;
+        // Usiamo l'endpoint per flussi HTTPS generici
+        return `${this.config.PROXY_URL}/proxy/stream?${params.toString()}`;
     }
 
     async getProxyStreams(channel) {
         const streams = [];
-        const userAgent = channel.headers?.['User-Agent'] || 'HbbTV/1.6.1';
+        const userAgent = channel.headers?.['User-Agent'] || 'Mozilla/5.0';
 
         if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
             return streams;
@@ -72,8 +73,8 @@ class ProxyManager {
             }
 
             const proxyStream = {
-                name: `${channel.name} (Proxy)`,
-                title: `${channel.name} (Proxy HLS)`,
+                name: `${channel.name} (Proxy HTTPS)`,
+                title: `${channel.name} (Proxy HTTPS)`,
                 url: proxyUrl,
                 behaviorHints: {
                     notWebReady: false,
@@ -95,4 +96,4 @@ class ProxyManager {
     }
 }
 
-module.exports = ProxyManager;
+module.exports = HttpsProxyManager;
