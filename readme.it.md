@@ -7,6 +7,9 @@ IMPORTANTE: Prima di tutto...
 
 <a href="https://www.buymeacoffee.com/mccoy88f"><img src="https://img.buymeacoffee.com/button-api/?text=Offrimi una birra&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" /></a>
 
+Puoi anche offrirmi una birra con PayPal
+
+[Offrimi una birra 🍻](https://paypal.me/mccoy88f?country.x=IT&locale.x=it_IT)
 
 ## 🚀 Novità in questa Versione (vedi in basso)
 
