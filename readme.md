@@ -10,9 +10,7 @@ IMPORTANT: First of all...
 
 <a href="https://www.buymeacoffee.com/mccoy88f"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a beer&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" /></a>
 
-You can also send a beer with PayPal
-
-[Buy me a beer 🍻](https://paypal.me/mccoy88f?country.x=IT&locale.x=en_US)
+[You can also send a beer with PayPal 🍻](https://paypal.me/mccoy88f?country.x=IT&locale.x=en_US)
 
 ## 🚀 What's New in This Version (see below)
 
