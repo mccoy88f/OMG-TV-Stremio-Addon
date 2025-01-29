@@ -39,30 +39,64 @@ class PlaylistTransformer {
         }
     }
 
-    parseVLCOpts(lines, currentIndex) {
-        const defaultHeaders = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Referer': 'https://streamtape.com/',
-            'Origin': 'https://streamtape.com'
-        };
-        
-        const headers = { ...defaultHeaders };
+    parseVLCOpts(lines, currentIndex, extinf) {
+        const headers = {};
         let i = currentIndex;
         
-        while (i < lines.length && lines[i].startsWith('#EXTVLCOPT:')) {
-            const opt = lines[i].substring('#EXTVLCOPT:'.length).trim();
+        // Prima controlliamo EXTHTTP per headers JSON
+        while (i < lines.length) {
+            const line = lines[i].trim();
             
-            if (opt.startsWith('http-user-agent=')) {
-                headers['User-Agent'] = opt.substring('http-user-agent='.length);
+            if (line.startsWith('#EXTHTTP:')) {
+                try {
+                    const httpHeaders = JSON.parse(line.substring('#EXTHTTP:'.length));
+                    Object.assign(headers, httpHeaders);
+                } catch (e) {
+                    console.error('Errore parsing EXTHTTP:', e);
+                }
+                i++;
+            } 
+            else if (line.startsWith('#EXTVLCOPT:')) {
+                const opt = line.substring('#EXTVLCOPT:'.length).trim();
+                // Solo se non abbiamo già gli headers da EXTHTTP
+                if (!headers['User-Agent'] && opt.startsWith('http-user-agent=')) {
+                    headers['User-Agent'] = opt.split('=')[1];
+                }
+                else if (!headers['Referer'] && opt.startsWith('http-referrer=')) {
+                    headers['Referer'] = opt.split('=')[1];
+                }
+                else if (!headers['Origin'] && opt.startsWith('http-origin=')) {
+                    headers['Origin'] = opt.split('=')[1];
+                }
+                i++;
             }
-            else if (opt.startsWith('http-referrer=')) {
-                headers['Referer'] = opt.substring('http-referrer='.length);
+            else {
+                break;
             }
-            else if (opt.startsWith('http-origin=')) {
-                headers['Origin'] = opt.substring('http-origin='.length);
-            }
+        }
+
+        // Se non abbiamo ancora gli headers, controlliamo nel tag EXTINF
+        if ((!headers['User-Agent'] || !headers['Referer']) && extinf) {
+            const userAgent = extinf.match(/http-user-agent="([^"]+)"/);
+            const referrer = extinf.match(/http-referrer="([^"]+)"/);
             
-            i++;
+            if (!headers['User-Agent'] && userAgent) {
+                headers['User-Agent'] = userAgent[1];
+            }
+            if (!headers['Referer'] && referrer) {
+                headers['Referer'] = referrer[1];
+            }
+        }
+
+        // Imposta headers di default se non sono stati trovati
+        if (!headers['User-Agent']) {
+            headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
+        }
+        if (!headers['Referer']) {
+            headers['Referer'] = 'https://streamtape.com/';
+        }
+        if (!headers['Origin']) {
+            headers['Origin'] = 'https://streamtape.com';
         }
         
         return { headers, nextIndex: i };
@@ -163,7 +197,7 @@ class PlaylistTransformer {
             const line = lines[i].trim();
         
             if (line.startsWith('#EXTINF:')) {
-                const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1);
+                const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1, line);
                 i = nextIndex - 1;
                 currentChannel = this.parseChannelFromLine(line, headers);
             } else if (line.startsWith('http') && currentChannel) {
