@@ -44,19 +44,24 @@ class HlsProxyManager {
             params.append('h_User-Agent', userAgent);
         }
 
+        if (referrer) {
+            params.append('h_Referer', referrer);
+        }
+
         return `${this.config.PROXY_URL}/proxy/hls/manifest.m3u8?${params.toString()}`;
     }
 
     async getProxyStreams(channel) {
         const streams = [];
         const userAgent = channel.headers?.['User-Agent'] || 'HbbTV/1.6.1';
+        const referrer = channel.headers?.['Referer'];
 
         if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
             return streams;
         }
 
         try {
-            const proxyUrl = this.buildProxyUrl(channel.url, userAgent);
+            const proxyUrl = this.buildProxyUrl(channel.url, userAgent, referrer);
 
             const cacheKey = `${channel.name}_${proxyUrl}`;
             const lastCheck = this.lastCheck.get(cacheKey);
