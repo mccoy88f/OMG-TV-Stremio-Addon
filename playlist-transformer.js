@@ -40,14 +40,27 @@ class PlaylistTransformer {
     }
 
     parseVLCOpts(lines, currentIndex) {
-        const headers = {};
+        const headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Referer': 'https://streamtape.com/',
+            'Origin': 'https://streamtape.com'
+        };
+        
         let i = currentIndex;
         
         while (i < lines.length && lines[i].startsWith('#EXTVLCOPT:')) {
             const opt = lines[i].substring('#EXTVLCOPT:'.length).trim();
+            
             if (opt.startsWith('http-user-agent=')) {
                 headers['User-Agent'] = opt.substring('http-user-agent='.length);
             }
+            else if (opt.startsWith('http-referrer=')) {
+                headers['Referer'] = opt.substring('http-referrer='.length);
+            }
+            else if (opt.startsWith('http-origin=')) {
+                headers['Origin'] = opt.substring('http-origin='.length);
+            }
+            
             i++;
         }
         
@@ -67,8 +80,6 @@ class PlaylistTransformer {
 
         const groupMatch = metadata.match(/group-title="([^"]+)"/);
         const group = groupMatch ? groupMatch[1] : 'Undefined';
-
-        // Separa i generi se sono presenti più di uno
         const genres = group.split(';').map(g => g.trim());
 
         const nameParts = metadata.split(',');
@@ -76,7 +87,7 @@ class PlaylistTransformer {
 
         return {
             name,
-            group: genres,  // Ora group è un array di generi
+            group: genres,
             tvg: tvgData,
             headers
         };
@@ -103,7 +114,7 @@ class PlaylistTransformer {
             id,
             type: 'tv',
             name,
-            genre: channel.group,  // Ora genre è un array di generi
+            genre: channel.group,
             posterShape: 'square',
             poster: channel.tvg?.logo,
             background: channel.tvg?.logo,
@@ -137,7 +148,7 @@ class PlaylistTransformer {
         const lines = content.split('\n');
         let currentChannel = null;
         let headers = {};
-        const genres = new Set(['Undefined']);  // Usiamo un Set per evitare duplicati
+        const genres = new Set(['Undefined']);
     
         let epgUrl = null;
         if (lines[0].includes('url-tvg=')) {
@@ -152,18 +163,9 @@ class PlaylistTransformer {
             const line = lines[i].trim();
         
             if (line.startsWith('#EXTINF:')) {
-                let nextIndex = i + 1;
-                headers = {};
-            
-                while (nextIndex < lines.length && lines[nextIndex].startsWith('#EXTVLCOPT:')) {
-                    const opt = lines[nextIndex].substring('#EXTVLCOPT:'.length).trim();
-                    if (opt.startsWith('http-user-agent=')) {
-                        headers['User-Agent'] = opt.substring('http-user-agent='.length);
-                    }
-                    nextIndex++;
-                }
+                const { headers: parsedHeaders, nextIndex } = this.parseVLCOpts(lines, i + 1);
+                headers = parsedHeaders;
                 i = nextIndex - 1;
-            
                 currentChannel = this.parseChannelFromLine(line, headers);
             } else if (line.startsWith('http') && currentChannel) {
                 const remappedId = this.getRemappedId(currentChannel);
@@ -172,8 +174,6 @@ class PlaylistTransformer {
                 if (!this.channelsMap.has(normalizedId)) {
                     const channelObj = this.createChannelObject(currentChannel, remappedId);
                     this.channelsMap.set(normalizedId, channelObj);
-                
-                    // Aggiungi i generi al Set
                     currentChannel.group.forEach(genre => genres.add(genre));
                 }
             
@@ -184,10 +184,8 @@ class PlaylistTransformer {
             }
         }
 
-        console.log(`✓ Canali processati: ${this.channelsMap.size}`);
-
         return {
-            genres: Array.from(genres),  // Convertiamo il Set in un array
+            genres: Array.from(genres),
             epgUrl
         };
     }
@@ -205,7 +203,7 @@ class PlaylistTransformer {
                 ? [url] 
                 : content.split('\n').filter(line => line.trim() && line.startsWith('http'));
 
-            const allGenres = []; // Array invece di Set
+            const allGenres = [];
             const epgUrls = new Set();
             
             for (const playlistUrl of playlistUrls) {
@@ -213,7 +211,6 @@ class PlaylistTransformer {
                 const playlistResponse = await axios.get(playlistUrl);
                 const result = await this.parseM3UContent(playlistResponse.data);
                 
-                // Aggiungi solo i generi non ancora presenti
                 result.genres.forEach(genre => {
                     if (!allGenres.includes(genre)) {
                         allGenres.push(genre);
@@ -226,7 +223,7 @@ class PlaylistTransformer {
             }
 
             const finalResult = {
-                genres: allGenres, // Non ordiniamo più alfabeticamente
+                genres: allGenres,
                 channels: Array.from(this.channelsMap.values()),
                 epgUrls: Array.from(epgUrls)
             };
