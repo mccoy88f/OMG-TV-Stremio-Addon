@@ -18,6 +18,32 @@ class HlsProxyManager {
         }
     }
 
+    async resolveStreamUrl(originalUrl, headers) {
+        try {
+            const response = await axios({
+                method: 'head',
+                url: originalUrl,
+                headers: headers,
+                maxRedirects: 5,
+                validateStatus: status => status < 400
+            });
+
+            return {
+                finalUrl: response.request.res.responseUrl || originalUrl,
+                headers: {
+                    ...headers,
+                    ...response.headers
+                }
+            };
+        } catch (error) {
+            console.error(`Errore risoluzione URL ${originalUrl}:`, error.message);
+            return { 
+                finalUrl: originalUrl, 
+                headers 
+            };
+        }
+    }
+
     async checkProxyHealth(proxyUrl) {
         try {
             const response = await axios.head(proxyUrl, {
@@ -41,7 +67,6 @@ class HlsProxyManager {
         });
 
         if (headers) {
-            // Se ci sono header specifici, li utilizziamo direttamente
             Object.entries(headers).forEach(([key, value]) => {
                 params.append(`h_${key}`, value);
             });
@@ -58,7 +83,13 @@ class HlsProxyManager {
         }
 
         try {
-            const proxyUrl = this.buildProxyUrl(channel.url, channel.headers);
+            // Risolvi l'URL del flusso
+            const { finalUrl, headers } = await this.resolveStreamUrl(
+                channel.url, 
+                channel.headers
+            );
+
+            const proxyUrl = this.buildProxyUrl(finalUrl, headers);
 
             const cacheKey = `${channel.name}_${proxyUrl}`;
             const lastCheck = this.lastCheck.get(cacheKey);
@@ -74,7 +105,7 @@ class HlsProxyManager {
             }
 
             const proxyStream = {
-                name: `${channel.name} (Proxy)`,
+                name: `${channel.name} (Proxy HLS)`,
                 title: `${channel.name} (Proxy HLS)`,
                 url: proxyUrl,
                 behaviorHints: {
