@@ -172,7 +172,8 @@ async function streamHandler({ id }) {
                         behaviorHints: {
                             notWebReady: false,
                             bingeGroup: "tv"
-                        }
+                        },
+                        headers: channel.streamInfo.headers
                     });
 
                     // Aggiungi flussi proxy se la configurazione è disponibile
