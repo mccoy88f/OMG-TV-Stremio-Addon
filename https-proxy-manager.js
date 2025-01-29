@@ -43,7 +43,9 @@ class HttpsProxyManager {
         if (userAgent) {
             params.append('h_User-Agent', userAgent);
         }
-
+        if (referrer) {
+            params.append('h_Referer', referrer);
+        }
         // Usiamo l'endpoint per flussi HTTPS generici
         return `${this.config.PROXY_URL}/proxy/stream?${params.toString()}`;
     }
