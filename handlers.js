@@ -127,17 +127,19 @@ async function streamHandler({ id }) {
 
         let streams = [];
 
-        // Se FORCE_PROXY è attivo, aggiungi solo i flussi proxy
         if (config.FORCE_PROXY === true) {
             if (config.PROXY_URL && config.PROXY_PASSWORD) {
                 if (channel.streamInfo && channel.streamInfo.urls) {
                     for (const stream of channel.streamInfo.urls) {
                         let proxyStreams = [];
-
                         const streamDetails = {
                             name: stream.name || channel.name,
                             url: stream.url,
-                            headers: channel.streamInfo.headers
+                            headers: channel.streamInfo.headers || {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                                'Referer': 'https://streamtape.com/',
+                                'Origin': 'https://streamtape.com'
+                            }
                         };
 
                         if (stream.url.endsWith('.m3u8')) {
@@ -156,29 +158,33 @@ async function streamHandler({ id }) {
                 }
             }
         } else {
-            // Se FORCE_PROXY non è attivo, aggiungi sia flussi diretti che proxy
             if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
                 for (const stream of channel.streamInfo.urls) {
-                    // Aggiungi flusso diretto con gli headers
                     streams.push({
                         name: stream.name || channel.name,
                         title: stream.name || channel.name,
                         url: stream.url,
-                        headers: channel.streamInfo.headers,
+                        headers: channel.streamInfo.headers || {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                            'Referer': 'https://streamtape.com/',
+                            'Origin': 'https://streamtape.com'
+                        },
                         behaviorHints: {
                             notWebReady: false,
                             bingeGroup: "tv"
                         }
                     });
 
-                    // Aggiungi flussi proxy se la configurazione è disponibile
                     if (config.PROXY_URL && config.PROXY_PASSWORD) {
                         let proxyStreams = [];
-
                         const streamDetails = {
                             name: stream.name || channel.name,
                             url: stream.url,
-                            headers: channel.streamInfo.headers
+                            headers: channel.streamInfo.headers || {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                                'Referer': 'https://streamtape.com/',
+                                'Origin': 'https://streamtape.com'
+                            }
                         };
 
                         if (stream.url.endsWith('.m3u8')) {
@@ -198,7 +204,6 @@ async function streamHandler({ id }) {
             }
         }
 
-        // Aggiungi meta dati ai flussi
         const meta = {
             id: channel.id,
             type: 'tv',
