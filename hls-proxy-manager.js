@@ -30,7 +30,7 @@ class HlsProxyManager {
         }
     }
 
-    buildProxyUrl(streamUrl, userAgent) {
+    buildProxyUrl(streamUrl, headers) {
         if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
             return null;
         }
@@ -40,8 +40,17 @@ class HlsProxyManager {
             d: streamUrl
         });
 
-        if (userAgent) {
-            params.append('h_User-Agent', userAgent);
+        // Aggiungi gli headers alla URL del proxy
+        if (headers) {
+            if (headers['User-Agent']) {
+                params.append('h_User-Agent', headers['User-Agent']);
+            }
+            if (headers['Referer']) {
+                params.append('h_Referer', headers['Referer']);
+            }
+            if (headers['Origin']) {
+                params.append('h_Origin', headers['Origin']);
+            }
         }
 
         return `${this.config.PROXY_URL}/proxy/hls/manifest.m3u8?${params.toString()}`;
@@ -49,14 +58,18 @@ class HlsProxyManager {
 
     async getProxyStreams(channel) {
         const streams = [];
-        const userAgent = channel.headers?.['User-Agent'] || 'HbbTV/1.6.1';
+        const headers = channel.headers || {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Referer': 'https://streamtape.com/',
+            'Origin': 'https://streamtape.com'
+        };
 
         if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
             return streams;
         }
 
         try {
-            const proxyUrl = this.buildProxyUrl(channel.url, userAgent);
+            const proxyUrl = this.buildProxyUrl(channel.url, headers);
 
             const cacheKey = `${channel.name}_${proxyUrl}`;
             const lastCheck = this.lastCheck.get(cacheKey);
@@ -88,7 +101,7 @@ class HlsProxyManager {
         } catch (error) {
             console.error('Errore proxy per il canale:', channel.name, error.message);
             console.error('URL richiesto:', proxyUrl);
-            console.error('User-Agent:', userAgent);
+            console.error('Headers:', headers);
         }
 
         return streams;
