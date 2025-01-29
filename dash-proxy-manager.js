@@ -8,6 +8,64 @@ class DashProxyManager {
         this.lastCheck = new Map();
     }
 
+    async resolveStreamUrl(originalUrl, headers) {
+        try {
+            console.log(`Risoluzione URL: ${originalUrl}`);
+            console.log('Headers iniziali:', headers);
+
+            const response = await axios({
+                method: 'get',
+                url: originalUrl,
+                headers: headers,
+                maxRedirects: 0,
+                validateStatus: status => status >= 200 && status < 400
+            });
+
+            // Gestione redirect
+            if (response.status >= 300 && response.status < 400) {
+                const redirectUrl = response.headers.location;
+                console.log(`Redirect a: ${redirectUrl}`);
+
+                // Verifica validità URL redirect
+                try {
+                    await axios.head(redirectUrl, { 
+                        headers, 
+                        timeout: 3000 
+                    });
+                    return {
+                        finalUrl: redirectUrl,
+                        headers: {
+                            ...headers,
+                            ...response.headers
+                        },
+                        status: response.status
+                    };
+                } catch {
+                    // Se URL non valido, mantieni URL originale
+                    return {
+                        finalUrl: originalUrl,
+                        headers,
+                        status: 500
+                    };
+                }
+            }
+
+            return {
+                finalUrl: originalUrl,
+                headers,
+                status: response.status
+            };
+
+        } catch (error) {
+            console.error(`Errore risoluzione URL ${originalUrl}:`, error.message);
+            return { 
+                finalUrl: originalUrl, 
+                headers,
+                status: 500
+            };
+        }
+    }
+
     async validateProxyUrl(url) {
         if (!url) return false;
         try {
