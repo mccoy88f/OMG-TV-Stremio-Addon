@@ -48,11 +48,15 @@ class PlaylistTransformer {
             if (opt.startsWith('http-user-agent=')) {
                 headers['User-Agent'] = opt.substring('http-user-agent='.length);
             }
+            if (opt.startsWith('http-referrer=')) {
+                headers['Referer'] = opt.substring('http-referrer='.length);
+            }
             i++;
         }
         
         return { headers, nextIndex: i };
     }
+
 
     parseChannelFromLine(line, headers) {
         const metadata = line.substring(8).trim();
