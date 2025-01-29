@@ -135,11 +135,7 @@ async function streamHandler({ id }) {
                         const streamDetails = {
                             name: stream.name || channel.name,
                             url: stream.url,
-                            headers: channel.streamInfo.headers || {
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-                                'Referer': 'https://streamtape.com/',
-                                'Origin': 'https://streamtape.com'
-                            }
+                            headers: channel.streamInfo.headers  // Propagate headers to proxy
                         };
 
                         if (stream.url.endsWith('.m3u8')) {
@@ -160,31 +156,25 @@ async function streamHandler({ id }) {
         } else {
             if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
                 for (const stream of channel.streamInfo.urls) {
+                    // Add direct stream with headers
                     streams.push({
                         name: stream.name || channel.name,
                         title: stream.name || channel.name,
                         url: stream.url,
-                        headers: channel.streamInfo.headers || {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-                            'Referer': 'https://streamtape.com/',
-                            'Origin': 'https://streamtape.com'
-                        },
+                        headers: channel.streamInfo.headers,  // Include headers in direct stream
                         behaviorHints: {
                             notWebReady: false,
                             bingeGroup: "tv"
                         }
                     });
 
+                    // Add proxy streams if enabled
                     if (config.PROXY_URL && config.PROXY_PASSWORD) {
                         let proxyStreams = [];
                         const streamDetails = {
                             name: stream.name || channel.name,
                             url: stream.url,
-                            headers: channel.streamInfo.headers || {
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-                                'Referer': 'https://streamtape.com/',
-                                'Origin': 'https://streamtape.com'
-                            }
+                            headers: channel.streamInfo.headers  // Propagate headers to proxy
                         };
 
                         if (stream.url.endsWith('.m3u8')) {
