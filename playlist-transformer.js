@@ -87,15 +87,22 @@ class PlaylistTransformer {
     }
 
     getRemappedId(channel) {
-        const originalId = channel.tvg?.id || channel.name;
+        let originalId = channel.tvg?.id || channel.name;
+    
+        // Rimuovi il testo tra parentesi
+        originalId = originalId.replace(/\s*\([^)]*\)/, '').trim();
+    
+        // Aggiungi .it alla fine
+        originalId += '.it';
+    
         const normalizedId = this.normalizeId(originalId);
         const remappedId = this.remappingRules.get(normalizedId);
-        
+    
         if (remappedId) {
             console.log(`✓ Remapping: ${originalId} -> ${remappedId}`);
             return remappedId;
         }
-        
+    
         return originalId;
     }
 
