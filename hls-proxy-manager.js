@@ -18,12 +18,8 @@ class HlsProxyManager {
                url: originalUrl,
                headers: headers,
                maxRedirects: 0,
-               validateStatus: status => status < 500
+               validateStatus: status => status >= 200 && status < 400
            });
-
-           console.log('Status risposta:', response.status);
-           console.log('URL finale:', response.request.res.responseUrl);
-           console.log('Headers risposta:', response.headers);
 
            // Gestione redirect
            if (response.status >= 300 && response.status < 400) {
@@ -40,12 +36,10 @@ class HlsProxyManager {
                };
            }
 
+           // Se nessun redirect, restituisci l'URL originale
            return {
-               finalUrl: response.request.res.responseUrl || originalUrl,
-               headers: {
-                   ...headers,
-                   ...response.headers
-               },
+               finalUrl: originalUrl,
+               headers,
                status: response.status
            };
 
@@ -58,6 +52,7 @@ class HlsProxyManager {
            };
        }
    }
+
 
    async validateProxyUrl(url) {
        if (!url) return false;
