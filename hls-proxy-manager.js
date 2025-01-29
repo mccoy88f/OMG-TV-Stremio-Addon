@@ -21,25 +21,37 @@ class HlsProxyManager {
     async resolveStreamUrl(originalUrl, headers) {
         try {
             const response = await axios({
-                method: 'head',
+                method: 'get',
                 url: originalUrl,
                 headers: headers,
                 maxRedirects: 5,
-                validateStatus: status => status < 400
+                validateStatus: status => status < 500
             });
+
+            // Se 404, restituisci l'URL originale
+            if (response.status === 404) {
+                console.error(`URL non trovato: ${originalUrl}`);
+                return { 
+                    finalUrl: originalUrl, 
+                    headers,
+                    status: 404
+                };
+            }
 
             return {
                 finalUrl: response.request.res.responseUrl || originalUrl,
                 headers: {
                     ...headers,
                     ...response.headers
-                }
+                },
+                status: response.status
             };
         } catch (error) {
             console.error(`Errore risoluzione URL ${originalUrl}:`, error.message);
             return { 
                 finalUrl: originalUrl, 
-                headers 
+                headers,
+                status: 500
             };
         }
     }
@@ -84,10 +96,16 @@ class HlsProxyManager {
 
         try {
             // Risolvi l'URL del flusso
-            const { finalUrl, headers } = await this.resolveStreamUrl(
+            const { finalUrl, headers, status } = await this.resolveStreamUrl(
                 channel.url, 
                 channel.headers
             );
+
+            // Se lo status è 404, non generare lo stream
+            if (status === 404) {
+                console.log(`Canale non disponibile: ${channel.name}`);
+                return streams;
+            }
 
             const proxyUrl = this.buildProxyUrl(finalUrl, headers);
 
@@ -120,7 +138,6 @@ class HlsProxyManager {
             streams.push(proxyStream);
         } catch (error) {
             console.error('Errore proxy per il canale:', channel.name, error.message);
-            console.error('URL richiesto:', proxyUrl);
             console.error('Headers:', channel.headers);
         }
 
