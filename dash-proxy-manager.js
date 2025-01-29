@@ -43,10 +43,7 @@ class DashProxyManager {
         if (userAgent) {
             params.append('h_User-Agent', userAgent);
         }
-        
-        if (referrer) {
-            params.append('h_Referer', referrer);
-        }
+
         // Usiamo l'endpoint per i manifesti DASH
         return `${this.config.PROXY_URL}/proxy/mpd/manifest.m3u8?${params.toString()}`;
     }
@@ -54,18 +51,14 @@ class DashProxyManager {
     async getProxyStreams(channel) {
         const streams = [];
         const userAgent = channel.headers?.['User-Agent'] || 'HbbTV/1.6.1';
-        const referrer = channel.headers?.['Referer'] || null; // Usa null come default
 
         if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
             return streams;
         }
 
         try {
-            const proxyUrl = this.buildProxyUrl(
-                channel.url, 
-                userAgent, 
-                referrer // Passa referrer anche se null
-            );
+            const proxyUrl = this.buildProxyUrl(channel.url, userAgent);
+
             const cacheKey = `${channel.name}_${proxyUrl}`;
             const lastCheck = this.lastCheck.get(cacheKey);
             const cacheValid = lastCheck && (Date.now() - lastCheck) < 5 * 60 * 1000;
@@ -97,8 +90,6 @@ class DashProxyManager {
             console.error('Errore proxy per il canale:', channel.name, error.message);
             console.error('URL richiesto:', proxyUrl);
             console.error('User-Agent:', userAgent);
-            console.error('Referrer:', referrer);
-
         }
 
         return streams;
