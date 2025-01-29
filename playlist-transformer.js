@@ -40,12 +40,13 @@ class PlaylistTransformer {
     }
 
     parseVLCOpts(lines, currentIndex) {
-        const headers = {
+        const defaultHeaders = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             'Referer': 'https://streamtape.com/',
             'Origin': 'https://streamtape.com'
         };
         
+        const headers = { ...defaultHeaders };
         let i = currentIndex;
         
         while (i < lines.length && lines[i].startsWith('#EXTVLCOPT:')) {
@@ -147,7 +148,6 @@ class PlaylistTransformer {
     async parseM3UContent(content) {
         const lines = content.split('\n');
         let currentChannel = null;
-        let headers = {};
         const genres = new Set(['Undefined']);
     
         let epgUrl = null;
@@ -163,8 +163,7 @@ class PlaylistTransformer {
             const line = lines[i].trim();
         
             if (line.startsWith('#EXTINF:')) {
-                const { headers: parsedHeaders, nextIndex } = this.parseVLCOpts(lines, i + 1);
-                headers = parsedHeaders;
+                const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1);
                 i = nextIndex - 1;
                 currentChannel = this.parseChannelFromLine(line, headers);
             } else if (line.startsWith('http') && currentChannel) {
@@ -183,6 +182,8 @@ class PlaylistTransformer {
                 currentChannel = null;
             }
         }
+
+        console.log(`✓ Canali processati: ${this.channelsMap.size}`);
 
         return {
             genres: Array.from(genres),
