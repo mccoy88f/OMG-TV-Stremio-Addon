@@ -18,6 +18,8 @@ class PlaylistTransformer {
             .trim()                          // Rimuove spazi iniziali e finali
             .toLowerCase()                    // Converte in minuscolo
             .replace(/\s+/g, '');            // Rimuove tutti gli spazi
+            + '.it';                         // Aggiunge .it
+
     }
 
     async loadRemappingRules() {
@@ -139,7 +141,7 @@ class PlaylistTransformer {
     }
 
     getRemappedId(channel) {
-        const originalId = channel.tvg?.id || channel.name;
+        const originalId = channel.tvg?.id || this.cleanChannelName(channel.name);
         const normalizedId = this.normalizeId(originalId);
         const remappedId = this.remappingRules.get(normalizedId);
         
