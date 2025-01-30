@@ -4,6 +4,7 @@ const { catalogHandler, streamHandler } = require('./handlers');
 const metaHandler = require('./meta-handler');
 const EPGManager = require('./epg-manager');
 const config = require('./config');
+const http = require('http');
 
 async function generateConfig() {
     try {
@@ -88,6 +89,8 @@ async function startAddon() {
             await EPGManager.initializeEPG(combinedEpgUrl);
         }
 
+        const addonInterface = builder.getInterface();
+
         const landingTemplate = landing => `
 <!DOCTYPE html>
 <html style="background: #000">
@@ -155,11 +158,7 @@ async function startAddon() {
 </body>
 </html>`;
 
-        const addonInterface = builder.getInterface();
-        const serveHTTP = require('stremio-addon-sdk/src/serveHTTP');
-
         // Crea un server personalizzato per gestire sia l'addon che l'endpoint EPG
-        const http = require('http');
         const server = http.createServer((req, res) => {
             if (generatedConfig.showMissingEPG && req.url === '/epgstatus.txt') {
                 const result = EPGManager.getMissingEPGStatus();
@@ -169,7 +168,7 @@ async function startAddon() {
             }
 
             // Gestione normale delle richieste dell'addon
-            serveHTTP(addonInterface, { landingTemplate })(req, res);
+            addonInterface.handleHTTPRequest(req, res);
         });
 
         server.listen(generatedConfig.port, () => {
