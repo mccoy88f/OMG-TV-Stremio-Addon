@@ -10,58 +10,52 @@ class DashProxyManager {
 
     async resolveStreamUrl(originalUrl, headers) {
         try {
-            console.log(`Risoluzione URL: ${originalUrl}`);
-            console.log('Headers iniziali:', headers);
+            console.log(`Risoluzione URL DASH: ${originalUrl}`);
+            
+            const networkHeaders = {
+                ...headers,
+                'User-Agent': headers['User-Agent'] || [
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+                    'Mozilla/5.0 (X11; Linux x86_64)'
+                ][Math.floor(Math.random() * 3)],
+                'Accept': 'application/dash+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3',
+                'Referer': headers.Referer || 'https://vavoo.to/',
+                'Origin': headers.Origin || 'https://vavoo.to',
+                'Connection': 'keep-alive',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'cross-site'
+            };
 
             const response = await axios({
                 method: 'get',
                 url: originalUrl,
-                headers: headers,
-                maxRedirects: 0,
-                validateStatus: status => status >= 200 && status < 400
+                headers: networkHeaders,
+                maxRedirects: 5,
+                validateStatus: status => status < 400,
+                timeout: 10000
             });
 
-            // Gestione redirect
-            if (response.status >= 300 && response.status < 400) {
-                const redirectUrl = response.headers.location;
-                console.log(`Redirect a: ${redirectUrl}`);
-
-                // Verifica validità URL redirect
-                try {
-                    await axios.head(redirectUrl, { 
-                        headers, 
-                        timeout: 3000 
-                    });
-                    return {
-                        finalUrl: redirectUrl,
-                        headers: {
-                            ...headers,
-                            ...response.headers
-                        },
-                        status: response.status
-                    };
-                } catch {
-                    // Se URL non valido, mantieni URL originale
-                    return {
-                        finalUrl: originalUrl,
-                        headers,
-                        status: 500
-                    };
-                }
-            }
+            const finalUrl = response.request.res.responseUrl || originalUrl;
+            console.log(`URL DASH finale: ${finalUrl}`);
 
             return {
-                finalUrl: originalUrl,
-                headers,
+                finalUrl,
+                headers: {
+                    ...networkHeaders,
+                    ...response.headers
+                },
                 status: response.status
             };
 
         } catch (error) {
-            console.error(`Errore risoluzione URL ${originalUrl}:`, error.message);
+            console.error(`Errore risoluzione URL DASH ${originalUrl}:`, error.message);
             return { 
                 finalUrl: originalUrl, 
                 headers,
-                status: 500
+                status: error.response?.status || 500
             };
         }
     }
@@ -80,7 +74,10 @@ class DashProxyManager {
         try {
             const response = await axios.head(proxyUrl, {
                 timeout: 5000,
-                validateStatus: status => status === 200 || status === 302
+                validateStatus: status => status === 200 || status === 302,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
             });
             return response.status === 200 || response.status === 302;
         } catch {
@@ -104,7 +101,7 @@ class DashProxyManager {
             });
         }
 
-        return `${this.config.PROXY_URL}/proxy/mpd/manifest.m3u8?${params.toString()}`;
+        return `${this.config.PROXY_URL}/proxy/mpd/manifest.mpd?${params.toString()}`;
     }
 
     async getProxyStreams(channel) {
@@ -115,21 +112,35 @@ class DashProxyManager {
         }
 
         try {
-            const proxyUrl = this.buildProxyUrl(channel.url, channel.headers);
+            // Risolvi l'URL del flusso con headers dinamici
+            const { finalUrl, headers, status } = await this.resolveStreamUrl(
+                channel.url, 
+                channel.headers
+            );
+
+            // Verifica URL finale
+            if (status === 404 || !finalUrl) {
+                console.log(`Canale DASH non disponibile: ${channel.name}`);
+                return streams;
+            }
+
+            const proxyUrl = this.buildProxyUrl(finalUrl, headers);
 
             const cacheKey = `${channel.name}_${proxyUrl}`;
             const lastCheck = this.lastCheck.get(cacheKey);
             const cacheValid = lastCheck && (Date.now() - lastCheck) < 5 * 60 * 1000;
 
             if (cacheValid && this.proxyCache.has(cacheKey)) {
+                console.log(`Usando cache DASH per: ${channel.name}`);
                 return [this.proxyCache.get(cacheKey)];
             }
 
             if (!await this.checkProxyHealth(proxyUrl)) {
-                console.log('Proxy non attivo per:', channel.name);
+                console.log('Proxy DASH non attivo per:', channel.name);
                 return [];
             }
 
+            // Costruisci stream proxy
             const proxyStream = {
                 name: `${channel.name} (Proxy DASH)`,
                 title: `${channel.name} (Proxy DASH)`,
@@ -144,9 +155,10 @@ class DashProxyManager {
             this.lastCheck.set(cacheKey, Date.now());
 
             streams.push(proxyStream);
+
         } catch (error) {
-            console.error('Errore proxy per il canale:', channel.name, error.message);
-            console.error('URL richiesto:', proxyUrl);
+            console.error('Errore proxy DASH per il canale:', channel.name, error.message);
+            console.error('URL richiesto:', channel.url);
             console.error('Headers:', channel.headers);
         }
 
