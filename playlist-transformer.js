@@ -12,6 +12,14 @@ class PlaylistTransformer {
         return id?.toLowerCase() || '';
     }
 
+    cleanChannelName(name) {
+        return name
+            .replace(/[\(\[].*?[\)\]]/g, '') // Rimuove contenuto tra parentesi
+            .trim()                          // Rimuove spazi iniziali e finali
+            .toLowerCase()                    // Converte in minuscolo
+            .replace(/\s+/g, '');            // Rimuove tutti gli spazi
+    }
+
     async loadRemappingRules() {
         const remappingPath = path.join(__dirname, 'link.epg.remapping');
         
@@ -119,6 +127,12 @@ class PlaylistTransformer {
 
         const nameParts = metadata.split(',');
         const name = nameParts[nameParts.length - 1].trim();
+
+        // Se non c'è tvg-id, generalo dal nome del canale
+        if (!tvgData.id) {
+            tvgData.id = this.cleanChannelName(name);
+            console.log(`✓ Generato tvg-id "${tvgData.id}" per il canale "${name}"`);
+        }
 
         return {
             name,
