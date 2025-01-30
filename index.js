@@ -109,7 +109,7 @@ async function startAddon() {
 
             // Usa porta 10001 per l'endpoint EPG
             epgServer.listen(10001, () => {
-                console.log('EPG Status disponibile su: https://omg-tv-stremio-addon-1n7w.onrender.com/epgstatus.txt');
+                console.log('EPG Status disponibile su: https://localhost/epgstatus.txt');
             });
         }
         const landingTemplate = landing => `
