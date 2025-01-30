@@ -94,6 +94,25 @@ async function startAddon() {
         const addonInterface = builder.getInterface();
         const serveHTTP = require('stremio-addon-sdk/src/serveHTTP');
 
+        // Se l'endpoint EPG è abilitato, crea un server HTTP aggiuntivo
+        if (generatedConfig.showMissingEPG) {
+            const epgServer = require('http').createServer((req, res) => {
+                if (req.url === '/epgstatus.txt') {
+                    const result = EPGManager.getMissingEPGStatus();
+                    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                    res.end(result.text);
+                } else {
+                    res.writeHead(404);
+                    res.end('Not Found');
+                }
+            });
+
+            const epgPort = generatedConfig.port + 1;
+            epgServer.listen(epgPort, () => {
+                console.log('EPG Status disponibile su:', `http://localhost:${epgPort}/epgstatus.txt`);
+            });
+        }
+
         const landingTemplate = landing => `
 <!DOCTYPE html>
 <html style="background: #000">
@@ -161,28 +180,13 @@ async function startAddon() {
 </body>
 </html>`;
 
-        // Creazione server HTTP personalizzato con endpoint aggiuntivo
-        const http = require('http');
-        const server = http.createServer((req, res) => {
-            // Gestione endpoint EPG status
-            if (generatedConfig.showMissingEPG && req.url === '/epgstatus.txt') {
-                const result = EPGManager.getMissingEPGStatus();
-                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                res.end(result.text);
-                return;
-            }
-            
-            // Gestione normale delle richieste dell'addon
-            serveHTTP(addonInterface, { landingTemplate })(req, res);
+        await serveHTTP(addonInterface, { 
+            port: generatedConfig.port,
+            landingTemplate
         });
-
-        server.listen(generatedConfig.port, () => {
-            console.log('Addon attivo su:', `http://localhost:${generatedConfig.port}`);
-            console.log('Aggiungi il seguente URL a Stremio:', `http://localhost:${generatedConfig.port}/manifest.json`);
-            if (generatedConfig.showMissingEPG) {
-                console.log('EPG Status disponibile su:', `http://localhost:${generatedConfig.port}/epgstatus.txt`);
-            }
-        });
+        
+        console.log('Addon attivo su:', `http://localhost:${generatedConfig.port}`);
+        console.log('Aggiungi il seguente URL a Stremio:', `http://localhost:${generatedConfig.port}/manifest.json`);
 
         if (generatedConfig.enableEPG) {
             const cachedData = CacheManager.getCachedData();
