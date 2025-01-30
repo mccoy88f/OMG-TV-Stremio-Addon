@@ -158,28 +158,23 @@ async function startAddon() {
 </body>
 </html>`;
 
-        // Crea un server personalizzato per gestire sia l'addon che l'endpoint EPG
-        const server = http.createServer((req, res) => {
-            if (generatedConfig.showMissingEPG && req.url === '/epgstatus.txt') {
-                const result = EPGManager.getMissingEPGStatus();
-                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                res.end(result.text);
-                return;
-            }
+        const serveHTTP = require('stremio-addon-sdk/src/serveHTTP');
 
-            // Gestione normale delle richieste dell'addon
-            addonInterface.handleHTTPRequest(req, res);
+        await serveHTTP(addonInterface, { 
+            port: generatedConfig.port,
+            landingTemplate
         });
-
-        server.listen(generatedConfig.port, () => {
-            console.log('Addon attivo su:', `http://localhost:${generatedConfig.port}`);
-            if (generatedConfig.showMissingEPG) {
-                console.log('EPG Status disponibile su:', `http://localhost:${generatedConfig.port}/epgstatus.txt`);
-            }
-        });
+        
+        console.log('Addon attivo su:', `http://localhost:${generatedConfig.port}`);
 
         if (generatedConfig.enableEPG) {
             const cachedData = CacheManager.getCachedData();
+            const result = EPGManager.getMissingEPGStatus();
+            if (generatedConfig.showMissingEPG) {
+                console.log('\n=== Canali senza EPG ===');
+                console.log(result.text);
+                console.log('=========================\n');
+            }
             EPGManager.checkMissingEPG(cachedData.channels);
         } else {
             console.log('EPG disabilitata, skip inizializzazione');
