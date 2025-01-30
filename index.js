@@ -107,12 +107,14 @@ async function startAddon() {
                 }
             });
 
-            const epgPort = generatedConfig.port + 1;
+            // Calcola la porta EPG assicurandosi che non superi il limite
+            const basePort = parseInt(generatedConfig.port);
+            const epgPort = basePort < 65535 ? basePort + 1 : basePort - 1;
+            
             epgServer.listen(epgPort, () => {
                 console.log('EPG Status disponibile su:', `http://localhost:${epgPort}/epgstatus.txt`);
             });
         }
-
         const landingTemplate = landing => `
 <!DOCTYPE html>
 <html style="background: #000">
