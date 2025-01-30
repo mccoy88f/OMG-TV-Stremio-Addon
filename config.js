@@ -3,6 +3,7 @@ const path = require('path');
 
 const baseConfig = {
     port: process.env.PORT || 10000,
+    showMissingEPG: process.env.SHOW_MISSING_EPG === 'true',
     M3U_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.playlist',
     EPG_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.epg',
     enableEPG: true,
