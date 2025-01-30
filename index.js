@@ -87,9 +87,30 @@ async function startAddon() {
 
         // Inizializza l'EPGManager con tutti gli URL EPG combinati
         if (allEpgUrls.length > 0) {
-            const combinedEpgUrl = allEpgUrls.join(','); // Combina gli URL EPG in una stringa separata da virgole
+            const combinedEpgUrl = allEpgUrls.join(',');
             await EPGManager.initializeEPG(combinedEpgUrl);
         }
+
+        const addonInterface = builder.getInterface();
+        
+        // Aggiungi endpoint per EPG status se abilitato
+        if (generatedConfig.showMissingEPG) {
+            addonInterface.defineResourceHandler('epgstatus', ({ type }, req, res) => {
+                if (type !== 'epgstatus') {
+                    return { text: '' };
+                }
+                
+                const result = EPGManager.getMissingEPGStatus();
+                
+                // Imposta gli headers per il plain text
+                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                res.end(result.text);
+                
+                return new Promise(() => {}); // Previene la risposta JSON automatica
+            });
+        }
+
+        const serveHTTP = require('stremio-addon-sdk/src/serveHTTP');
 
         const landingTemplate = landing => `
 <!DOCTYPE html>
@@ -157,9 +178,6 @@ async function startAddon() {
     </button>
 </body>
 </html>`;
-
-        const addonInterface = builder.getInterface();
-        const serveHTTP = require('stremio-addon-sdk/src/serveHTTP');
 
         await serveHTTP(addonInterface, { 
             port: generatedConfig.port, 
