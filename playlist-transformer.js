@@ -18,8 +18,6 @@ class PlaylistTransformer {
             .trim()                          // Rimuove spazi iniziali e finali
             .toLowerCase()                    // Converte in minuscolo
             .replace(/\s+/g, '');            // Rimuove tutti gli spazi
-            + '.it';                         // Aggiunge .it
-
     }
 
     async loadRemappingRules() {
@@ -53,7 +51,6 @@ class PlaylistTransformer {
         const headers = {};
         let i = currentIndex;
         
-        // Prima controlliamo EXTHTTP per headers JSON
         while (i < lines.length) {
             const line = lines[i].trim();
             
@@ -68,7 +65,6 @@ class PlaylistTransformer {
             } 
             else if (line.startsWith('#EXTVLCOPT:')) {
                 const opt = line.substring('#EXTVLCOPT:'.length).trim();
-                // Solo se non abbiamo già gli headers da EXTHTTP
                 if (!headers['User-Agent'] && opt.startsWith('http-user-agent=')) {
                     headers['User-Agent'] = opt.split('=')[1];
                 }
@@ -85,7 +81,6 @@ class PlaylistTransformer {
             }
         }
 
-        // Se non abbiamo ancora gli headers, controlliamo nel tag EXTINF
         if ((!headers['User-Agent'] || !headers['Referer']) && extinf) {
             const userAgent = extinf.match(/http-user-agent="([^"]+)"/);
             const referrer = extinf.match(/http-referrer="([^"]+)"/);
@@ -98,7 +93,6 @@ class PlaylistTransformer {
             }
         }
 
-        // Imposta headers di default se non sono stati trovati
         if (!headers['User-Agent']) {
             headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
         }
@@ -130,7 +124,10 @@ class PlaylistTransformer {
         const nameParts = metadata.split(',');
         const name = nameParts[nameParts.length - 1].trim();
 
-
+        // Genera tvg.id se non presente
+        if (!tvgData.id) {
+            tvgData.id = this.cleanChannelName(name) + '.it';
+        }
 
         return {
             name,
@@ -141,7 +138,7 @@ class PlaylistTransformer {
     }
 
     getRemappedId(channel) {
-        const originalId = channel.tvg?.id || this.cleanChannelName(channel.name);
+        const originalId = channel.tvg.id;
         const normalizedId = this.normalizeId(originalId);
         const remappedId = this.remappingRules.get(normalizedId);
         
@@ -154,22 +151,22 @@ class PlaylistTransformer {
     }
 
     createChannelObject(channel, channelId) {
-        const id = `tv|${channelId}`;
         const name = channel.tvg?.name || channel.name;
-    
+        const cleanName = name.replace(/\s*\(.*?\)\s*/g, '').trim();
+
         return {
-            id,
+            id: `tv|${channelId}`,
             type: 'tv',
-            name,
+            name: cleanName,
             genre: channel.group,
             posterShape: 'square',
             poster: channel.tvg?.logo,
             background: channel.tvg?.logo,
             logo: channel.tvg?.logo,
-            description: `Canale: ${name} - ID: ${channelId}`,
+            description: `Canale: ${cleanName} - ID: ${channelId}`,
             runtime: 'LIVE',
             behaviorHints: {
-                defaultVideoId: id,
+                defaultVideoId: `tv|${channelId}`,
                 isLive: true
             },
             streamInfo: {
@@ -178,7 +175,7 @@ class PlaylistTransformer {
                 tvg: {
                     ...channel.tvg,
                     id: channelId,
-                    name
+                    name: cleanName
                 }
             }
         };
