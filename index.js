@@ -96,14 +96,20 @@ async function startAddon() {
 
         // Se l'endpoint EPG è abilitato, crea un server HTTP aggiuntivo
         if (generatedConfig.showMissingEPG) {
-            const epgPath = '/epgstatus.txt';
-            console.log('EPG Status sarà disponibile su:', `${process.env.PUBLIC_URL || 'http://localhost:' + generatedConfig.port}${epgPath}`);
-            
-            // Aggiungi la gestione dell'endpoint EPG al server principale
-            addonInterface.defineStaticResponse(epgPath, async ({ request, response }) => {
-                const result = EPGManager.getMissingEPGStatus();
-                response.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                response.end(result.text);
+            const epgServer = require('http').createServer((req, res) => {
+                if (req.url === '/epgstatus.txt') {
+                    const result = EPGManager.getMissingEPGStatus();
+                    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                    res.end(result.text);
+                } else {
+                    res.writeHead(404);
+                    res.end('Not Found');
+                }
+            });
+
+            // Usa porta 10001 per l'endpoint EPG
+            epgServer.listen(10001, () => {
+                console.log('EPG Status disponibile su: https://omg-tv-stremio-addon-1n7w.onrender.com/epgstatus.txt');
             });
         }
         const landingTemplate = landing => `
