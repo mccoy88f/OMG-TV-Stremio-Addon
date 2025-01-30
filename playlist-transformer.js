@@ -128,11 +128,7 @@ class PlaylistTransformer {
         const nameParts = metadata.split(',');
         const name = nameParts[nameParts.length - 1].trim();
 
-        // Se non c'è tvg-id, generalo dal nome del canale
-        if (!tvgData.id) {
-            tvgData.id = this.cleanChannelName(name);
-            console.log(`✓ Generato tvg-id "${tvgData.id}" per il canale "${name}"`);
-        }
+
 
         return {
             name,
