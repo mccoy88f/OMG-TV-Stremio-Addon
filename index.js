@@ -96,23 +96,14 @@ async function startAddon() {
 
         // Se l'endpoint EPG è abilitato, crea un server HTTP aggiuntivo
         if (generatedConfig.showMissingEPG) {
-            const epgServer = require('http').createServer((req, res) => {
-                if (req.url === '/epgstatus.txt') {
-                    const result = EPGManager.getMissingEPGStatus();
-                    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                    res.end(result.text);
-                } else {
-                    res.writeHead(404);
-                    res.end('Not Found');
-                }
-            });
-
-            // Calcola la porta EPG assicurandosi che non superi il limite
-            const basePort = parseInt(generatedConfig.port);
-            const epgPort = basePort < 65535 ? basePort + 1 : basePort - 1;
+            const epgPath = '/epgstatus.txt';
+            console.log('EPG Status sarà disponibile su:', `${process.env.PUBLIC_URL || 'http://localhost:' + generatedConfig.port}${epgPath}`);
             
-            epgServer.listen(epgPort, () => {
-                console.log('EPG Status disponibile su:', `http://localhost:${epgPort}/epgstatus.txt`);
+            // Aggiungi la gestione dell'endpoint EPG al server principale
+            addonInterface.defineStaticResponse(epgPath, async ({ request, response }) => {
+                const result = EPGManager.getMissingEPGStatus();
+                response.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                response.end(result.text);
             });
         }
         const landingTemplate = landing => `
