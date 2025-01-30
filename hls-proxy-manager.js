@@ -1,156 +1,176 @@
 const axios = require('axios');
 const { URL } = require('url');
+const DNSResolver = require('./dns-resolver');
 
 class HlsProxyManager {
-   constructor(config) {
-       this.config = config;
-       this.proxyCache = new Map();
-       this.lastCheck = new Map();
-   }
+    constructor(config) {
+        this.config = config;
+        this.proxyCache = new Map();
+        this.lastCheck = new Map();
+    }
 
-   async resolveStreamUrl(originalUrl, headers) {
-       try {
-           console.log(`Risoluzione URL: ${originalUrl}`);
-           console.log('Headers iniziali:', headers);
+    async resolveStreamUrl(originalUrl, headers) {
+        try {
+            console.log(`Risoluzione URL: ${originalUrl}`);
+            console.log('Headers iniziali:', headers);
 
-           const response = await axios({
-               method: 'get',
-               url: originalUrl,
-               headers: headers,
-               maxRedirects: 0,
-               validateStatus: status => status >= 200 && status < 400
-           });
+            // Risolvi e valida l'URL usando il DNS resolver
+            const resolvedUrl = await DNSResolver.validateAndResolveUrl(
+                originalUrl, 
+                headers
+            );
 
-           // Gestione redirect
-           if (response.status >= 300 && response.status < 400) {
-               const redirectUrl = response.headers.location;
-               console.log(`Redirect a: ${redirectUrl}`);
+            const response = await axios({
+                method: 'get',
+                url: resolvedUrl,
+                headers: headers,
+                maxRedirects: 0,
+                validateStatus: status => status >= 200 && status < 400
+            });
 
-               return {
-                   finalUrl: redirectUrl,
-                   headers: {
-                       ...headers,
-                       ...response.headers
-                   },
-                   status: response.status
-               };
-           }
+            // Gestione redirect
+            if (response.status >= 300 && response.status < 400) {
+                const redirectUrl = response.headers.location;
+                console.log(`Redirect a: ${redirectUrl}`);
 
-           // Se nessun redirect, restituisci l'URL originale
-           return {
-               finalUrl: originalUrl,
-               headers,
-               status: response.status
-           };
+                // Verifica validità URL redirect
+                try {
+                    const finalResolvedUrl = await DNSResolver.validateAndResolveUrl(
+                        redirectUrl, 
+                        headers
+                    );
 
-       } catch (error) {
-           console.error(`Errore risoluzione URL ${originalUrl}:`, error.message);
-           return { 
-               finalUrl: originalUrl, 
-               headers,
-               status: 500
-           };
-       }
-   }
+                    return {
+                        finalUrl: finalResolvedUrl,
+                        headers: {
+                            ...headers,
+                            ...response.headers
+                        },
+                        status: response.status
+                    };
+                } catch {
+                    // Se URL non valido, mantieni URL originale
+                    return {
+                        finalUrl: originalUrl,
+                        headers,
+                        status: 500
+                    };
+                }
+            }
 
+            return {
+                finalUrl: resolvedUrl,
+                headers,
+                status: response.status
+            };
 
-   async validateProxyUrl(url) {
-       if (!url) return false;
-       try {
-           const parsed = new URL(url);
-           return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-       } catch {
-           return false;
-       }
-   }
+        } catch (error) {
+            console.error(`Errore risoluzione URL ${originalUrl}:`, error.message);
+            return { 
+                finalUrl: originalUrl, 
+                headers,
+                status: 500
+            };
+        }
+    }
 
-   async checkProxyHealth(proxyUrl) {
-       try {
-           const response = await axios.head(proxyUrl, {
-               timeout: 5000,
-               validateStatus: status => status === 200 || status === 302
-           });
-           return response.status === 200 || response.status === 302;
-       } catch {
-           return false;
-       }
-   }
+    async validateProxyUrl(url) {
+        if (!url) return false;
+        try {
+            const parsed = new URL(url);
+            return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        } catch {
+            return false;
+        }
+    }
 
-   buildProxyUrl(streamUrl, headers) {
-       if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
-           return null;
-       }
+    async checkProxyHealth(proxyUrl) {
+        try {
+            const response = await axios.head(proxyUrl, {
+                timeout: 5000,
+                validateStatus: status => status === 200 || status === 302
+            });
+            return response.status === 200 || response.status === 302;
+        } catch {
+            return false;
+        }
+    }
 
-       const params = new URLSearchParams({
-           api_password: this.config.PROXY_PASSWORD,
-           d: streamUrl
-       });
+    buildProxyUrl(streamUrl, headers) {
+        if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
+            return null;
+        }
 
-       if (headers) {
-           Object.entries(headers).forEach(([key, value]) => {
-               params.append(`h_${key}`, value);
-           });
-       }
+        const params = new URLSearchParams({
+            api_password: this.config.PROXY_PASSWORD,
+            d: streamUrl
+        });
 
-       return `${this.config.PROXY_URL}/proxy/hls/manifest.m3u8?${params.toString()}`;
-   }
+        if (headers) {
+            Object.entries(headers).forEach(([key, value]) => {
+                params.append(`h_${key}`, value);
+            });
+        }
 
-   async getProxyStreams(channel) {
-       const streams = [];
+        return `${this.config.PROXY_URL}/proxy/hls/manifest.m3u8?${params.toString()}`;
+    }
 
-       if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
-           return streams;
-       }
+    async getProxyStreams(channel) {
+        const streams = [];
 
-       try {
-           // Risolvi l'URL del flusso
-           const { finalUrl, headers, status } = await this.resolveStreamUrl(
-               channel.url, 
-               channel.headers
-           );
+        if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
+            return streams;
+        }
 
-           // Se lo status è 404, non generare lo stream
-           if (status === 404) {
-               console.log(`Canale non disponibile: ${channel.name}`);
-               return streams;
-           }
+        try {
+            // Risolvi l'URL del flusso
+            const { finalUrl, headers, status } = await this.resolveStreamUrl(
+                channel.url, 
+                channel.headers
+            );
 
-           const proxyUrl = this.buildProxyUrl(finalUrl, headers);
+            // Se lo status è 404, non generare lo stream
+            if (status === 404) {
+                console.log(`Canale non disponibile: ${channel.name}`);
+                return streams;
+            }
 
-           const cacheKey = `${channel.name}_${proxyUrl}`;
-           const lastCheck = this.lastCheck.get(cacheKey);
-           const cacheValid = lastCheck && (Date.now() - lastCheck) < 5 * 60 * 1000;
+            const proxyUrl = this.buildProxyUrl(finalUrl, headers);
 
-           if (cacheValid && this.proxyCache.has(cacheKey)) {
-               return [this.proxyCache.get(cacheKey)];
-           }
+            const cacheKey = `${channel.name}_${proxyUrl}`;
+            const lastCheck = this.lastCheck.get(cacheKey);
+            const cacheValid = lastCheck && (Date.now() - lastCheck) < 5 * 60 * 1000;
 
-           if (!await this.checkProxyHealth(proxyUrl)) {
-               console.log('Proxy non attivo per:', channel.name);
-               return [];
-           }
+            if (cacheValid && this.proxyCache.has(cacheKey)) {
+                return [this.proxyCache.get(cacheKey)];
+            }
 
-           const proxyStream = {
-               name: `${channel.name} (Proxy HLS)`,
-               title: `${channel.name} (Proxy HLS)`,
-               url: proxyUrl,
-               behaviorHints: {
-                   notWebReady: false,
-                   bingeGroup: "tv"
-               }
-           };
+            if (!await this.checkProxyHealth(proxyUrl)) {
+                console.log('Proxy non attivo per:', channel.name);
+                return [];
+            }
 
-           this.proxyCache.set(cacheKey, proxyStream);
-           this.lastCheck.set(cacheKey, Date.now());
+            const proxyStream = {
+                name: `${channel.name} (Proxy HLS)`,
+                title: `${channel.name} (Proxy HLS)`,
+                url: proxyUrl,
+                behaviorHints: {
+                    notWebReady: false,
+                    bingeGroup: "tv"
+                }
+            };
 
-           streams.push(proxyStream);
-       } catch (error) {
-           console.error('Errore proxy per il canale:', channel.name, error.message);
-           console.error('Headers:', channel.headers);
-       }
+            this.proxyCache.set(cacheKey, proxyStream);
+            this.lastCheck.set(cacheKey, Date.now());
 
-       return streams;
-   }
+            streams.push(proxyStream);
+        } catch (error) {
+            console.error('Errore proxy per il canale:', channel.name, error.message);
+            console.error('Headers:', channel.headers);
+        }
+
+        return streams;
+    }
 }
 
 module.exports = HlsProxyManager;
