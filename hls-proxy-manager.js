@@ -1,6 +1,5 @@
 const axios = require('axios');
 const { URL } = require('url');
-const DNSResolver = require('./dns-resolver');
 
 class HlsProxyManager {
     constructor(config) {
@@ -12,55 +11,40 @@ class HlsProxyManager {
     async resolveStreamUrl(originalUrl, headers) {
         try {
             console.log(`Risoluzione URL: ${originalUrl}`);
-            console.log('Headers iniziali:', headers);
-
-            // Risolvi e valida l'URL usando il DNS resolver
-            const resolvedUrl = await DNSResolver.validateAndResolveUrl(
-                originalUrl, 
-                headers
-            );
+            
+            // User agent della playlist come prima scelta
+            const networkHeaders = {
+                ...headers,
+                'User-Agent': headers['User-Agent'] || [
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+                    'Mozilla/5.0 (X11; Linux x86_64)'
+                ][Math.floor(Math.random() * 3)],
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3',
+                'Referer': headers.Referer || 'https://vavoo.to/',
+                'Origin': headers.Origin || 'https://vavoo.to'
+            };
 
             const response = await axios({
                 method: 'get',
-                url: resolvedUrl,
-                headers: headers,
-                maxRedirects: 0,
-                validateStatus: status => status >= 200 && status < 400
+                url: originalUrl,
+                headers: networkHeaders,
+                maxRedirects: 5,
+                validateStatus: status => status < 400
             });
 
-            // Gestione redirect
-            if (response.status >= 300 && response.status < 400) {
-                const redirectUrl = response.headers.location;
-                console.log(`Redirect a: ${redirectUrl}`);
-
-                // Verifica validità URL redirect
-                try {
-                    const finalResolvedUrl = await DNSResolver.validateAndResolveUrl(
-                        redirectUrl, 
-                        headers
-                    );
-
-                    return {
-                        finalUrl: finalResolvedUrl,
-                        headers: {
-                            ...headers,
-                            ...response.headers
-                        },
-                        status: response.status
-                    };
-                } catch {
-                    // Se URL non valido, mantieni URL originale
-                    return {
-                        finalUrl: originalUrl,
-                        headers,
-                        status: 500
-                    };
-                }
-            }
+            // Gestione redirect multipli
+            const finalUrl = response.request.res.responseUrl || originalUrl;
+            
+            console.log(`URL finale: ${finalUrl}`);
 
             return {
-                finalUrl: resolvedUrl,
-                headers,
+                finalUrl,
+                headers: {
+                    ...networkHeaders,
+                    ...response.headers
+                },
                 status: response.status
             };
 
@@ -123,14 +107,14 @@ class HlsProxyManager {
         }
 
         try {
-            // Risolvi l'URL del flusso
+            // Risolvi l'URL del flusso con headers dinamici
             const { finalUrl, headers, status } = await this.resolveStreamUrl(
                 channel.url, 
                 channel.headers
             );
 
-            // Se lo status è 404, non generare lo stream
-            if (status === 404) {
+            // Verifica URL finale
+            if (status === 404 || !finalUrl) {
                 console.log(`Canale non disponibile: ${channel.name}`);
                 return streams;
             }
@@ -150,6 +134,7 @@ class HlsProxyManager {
                 return [];
             }
 
+            // Costruisci stream proxy
             const proxyStream = {
                 name: `${channel.name} (Proxy HLS)`,
                 title: `${channel.name} (Proxy HLS)`,
@@ -164,9 +149,9 @@ class HlsProxyManager {
             this.lastCheck.set(cacheKey, Date.now());
 
             streams.push(proxyStream);
+
         } catch (error) {
             console.error('Errore proxy per il canale:', channel.name, error.message);
-            console.error('Headers:', channel.headers);
         }
 
         return streams;
