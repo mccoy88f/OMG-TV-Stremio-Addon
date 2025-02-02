@@ -12,6 +12,14 @@ class PlaylistTransformer {
         return id?.toLowerCase() || '';
     }
 
+    cleanChannelName(name) {
+        return name
+            .replace(/[\(\[].*?[\)\]]/g, '') // Rimuove contenuto tra parentesi
+            .trim()                          // Rimuove spazi iniziali e finali
+            .toLowerCase()                    // Converte in minuscolo
+            .replace(/\s+/g, '');            // Rimuove tutti gli spazi
+    }
+
     async loadRemappingRules() {
         const remappingPath = path.join(__dirname, 'link.epg.remapping');
         
@@ -39,16 +47,60 @@ class PlaylistTransformer {
         }
     }
 
-    parseVLCOpts(lines, currentIndex) {
+    parseVLCOpts(lines, currentIndex, extinf) {
         const headers = {};
         let i = currentIndex;
         
-        while (i < lines.length && lines[i].startsWith('#EXTVLCOPT:')) {
-            const opt = lines[i].substring('#EXTVLCOPT:'.length).trim();
-            if (opt.startsWith('http-user-agent=')) {
-                headers['User-Agent'] = opt.substring('http-user-agent='.length);
+        while (i < lines.length) {
+            const line = lines[i].trim();
+            
+            if (line.startsWith('#EXTHTTP:')) {
+                try {
+                    const httpHeaders = JSON.parse(line.substring('#EXTHTTP:'.length));
+                    Object.assign(headers, httpHeaders);
+                } catch (e) {
+                    console.error('Errore parsing EXTHTTP:', e);
+                }
+                i++;
+            } 
+            else if (line.startsWith('#EXTVLCOPT:')) {
+                const opt = line.substring('#EXTVLCOPT:'.length).trim();
+                if (!headers['User-Agent'] && opt.startsWith('http-user-agent=')) {
+                    headers['User-Agent'] = opt.split('=')[1];
+                }
+                else if (!headers['Referer'] && opt.startsWith('http-referrer=')) {
+                    headers['Referer'] = opt.split('=')[1];
+                }
+                else if (!headers['Origin'] && opt.startsWith('http-origin=')) {
+                    headers['Origin'] = opt.split('=')[1];
+                }
+                i++;
             }
-            i++;
+            else {
+                break;
+            }
+        }
+
+        if ((!headers['User-Agent'] || !headers['Referer']) && extinf) {
+            const userAgent = extinf.match(/http-user-agent="([^"]+)"/);
+            const referrer = extinf.match(/http-referrer="([^"]+)"/);
+            
+            if (!headers['User-Agent'] && userAgent) {
+                headers['User-Agent'] = userAgent[1];
+            }
+            if (!headers['Referer'] && referrer) {
+                headers['Referer'] = referrer[1];
+            }
+        }
+
+        if (!headers['User-Agent']) {
+            headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
+        }
+        if (!headers['Referer']) {
+            headers['Referer'] = 'https://streamtape.com/';
+        }
+        if (!headers['Origin']) {
+            headers['Origin'] = 'https://streamtape.com';
         }
         
         return { headers, nextIndex: i };
@@ -67,23 +119,27 @@ class PlaylistTransformer {
 
         const groupMatch = metadata.match(/group-title="([^"]+)"/);
         const group = groupMatch ? groupMatch[1] : 'Undefined';
-
-        // Separa i generi se sono presenti più di uno
         const genres = group.split(';').map(g => g.trim());
 
         const nameParts = metadata.split(',');
         const name = nameParts[nameParts.length - 1].trim();
 
+        // Genera tvg.id se non presente
+        if (!tvgData.id) {
+            const suffix = process.env.ID_SUFFIX || '';
+            tvgData.id = this.cleanChannelName(name) + (suffix ? `.${suffix}` : '');
+        }
+
         return {
             name,
-            group: genres,  // Ora group è un array di generi
+            group: genres,
             tvg: tvgData,
             headers
         };
     }
 
     getRemappedId(channel) {
-        const originalId = channel.tvg?.id || channel.name;
+        const originalId = channel.tvg.id;
         const normalizedId = this.normalizeId(originalId);
         const remappedId = this.remappingRules.get(normalizedId);
         
@@ -96,22 +152,22 @@ class PlaylistTransformer {
     }
 
     createChannelObject(channel, channelId) {
-        const id = `tv|${channelId}`;
         const name = channel.tvg?.name || channel.name;
-    
+        const cleanName = name.replace(/\s*\(.*?\)\s*/g, '').trim();
+
         return {
-            id,
+            id: `tv|${channelId}`,
             type: 'tv',
-            name,
-            genre: channel.group,  // Ora genre è un array di generi
+            name: cleanName,
+            genre: channel.group,
             posterShape: 'square',
             poster: channel.tvg?.logo,
             background: channel.tvg?.logo,
             logo: channel.tvg?.logo,
-            description: `Canale: ${name} - ID: ${channelId}`,
+            description: `Canale: ${cleanName} - ID: ${channelId}`,
             runtime: 'LIVE',
             behaviorHints: {
-                defaultVideoId: id,
+                defaultVideoId: `tv|${channelId}`,
                 isLive: true
             },
             streamInfo: {
@@ -120,7 +176,7 @@ class PlaylistTransformer {
                 tvg: {
                     ...channel.tvg,
                     id: channelId,
-                    name
+                    name: cleanName
                 }
             }
         };
@@ -136,8 +192,7 @@ class PlaylistTransformer {
     async parseM3UContent(content) {
         const lines = content.split('\n');
         let currentChannel = null;
-        let headers = {};
-        const genres = new Set(['Undefined']);  // Usiamo un Set per evitare duplicati
+        const genres = new Set(['Undefined']);
     
         let epgUrl = null;
         if (lines[0].includes('url-tvg=')) {
@@ -152,18 +207,8 @@ class PlaylistTransformer {
             const line = lines[i].trim();
         
             if (line.startsWith('#EXTINF:')) {
-                let nextIndex = i + 1;
-                headers = {};
-            
-                while (nextIndex < lines.length && lines[nextIndex].startsWith('#EXTVLCOPT:')) {
-                    const opt = lines[nextIndex].substring('#EXTVLCOPT:'.length).trim();
-                    if (opt.startsWith('http-user-agent=')) {
-                        headers['User-Agent'] = opt.substring('http-user-agent='.length);
-                    }
-                    nextIndex++;
-                }
+                const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1, line);
                 i = nextIndex - 1;
-            
                 currentChannel = this.parseChannelFromLine(line, headers);
             } else if (line.startsWith('http') && currentChannel) {
                 const remappedId = this.getRemappedId(currentChannel);
@@ -172,8 +217,6 @@ class PlaylistTransformer {
                 if (!this.channelsMap.has(normalizedId)) {
                     const channelObj = this.createChannelObject(currentChannel, remappedId);
                     this.channelsMap.set(normalizedId, channelObj);
-                
-                    // Aggiungi i generi al Set
                     currentChannel.group.forEach(genre => genres.add(genre));
                 }
             
@@ -187,7 +230,7 @@ class PlaylistTransformer {
         console.log(`✓ Canali processati: ${this.channelsMap.size}`);
 
         return {
-            genres: Array.from(genres),  // Convertiamo il Set in un array
+            genres: Array.from(genres),
             epgUrl
         };
     }
@@ -205,7 +248,7 @@ class PlaylistTransformer {
                 ? [url] 
                 : content.split('\n').filter(line => line.trim() && line.startsWith('http'));
 
-            const allGenres = []; // Array invece di Set
+            const allGenres = [];
             const epgUrls = new Set();
             
             for (const playlistUrl of playlistUrls) {
@@ -213,7 +256,6 @@ class PlaylistTransformer {
                 const playlistResponse = await axios.get(playlistUrl);
                 const result = await this.parseM3UContent(playlistResponse.data);
                 
-                // Aggiungi solo i generi non ancora presenti
                 result.genres.forEach(genre => {
                     if (!allGenres.includes(genre)) {
                         allGenres.push(genre);
@@ -226,7 +268,7 @@ class PlaylistTransformer {
             }
 
             const finalResult = {
-                genres: allGenres, // Non ordiniamo più alfabeticamente
+                genres: allGenres,
                 channels: Array.from(this.channelsMap.values()),
                 epgUrls: Array.from(epgUrls)
             };
