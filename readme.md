@@ -1,152 +1,161 @@
 # OMG TV & OMG+ TV - Stremio Addon
 
-An add-on for Stremio to add M3U channel playlists with EPG to the catalog.
-FOR THE PLUS VERSION TO INSERT YOUR OWN LIST, visit this repository: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
+Un add-on per Stremio per aggiungere al catalogo playlist di canali M3U con EPG.
+Per la versione PLUS con supporto per playlist personalizzate, visita: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
 
-## LEGGIMI IN ITALIANO QUI 
-https://github.com/mccoy88f/OMG-TV-Stremio-Addon/blob/main/readme.it.md
+IMPORTANTE: Prima di tutto...
 
-IMPORTANT: First of all...
+<a href="https://www.buymeacoffee.com/mccoy88f"><img src="https://img.buymeacoffee.com/button-api/?text=Offrimi una birra&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" /></a>
 
-<a href="https://www.buymeacoffee.com/mccoy88f"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a beer&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" /></a>
+[Puoi anche offrirmi una birra con PayPal 🍻](https://paypal.me/mccoy88f?country.x=IT&locale.x=it_IT)
 
-[You can also send a beer with PayPal 🍻](https://paypal.me/mccoy88f?country.x=IT&locale.x=en_US)
-
-## 🚀 What's New in This Version (see below)
-
-### Key Features
-- 🔒 Base Version: **Static Playlist**: Fully hardcoded URL
-- 🔒 Plus Version: **Dynamic Playlist**: URL defined via environment variable
-- 🛡️ Simplified and more secure configuration
-- 📺 Base Version: Always up-to-date Italian TV channels with no setup required
-
-### Playlist Used
-- **Fixed multiplaylist URL**: `https://github.com/mccoy88f/OMG-TV-Stremio-Addon/tree/link.playlist`
-- **Fixed multiplaylist EPG**: `https://github.com/mccoy88f/OMG-TV-Stremio-Addon/tree/link.epg`
-- **Custom multiplaylist URL & EPG** uses the plus version: `https://github.com/mccoy88f/OMG-TV-Stremio-Addon/tree/plus`
-  
-## 🌟 Features 
+## 🌟 Funzionalità Principali
 
 ### Core
-- Channel display by category
-- Channel search by name
-- Automatic sorting by channel number
-- Data caching with automatic updates
+- Visualizzazione dei canali per categorie
+- Ricerca dei canali per nome
+- Ordinamento automatico per numero di canale
+- Cache dei dati con aggiornamento automatico
+- Supporto per playlist multiple
+- Gestione automatica degli stream duplicati
+- Cache intelligente con aggiornamento automatico ogni 12 ore
 
 ### EPG (Electronic Program Guide)
-- EPG support with detailed information
-- Display of current program
-- List of upcoming programs
+- Supporto EPG con informazioni dettagliate
+- Visualizzazione del programma in onda
+- Lista dei prossimi programmi
+- Supporto per EPG multiple
+- Sistema di remapping degli ID canali
+- Cache EPG con aggiornamento automatico ogni 12 ore
+- Supporto per file EPG compressi (gz)
 
 ### Streaming
-- Direct support for HLS streams
-- Integration with MediaFlow Proxy
-- Custom User-Agent management
+- Supporto diretto per stream HLS
+- Supporto per stream DASH MPD non criptati
+- Integrazione con MediaFlow Proxy
+- Gestione degli User-Agent personalizzati
+- Gestione Header personalizzati per ogni stream
 
-## 🛠️ Configuration
+## 🚀 Opzioni di Deployment
 
-### Supported Environment Variables
-
-#### ENABLE_EPG
-- Enable/disable EPG features
-- Values: 
-  - `no` to disable 
-- Default: enabled
-- WARNING: EPG with extracted size greater than 5/7 MB may block servers if hosted on Render.com
-
-### EPG_URL
-- Set a specific EPG url (xml o compressed)
-
-#### Timezone Configuration
-The EPG (Electronic Program Guide) data is often provided in UTC. To ensure that the program times are displayed correctly in your local timezone, you can configure the timezone offset using the TIMEZONE_OFFSET environment variable.
-
-Setting the Timezone Offset
-Format: The TIMEZONE_OFFSET must be in the format ±HH:MM. For example:
-
-+1:00 for Central European Time (CET).
--5:00 for Eastern Standard Time (EST).
-
-Default Value: If the TIMEZONE_OFFSET is not set, the add-on will default to +1:00 (CET).
-
-#### PROXY_URL and PROXY_PASSWORD
-- MediaFlow Proxy configuration
-- Optional for compatibility with Android and Web
-
-#### FORCE_PROXY
-- Forces the use of the proxy if configured, removing direct channels
-
-#### PORT
-- Server port
-- Default: 10000
-
-## 📦 Installation
-
-### Local Deployment
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the addon:
-   ```bash
-   npm start
-   ```
-
-### Deployment on Render.com
-1. Link the repository to Render
-2. Configure optional environment variables and proceed with deployment or
-3. Automatic deployment via this button (a free Render.com account is required) - Select the plus branch to activate the plus version
-
+### 1. Deploy su Render.com
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mccoy88f/OMG-TV-Stremio-Addon)
 
-IMPORTANT: If you haven't done so yet...
+1. Clicca sul pulsante sopra (richiede un account Render)
+2. Seleziona il branch 'plus' per la versione Plus
+3. Configura le variabili d'ambiente necessarie
 
-<a href="https://www.buymeacoffee.com/mccoy88f"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a beer&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" /></a>
+### 2. Deploy su Hugging Face
+1. Crea un nuovo Space su Hugging Face
+2. Seleziona "Docker" come template
+3. Usa il Dockerfile fornito
+4. Configura le variabili d'ambiente nelle impostazioni dello Space
 
+## 🛠️ Configurazione Variabili d'Ambiente
+
+### Configurazione Base
+- `M3U_URL`: URL della playlist M3U (solo versione Plus)
+  - Supporta sia singola playlist che file con lista di URL
+  - Default: URL hardcoded nella versione base
+  
+- `EPG_URL`: URL della guida EPG (solo versione Plus)
+  - Supporta sia singolo file EPG che file con lista di URL
+  - Supporta file .gz compressi
+  - Default: URL hardcoded nella versione base
+
+- `ID_SUFFIX`: Suffisso per gli ID canali
+  - Esempio: 'it' aggiungerà .it agli ID canali senza ID
+  - Se non impostata o vuota, non verrà aggiunto alcun suffisso
+  - Non ha valore di default
+
+### Configurazione EPG
+- `ENABLE_EPG`: Attiva/disattiva EPG 
+  - Valori: 'no' per disattivare
+  - Default: attivo
+  
+- `TIMEZONE_OFFSET`: Offset del fuso orario per EPG
+  - Formato: '+1:00' o '-2:00'
+  - Default: '+1:00'
+
+### Configurazione Proxy
+- `PROXY_URL`: URL del MediaFlow Proxy
+  - Opzionale
+  - Necessario per alcuni dispositivi/browser
+
+- `PROXY_PASSWORD`: Password per il proxy
+  - Richiesta se PROXY_URL è impostato
+
+- `FORCE_PROXY`: Forza l'uso del proxy
+  - Valori: 'yes' per attivare
+  - Rimuove gli stream diretti quando attivo
+
+### Configurazione Deployment
+- `PORT`: Porta del server
+  - Render.com: Default 10000
+  - Hugging Face: Default 7860
+  
+- `HOST`: Host del server
+  - Hugging Face: Default '0.0.0.0'
+
+- `BRANCH`: Branch del repository
+  - Valori: main/plus/release-candidate
+  - Usato nel deployment su Hugging Face
 
 ## 🔄 Changelog
 
+### v3.2.0
+- Aggiunto supporto per file EPG compressi
+- Aggiunta variabile ID_SUFFIX per personalizzare ID canali
+- Migliorata gestione timezone EPG
+- Ottimizzazione cache e performance
+- Supporto per deploy su Hugging Face
+- Fix minori e miglioramenti stabilità
+
 ### v3.0.0
-- Enhanced epg management
-- Management of unencrypted dash mpd streams via proxy
-- Remapper: file link.epg.remapper sync channel id from m3u to channel id from epg
+- Gestione EPG migliorata
+- Supporto stream DASH MPD
+- Sistema di remapping ID canali
+- Supporto per deployment su Hugging Face
 
 ### v2.5.0
-- Improved playlist and epg management, new logo, mutiplaylist and multiepg also from sites like pastebin
-- Improved genre/group management
-- Channels with the same id are managed as one channel but with streams from the various channels
-- Support for larger epg files with longer download timeout
+- Gestione multiplaylist e multi-EPG
+- Miglioramento gestione generi/gruppi
+- Unificazione canali con stesso ID
+- Supporto per EPG di grandi dimensioni
 
-### v2.0.0
-- 🔒 Updated playlist for the base version with active and updated EPG. Only missing EPG for Rakuten and Samsung TV channels
-- 📃 Multiplaylist - multiepg mode (plus version only): instead of directly linking to a playlist or EPG, you can insert in the variables the link to a text file containing multiple links
-- 🚀 Improved stability and ease of configuration
+## ⚠️ Note Importanti
+- EPG superiori a 5/7 MB potrebbero causare problemi su Render.com
+- Su Render.com, usa [uptime robot](https://uptimerobot.com/) per evitare lo standby del server
+- Alcuni stream potrebbero richiedere il proxy per funzionare su certi dispositivi
+- La cache viene aggiornata automaticamente ogni 12 ore
 
-## 🤝 Contributing
-1. Fork the repository
-2. Create a branch for your feature
-3. Commit your changes
-4. Push the branch
-5. Open a Pull Request
+## 📦 Installazione Locale
 
-## ⚠️ Warnings
-- EPG may not work on some free hosting services
-- Some streams may require the proxy
-- ⚠️ Render.com has a timer that puts the server on standby if not used, slowing down the restart; use [uptime](https://uptimerobot.com/) to solve the issue
+1. Clona il repository
+```bash
+git clone https://github.com/mccoy88f/OMG-TV-Stremio-Addon.git
+```
 
-## 📋 Requirements
-- Node.js 16+
-- Internet connection
-- Stremio client
+2. Installa le dipendenze
+```bash
+npm install
+```
 
-## 🔒 Disclaimer
-- I am not responsible for any illegal use of this addon
-- Content provided by third parties
-- No guarantee on channel availability
+3. Avvia l'addon
+```bash
+npm start
+```
 
-## 👏 Acknowledgments
-- Thanks to FuriousCat for the OMG name idea
-- Thanks to the entire team at https://www.reddit.com/r/Stremio_Italia/ for the support, suggestions, and guides for this addon, also available on the Telegram channel https://t.me/Stremio_ITA
+## 👏 Ringraziamenti
+- FuriousCat per l'idea del nome OMG
+- Team di [Stremio Italia](https://www.reddit.com/r/Stremio_Italia/)
+- Comunità Telegram [Stremio ITA](https://t.me/Stremio_ITA)
+- Iconic Panda per l'[icona](https://www.flaticon.com/free-icon/tv_18223703?term=tv&page=1&position=2&origin=tag&related_id=18223703)
 
-## 📜 License
-Project released under the MIT license. - Logo came from Iconic Panda: https://www.flaticon.com/free-icon/tv_18223703
+## 📜 Licenza
+Progetto rilasciato sotto licenza MIT.
+
+## ⚠️ Disclaimer
+- Non sono responsabile per l'uso illecito dell'addon
+- Contenuti forniti da terze parti
+- Nessuna garanzia sulla disponibilità dei canali
