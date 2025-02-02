@@ -50,7 +50,7 @@ IMPORTANTE: Prima di tutto...
 ### 2. Deploy su Hugging Face
 1. Crea un nuovo Space su Hugging Face
 2. Seleziona "Docker" come template
-3. Usa il Dockerfile fornito
+3. Usa il Dockerfile fornito (Dockerfile.hf in questa repo)
 4. Configura le variabili d'ambiente nelle impostazioni dello Space
 
 ## 🛠️ Configurazione Variabili d'Ambiente
