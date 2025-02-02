@@ -44,7 +44,7 @@ IMPORTANTE: Prima di tutto...
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mccoy88f/OMG-TV-Stremio-Addon)
 
 1. Clicca sul pulsante sopra (richiede un account Render)
-2. Seleziona il branch 'plus' per la versione Plus
+2. Seleziona il branch 'main' (usa le altre solo per test)
 3. Configura le variabili d'ambiente necessarie
 
 ### 2. Deploy su Hugging Face
@@ -100,7 +100,7 @@ IMPORTANTE: Prima di tutto...
   - Hugging Face: Default '0.0.0.0'
 
 - `BRANCH`: Branch del repository
-  - Valori: main/plus/release-candidate
+  - Valore: main (use le altre solo per test)
   - Usato nel deployment su Hugging Face
 
 ## 🔄 Changelog
