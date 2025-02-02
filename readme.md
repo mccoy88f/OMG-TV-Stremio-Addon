@@ -100,7 +100,7 @@ IMPORTANT: First of all...
   - Hugging Face: Default '0.0.0.0'
 
 - `BRANCH`: Repository branch
-  - Values: main (use the other ones only for test)
+  - Value: main (use the other ones only for test)
   - Used in Hugging Face deployment
 
 ## 🔄 Changelog
