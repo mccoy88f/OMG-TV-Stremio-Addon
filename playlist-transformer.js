@@ -126,7 +126,8 @@ class PlaylistTransformer {
 
         // Genera tvg.id se non presente
         if (!tvgData.id) {
-            tvgData.id = this.cleanChannelName(name) + '.it';
+            const suffix = process.env.ID_SUFFIX || '';
+            tvgData.id = this.cleanChannelName(name) + (suffix ? `.${suffix}` : '');
         }
 
         return {
