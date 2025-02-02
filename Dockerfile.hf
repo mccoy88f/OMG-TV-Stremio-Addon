@@ -1,22 +1,26 @@
 FROM node:16-slim
 
+# Install git
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Clone the repository and checkout specific branch
+RUN git clone https://github.com/mccoy88f/OMG-TV-Stremio-Addon.git . && \
+    git checkout main
 
 # Install dependencies
-RUN npm install --production
+RUN npm install
 
-# Copy application code
-COPY . .
-
-# Expose the port
+# Expose the port (Hugging Face uses 7860)
 EXPOSE 7860
 
 # Set environment variables
 ENV PORT=7860
 ENV HOST=0.0.0.0
+ENV M3U_URL=https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.playlist
+ENV EPG_URL=https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.epg
+ENV ENABLE_EPG=true
 
-# Start the application 
+# Start the application
 CMD ["node", "index.js"]
