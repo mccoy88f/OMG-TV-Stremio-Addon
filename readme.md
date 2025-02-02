@@ -1,161 +1,163 @@
 # OMG TV & OMG+ TV - Stremio Addon
 
-Un add-on per Stremio per aggiungere al catalogo playlist di canali M3U con EPG.
-Per la versione PLUS con supporto per playlist personalizzate, visita: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
+[🇮🇹 Leggi in italiano](README.it.md)
 
-IMPORTANTE: Prima di tutto...
+A Stremio addon to add M3U playlist channels with EPG support to your catalog.
+For the PLUS version with custom playlist support, visit: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
 
-<a href="https://www.buymeacoffee.com/mccoy88f"><img src="https://img.buymeacoffee.com/button-api/?text=Offrimi una birra&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" /></a>
+IMPORTANT: First of all...
 
-[Puoi anche offrirmi una birra con PayPal 🍻](https://paypal.me/mccoy88f?country.x=IT&locale.x=it_IT)
+<a href="https://www.buymeacoffee.com/mccoy88f"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a beer&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" /></a>
 
-## 🌟 Funzionalità Principali
+[You can also buy me a beer with PayPal 🍻](https://paypal.me/mccoy88f?country.x=IT&locale.x=it_IT)
+
+## 🌟 Main Features
 
 ### Core
-- Visualizzazione dei canali per categorie
-- Ricerca dei canali per nome
-- Ordinamento automatico per numero di canale
-- Cache dei dati con aggiornamento automatico
-- Supporto per playlist multiple
-- Gestione automatica degli stream duplicati
-- Cache intelligente con aggiornamento automatico ogni 12 ore
+- Channel browsing by categories
+- Channel search by name
+- Automatic channel number sorting
+- Data caching with auto-update
+- Multiple playlist support
+- Automatic duplicate stream management
+- Smart cache with 12-hour auto-update
 
 ### EPG (Electronic Program Guide)
-- Supporto EPG con informazioni dettagliate
-- Visualizzazione del programma in onda
-- Lista dei prossimi programmi
-- Supporto per EPG multiple
-- Sistema di remapping degli ID canali
-- Cache EPG con aggiornamento automatico ogni 12 ore
-- Supporto per file EPG compressi (gz)
+- EPG support with detailed information
+- Currently airing program display
+- Upcoming programs list
+- Multiple EPG support
+- Channel ID remapping system
+- EPG cache with 12-hour auto-update
+- Compressed EPG file support (gz)
 
 ### Streaming
-- Supporto diretto per stream HLS
-- Supporto per stream DASH MPD non criptati
-- Integrazione con MediaFlow Proxy
-- Gestione degli User-Agent personalizzati
-- Gestione Header personalizzati per ogni stream
+- Direct HLS stream support
+- Unencrypted DASH MPD stream support
+- MediaFlow Proxy integration
+- Custom User-Agent management
+- Custom headers for each stream
 
-## 🚀 Opzioni di Deployment
+## 🚀 Deployment Options
 
-### 1. Deploy su Render.com
+### 1. Deploy on Render.com
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mccoy88f/OMG-TV-Stremio-Addon)
 
-1. Clicca sul pulsante sopra (richiede un account Render)
-2. Seleziona il branch 'plus' per la versione Plus
-3. Configura le variabili d'ambiente necessarie
+1. Click the button above (requires a Render account)
+2. Select 'plus' branch for Plus version
+3. Configure required environment variables
 
-### 2. Deploy su Hugging Face
-1. Crea un nuovo Space su Hugging Face
-2. Seleziona "Docker" come template
-3. Usa il Dockerfile fornito
-4. Configura le variabili d'ambiente nelle impostazioni dello Space
+### 2. Deploy on Hugging Face
+1. Create a new Space on Hugging Face
+2. Select "Docker" as template
+3. Use the provided Dockerfile
+4. Configure environment variables in Space settings
 
-## 🛠️ Configurazione Variabili d'Ambiente
+## 🛠️ Environment Variables Configuration
 
-### Configurazione Base
-- `M3U_URL`: URL della playlist M3U (solo versione Plus)
-  - Supporta sia singola playlist che file con lista di URL
-  - Default: URL hardcoded nella versione base
+### Basic Configuration
+- `M3U_URL`: M3U playlist URL (Plus version only)
+  - Supports both single playlist and URL list file
+  - Default: Hardcoded URL in base version
   
-- `EPG_URL`: URL della guida EPG (solo versione Plus)
-  - Supporta sia singolo file EPG che file con lista di URL
-  - Supporta file .gz compressi
-  - Default: URL hardcoded nella versione base
+- `EPG_URL`: EPG guide URL (Plus version only)
+  - Supports both single EPG file and URL list file
+  - Supports compressed .gz files
+  - Default: Hardcoded URL in base version
 
-- `ID_SUFFIX`: Suffisso per gli ID canali
-  - Esempio: 'it' aggiungerà .it agli ID canali senza ID
-  - Se non impostata o vuota, non verrà aggiunto alcun suffisso
-  - Non ha valore di default
+- `ID_SUFFIX`: Suffix for channel IDs
+  - Example: 'it' will add .it to channel IDs without ID
+  - If not set or empty, no suffix will be added
+  - No default value
 
-### Configurazione EPG
-- `ENABLE_EPG`: Attiva/disattiva EPG 
-  - Valori: 'no' per disattivare
-  - Default: attivo
+### EPG Configuration
+- `ENABLE_EPG`: Enable/disable EPG 
+  - Values: 'no' to disable
+  - Default: enabled
   
-- `TIMEZONE_OFFSET`: Offset del fuso orario per EPG
-  - Formato: '+1:00' o '-2:00'
+- `TIMEZONE_OFFSET`: Timezone offset for EPG
+  - Format: '+1:00' or '-2:00'
   - Default: '+1:00'
 
-### Configurazione Proxy
-- `PROXY_URL`: URL del MediaFlow Proxy
-  - Opzionale
-  - Necessario per alcuni dispositivi/browser
+### Proxy Configuration
+- `PROXY_URL`: MediaFlow Proxy URL
+  - Optional
+  - Required for some devices/browsers
 
-- `PROXY_PASSWORD`: Password per il proxy
-  - Richiesta se PROXY_URL è impostato
+- `PROXY_PASSWORD`: Proxy password
+  - Required if PROXY_URL is set
 
-- `FORCE_PROXY`: Forza l'uso del proxy
-  - Valori: 'yes' per attivare
-  - Rimuove gli stream diretti quando attivo
+- `FORCE_PROXY`: Force proxy usage
+  - Values: 'yes' to enable
+  - Removes direct streams when active
 
-### Configurazione Deployment
-- `PORT`: Porta del server
+### Deployment Configuration
+- `PORT`: Server port
   - Render.com: Default 10000
   - Hugging Face: Default 7860
   
-- `HOST`: Host del server
+- `HOST`: Server host
   - Hugging Face: Default '0.0.0.0'
 
-- `BRANCH`: Branch del repository
-  - Valori: main/plus/release-candidate
-  - Usato nel deployment su Hugging Face
+- `BRANCH`: Repository branch
+  - Values: main/plus/release-candidate
+  - Used in Hugging Face deployment
 
 ## 🔄 Changelog
 
 ### v3.2.0
-- Aggiunto supporto per file EPG compressi
-- Aggiunta variabile ID_SUFFIX per personalizzare ID canali
-- Migliorata gestione timezone EPG
-- Ottimizzazione cache e performance
-- Supporto per deploy su Hugging Face
-- Fix minori e miglioramenti stabilità
+- Added compressed EPG file support
+- Added ID_SUFFIX variable for custom channel IDs
+- Improved EPG timezone handling
+- Cache and performance optimization
+- Hugging Face deployment support
+- Minor fixes and stability improvements
 
 ### v3.0.0
-- Gestione EPG migliorata
-- Supporto stream DASH MPD
-- Sistema di remapping ID canali
-- Supporto per deployment su Hugging Face
+- Improved EPG management
+- DASH MPD stream support
+- Channel ID remapping system
+- Hugging Face deployment support
 
 ### v2.5.0
-- Gestione multiplaylist e multi-EPG
-- Miglioramento gestione generi/gruppi
-- Unificazione canali con stesso ID
-- Supporto per EPG di grandi dimensioni
+- Multi-playlist and multi-EPG management
+- Improved genre/group handling
+- Same ID channel unification
+- Large EPG file support
 
-## ⚠️ Note Importanti
-- EPG superiori a 5/7 MB potrebbero causare problemi su Render.com
-- Su Render.com, usa [uptime robot](https://uptimerobot.com/) per evitare lo standby del server
-- Alcuni stream potrebbero richiedere il proxy per funzionare su certi dispositivi
-- La cache viene aggiornata automaticamente ogni 12 ore
+## ⚠️ Important Notes
+- EPG files larger than 5/7 MB might cause issues on Render.com
+- On Render.com, use [uptime robot](https://uptimerobot.com/) to prevent server standby
+- Some streams might require proxy for certain devices
+- Cache automatically updates every 12 hours
 
-## 📦 Installazione Locale
+## 📦 Local Installation
 
-1. Clona il repository
+1. Clone the repository
 ```bash
 git clone https://github.com/mccoy88f/OMG-TV-Stremio-Addon.git
 ```
 
-2. Installa le dipendenze
+2. Install dependencies
 ```bash
 npm install
 ```
 
-3. Avvia l'addon
+3. Start the addon
 ```bash
 npm start
 ```
 
-## 👏 Ringraziamenti
-- FuriousCat per l'idea del nome OMG
-- Team di [Stremio Italia](https://www.reddit.com/r/Stremio_Italia/)
-- Comunità Telegram [Stremio ITA](https://t.me/Stremio_ITA)
-- Iconic Panda per l'[icona](https://www.flaticon.com/free-icon/tv_18223703?term=tv&page=1&position=2&origin=tag&related_id=18223703)
+## 👏 Acknowledgments
+- FuriousCat for the OMG name idea
+- [Stremio Italia](https://www.reddit.com/r/Stremio_Italia/) team
+- [Stremio ITA](https://t.me/Stremio_ITA) Telegram community
+- Iconic Panda for [icon](https://www.flaticon.com/free-icon/tv_18223703?term=tv&page=1&position=2&origin=tag&related_id=18223703)
 
-## 📜 Licenza
-Progetto rilasciato sotto licenza MIT.
+## 📜 License
+Project released under MIT license.
 
 ## ⚠️ Disclaimer
-- Non sono responsabile per l'uso illecito dell'addon
-- Contenuti forniti da terze parti
-- Nessuna garanzia sulla disponibilità dei canali
+- Not responsible for illegal use of the addon
+- Content provided by third parties
+- No guarantee on channel availability
