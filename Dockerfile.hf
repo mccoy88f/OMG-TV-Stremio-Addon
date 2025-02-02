@@ -1,13 +1,16 @@
 FROM node:16-slim
 
+# Define build argument for branch
+ARG BRANCH=main
+
 # Install git
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Clone the repository and checkout specific branch
+# Clone the repository and checkout specified branch
 RUN git clone https://github.com/mccoy88f/OMG-TV-Stremio-Addon.git . && \
-    git checkout main
+    git checkout ${BRANCH}
 
 # Install dependencies
 RUN npm install
@@ -15,12 +18,9 @@ RUN npm install
 # Expose the port (Hugging Face uses 7860)
 EXPOSE 7860
 
-# Set environment variables
+# Set essential environment variables for Hugging Face
 ENV PORT=7860
 ENV HOST=0.0.0.0
-ENV M3U_URL=https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.playlist
-ENV EPG_URL=https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.epg
-ENV ENABLE_EPG=true
 
 # Start the application
 CMD ["node", "index.js"]
