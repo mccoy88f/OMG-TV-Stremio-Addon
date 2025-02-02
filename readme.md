@@ -2,7 +2,7 @@
 
 [🇮🇹 Leggi in italiano](leggimi.md)
 
-A Stremio addon to add M3U playlist channels with EPG support to your catalog.
+A Stremio addon to add M3U playlist (IPTV) channels with EPG support to your catalog.
 For the PLUS version with custom playlist support, visit: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
 
 IMPORTANT: First of all...
