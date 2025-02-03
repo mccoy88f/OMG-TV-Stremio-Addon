@@ -40,7 +40,9 @@ class PlaylistTransformer {
                 }
             });
 
-            console.log(`✓ Caricate ${ruleCount} regole di remapping`);
+            if (ruleCount > 0) {
+                console.log(`✓ Caricate ${ruleCount} regole di remapping`);
+            }
         } catch (error) {
             if (error.code !== 'ENOENT') {
                 console.error('❌ Errore remapping:', error.message);
@@ -82,15 +84,19 @@ class PlaylistTransformer {
             }
         }
 
-        if ((!headers['User-Agent'] || !headers['Referer']) && extinf) {
+        if ((!headers['User-Agent'] || !headers['Referer'] || !headers['Origin']) && extinf) {
             const userAgent = extinf.match(/http-user-agent="([^"]+)"/);
             const referrer = extinf.match(/http-referrer="([^"]+)"/);
-            
+            const origin = extinf.match(/http-origin="([^"]+)"/);
+
             if (!headers['User-Agent'] && userAgent) {
                 headers['User-Agent'] = userAgent[1];
             }
             if (!headers['Referer'] && referrer) {
                 headers['Referer'] = referrer[1];
+            }
+            if (!headers['Origin'] && origin) {
+                headers['Origin'] = origin[1];
             }
         }
 
@@ -197,7 +203,7 @@ class PlaylistTransformer {
         else if (channel.streamInfo.urls.length === 0) {
             channel.streamInfo.urls.push({
                 url: null,
-                name: "Nessun flusso disponibile per questo canale, configura una playlist m3u per questo canale"
+                name: "Nessun flusso disponibile per questo canale, configura una playlist m3u."
             });
         }
     }
@@ -212,7 +218,6 @@ class PlaylistTransformer {
             const match = lines[0].match(/url-tvg="([^"]+)"/);
             if (match) {
                 epgUrl = match[1];
-                console.log('✓ EPG URL trovato:', epgUrl);
             }
         }
     
@@ -248,11 +253,8 @@ class PlaylistTransformer {
             }
         }
 
-        console.log(`✓ Canali processati: ${this.channelsMap.size}`);
         if (this.channelsWithoutStreams.length > 0) {
-            console.log(`⚠️ Canali senza flussi riproducibili: ${this.channelsWithoutStreams.length}`);
-            console.log('Lista canali senza flussi:');
-            this.channelsWithoutStreams.forEach(name => console.log(`- ${name}`));
+            console.warn(`⚠️ Canali senza flussi riproducibili: ${this.channelsWithoutStreams.length}`);
         }
 
         return {
@@ -263,9 +265,6 @@ class PlaylistTransformer {
 
     async loadAndTransform(url) {
         try {
-            console.log('=== Inizio Processamento Playlist ===');
-            console.log(`URL: ${url}`);
-            
             await this.loadRemappingRules();
             
             const response = await axios.get(url);
@@ -278,7 +277,6 @@ class PlaylistTransformer {
             const epgUrls = new Set();
             
             for (const playlistUrl of playlistUrls) {
-                console.log(`\nProcesso playlist: ${playlistUrl}`);
                 const playlistResponse = await axios.get(playlistUrl);
                 const result = await this.parseM3UContent(playlistResponse.data);
                 
@@ -298,13 +296,6 @@ class PlaylistTransformer {
                 channels: Array.from(this.channelsMap.values()),
                 epgUrls: Array.from(epgUrls)
             };
-
-            console.log('\n=== Riepilogo ===');
-            console.log(`✓ Canali totali: ${finalResult.channels.length}`);
-            console.log(`✓ Canali riproducibili: ${finalResult.channels.length - this.channelsWithoutStreams.length}`);
-            console.log(`✓ Canali senza flussi: ${this.channelsWithoutStreams.length}`);
-            console.log(`✓ Generi: ${finalResult.genres.length}`);
-            console.log(`✓ URL EPG: ${finalResult.epgUrls.length}`);
 
             this.channelsMap.clear();
             this.channelsWithoutStreams = [];
