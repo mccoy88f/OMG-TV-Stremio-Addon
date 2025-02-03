@@ -153,6 +153,7 @@ npm start
 - Team di [Stremio Italia](https://www.reddit.com/r/Stremio_Italia/)
 - Comunità Telegram [Stremio ITA](https://t.me/Stremio_ITA)
 - Iconic Panda per l'[icona](https://www.flaticon.com/free-icon/tv_18223703?term=tv&page=1&position=2&origin=tag&related_id=18223703)
+- Video Demo: https://www.vecteezy.com/video/1803236-no-signal-bad-tv
 
 ## 📜 Licenza
 Progetto rilasciato sotto licenza MIT.
