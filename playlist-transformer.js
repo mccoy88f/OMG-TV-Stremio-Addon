@@ -222,7 +222,7 @@ class PlaylistTransformer {
                 const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1, line);
                 i = nextIndex - 1;
                 currentChannel = this.parseChannelFromLine(line, headers);
-            } else if (line.startsWith('http') && currentChannel) {
+            } else if ((line.startsWith('http') || line.toLowerCase() === 'null') && currentChannel) {
                 const remappedId = this.getRemappedId(currentChannel);
                 const normalizedId = this.normalizeId(remappedId);
             
@@ -299,6 +299,12 @@ class PlaylistTransformer {
                     );
                 }
             });
+
+            console.log(`✓ Totale canali processati: ${finalResult.channels.length}`);
+            console.log(`✓ Totale generi trovati: ${finalResult.genres.length}`);
+            if (epgUrls.size > 0) {
+                console.log(`✓ URL EPG trovati: ${epgUrls.size}`);
+            }
 
             this.channelsMap.clear();
             this.channelsWithoutStreams = [];
