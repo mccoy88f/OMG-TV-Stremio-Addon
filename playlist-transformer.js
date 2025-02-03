@@ -6,6 +6,7 @@ class PlaylistTransformer {
     constructor() {
         this.remappingRules = new Map();
         this.channelsMap = new Map();
+        this.channelsWithoutStreams = [];
     }
 
     normalizeId(id) {
@@ -14,10 +15,10 @@ class PlaylistTransformer {
 
     cleanChannelName(name) {
         return name
-            .replace(/[\(\[].*?[\)\]]/g, '') // Rimuove contenuto tra parentesi
-            .trim()                          // Rimuove spazi iniziali e finali
-            .toLowerCase()                    // Converte in minuscolo
-            .replace(/\s+/g, '');            // Rimuove tutti gli spazi
+            .replace(/[\(\[].*?[\)\]]/g, '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '');
     }
 
     async loadRemappingRules() {
@@ -124,7 +125,6 @@ class PlaylistTransformer {
         const nameParts = metadata.split(',');
         const name = nameParts[nameParts.length - 1].trim();
 
-        // Genera tvg.id se non presente
         if (!tvgData.id) {
             const suffix = process.env.ID_SUFFIX || '';
             tvgData.id = this.cleanChannelName(name) + (suffix ? `.${suffix}` : '');
@@ -183,10 +183,12 @@ class PlaylistTransformer {
     }
 
     addStreamToChannel(channel, url, name) {
-        channel.streamInfo.urls.push({
-            url,
-            name
-        });
+        if (url && url.toLowerCase() !== 'null') {
+            channel.streamInfo.urls.push({
+                url,
+                name
+            });
+        }
     }
 
     async parseM3UContent(content) {
@@ -227,7 +229,20 @@ class PlaylistTransformer {
             }
         }
 
+        // Verifica canali senza flussi
+        this.channelsWithoutStreams = [];
+        for (const [id, channel] of this.channelsMap.entries()) {
+            if (channel.streamInfo.urls.length === 0) {
+                this.channelsWithoutStreams.push(channel.name);
+            }
+        }
+
         console.log(`✓ Canali processati: ${this.channelsMap.size}`);
+        if (this.channelsWithoutStreams.length > 0) {
+            console.log(`⚠️ Canali senza flussi riproducibili: ${this.channelsWithoutStreams.length}`);
+            console.log('Lista canali senza flussi:');
+            this.channelsWithoutStreams.forEach(name => console.log(`- ${name}`));
+        }
 
         return {
             genres: Array.from(genres),
@@ -274,11 +289,14 @@ class PlaylistTransformer {
             };
 
             console.log('\n=== Riepilogo ===');
-            console.log(`✓ Canali: ${finalResult.channels.length}`);
+            console.log(`✓ Canali totali: ${finalResult.channels.length}`);
+            console.log(`✓ Canali riproducibili: ${finalResult.channels.length - this.channelsWithoutStreams.length}`);
+            console.log(`✓ Canali senza flussi: ${this.channelsWithoutStreams.length}`);
             console.log(`✓ Generi: ${finalResult.genres.length}`);
             console.log(`✓ URL EPG: ${finalResult.epgUrls.length}`);
 
             this.channelsMap.clear();
+            this.channelsWithoutStreams = [];
             return finalResult;
 
         } catch (error) {
