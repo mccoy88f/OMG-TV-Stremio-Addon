@@ -1,21 +1,21 @@
 #EXTM3U
-#EXTINF:-1 tvg-id="rai1.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Rai_1_-_Logo_2016.svg/512px-Rai_1_-_Logo_2016.svg.png" tvg-chno="1",Rai 1
+#EXTINF:-1 tvg-id="rai1.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Rai_1_-_Logo_2016.svg/512px-Rai_1_-_Logo_2016.svg.png" tvg-chno="1" group-title="Generalista",Rai 1
 null
-#EXTINF:-1 tvg-id="rai2.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Rai_2_-_Logo_2016.svg/512px-Rai_2_-_Logo_2016.svg.png" tvg-chno="2",Rai 2
+#EXTINF:-1 tvg-id="rai2.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Rai_2_-_Logo_2016.svg/512px-Rai_2_-_Logo_2016.svg.png" tvg-chno="2" group-title="Generalista",Rai 2
 null
-#EXTINF:-1 tvg-id="rai3.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Rai_3_-_Logo_2016.svg/512px-Rai_3_-_Logo_2016.svg.png" tvg-chno="3",Rai 3
+#EXTINF:-1 tvg-id="rai3.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Rai_3_-_Logo_2016.svg/512px-Rai_3_-_Logo_2016.svg.png" tvg-chno="3" group-title="Generalista",Rai 3
 null
-#EXTINF:-1 tvg-id="rete4.it" tvg-logo="https://upload.wikimedia.org/wikipedia/en/thumb/5/5f/Rete_4_2018.svg/512px-Rete_4_2018.svg.png" tvg-chno="4",Rete 4
+#EXTINF:-1 tvg-id="rete4.it" tvg-logo="https://upload.wikimedia.org/wikipedia/en/thumb/5/5f/Rete_4_2018.svg/512px-Rete_4_2018.svg.png" tvg-chno="4" group-title="Generalista",Rete 4
 null
-#EXTINF:-1 tvg-id="canale5.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Canale_5_-_2018_logo.svg/512px-Canale_5_-_2018_logo.svg.png" tvg-chno="5",Canale 5
+#EXTINF:-1 tvg-id="canale5.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Canale_5_-_2018_logo.svg/512px-Canale_5_-_2018_logo.svg.png" tvg-chno="5" group-title="Generalista",Canale 5
 null
-#EXTINF:-1 tvg-id="italia1.it" tvg-logo="https://upload.wikimedia.org/wikipedia/en/thumb/e/e2/Italia_1.svg/512px-Italia_1.svg.png" tvg-chno="6",Italia 1
+#EXTINF:-1 tvg-id="italia1.it" tvg-logo="https://upload.wikimedia.org/wikipedia/en/thumb/e/e2/Italia_1.svg/512px-Italia_1.svg.png" tvg-chno="6" group-title="Generalista",Italia 1
 null
-#EXTINF:-1 tvg-id="la7.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/LA7_-_Logo_2011.svg/512px-LA7_-_Logo_2011.svg.png" tvg-chno="7",La7
+#EXTINF:-1 tvg-id="la7.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/LA7_-_Logo_2011.svg/512px-LA7_-_Logo_2011.svg.png" tvg-chno="7" group-title="Generalista",La7
 null
-#EXTINF:-1 tvg-id="tv8.it" tvg-logo="https://upload.wikimedia.org/wikipedia/it/thumb/6/6d/TV8_Logo_2016.svg/512px-TV8_Logo_2016.svg.png" tvg-chno="8",TV8
+#EXTINF:-1 tvg-id="tv8.it" tvg-logo="https://upload.wikimedia.org/wikipedia/it/thumb/6/6d/TV8_Logo_2016.svg/512px-TV8_Logo_2016.svg.png" tvg-chno="8" group-title="Generalista",TV8
 null
-#EXTINF:-1 tvg-id="nove.it" tvg-logo="https://i.imgur.com/rTjIkGO.png" tvg-chno="9",Nove
+#EXTINF:-1 tvg-id="nove.it" tvg-logo="https://i.imgur.com/rTjIkGO.png" tvg-chno="9" group-title="Generalista",Nove
 null
 #EXTINF:-1 tvg-id="20.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/20_Mediaset_2018.svg/512px-20_Mediaset_2018.svg.png" tvg-chno="20",20
 null
@@ -29,7 +29,7 @@ null
 null
 #EXTINF:-1 tvg-id="raipremium.it" tvg-logo="https://i.imgur.com/40g5Urz.png" tvg-chno="25",Rai Premium
 null
-#EXTINF:-1 tvg-id="la7d.it" tvg-logo="https://i.imgur.com/sM0A3GD.png" tvg-chno="29",LA7D
+#EXTINF:-1 tvg-id="la7d.it" tvg-logo="https://i.imgur.com/sM0A3GD.png" tvg-chno="29",La7d
 null
 #EXTINF:-1 tvg-id="la5.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/La5_Mediaset.svg/512px-La5_Mediaset.svg.png" tvg-chno="30",La 5
 null
@@ -49,15 +49,15 @@ null
 null
 #EXTINF:-1 tvg-id="raiyoyo.it" tvg-logo="https://i.imgur.com/9gCxiDy.png" tvg-chno="43",Rai Yoyo
 null
-#EXTINF:-1 tvg-id="frisbee.it" tvg-logo="https://i.imgur.com/U1MF1vR.png" tvg-chno="44",-frisbee-
+#EXTINF:-1 tvg-id="frisbee.it" tvg-logo="https://i.imgur.com/U1MF1vR.png" tvg-chno="44",Frisbee
 null
 #EXTINF:-1 tvg-id="super.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Super%21_logo_2021.svg/512px-Super%21_logo_2021.svg.png" tvg-chno="47",Super!
 null
-#EXTINF:-1 tvg-id="rainews24.it" tvg-logo="https://i.imgur.com/n2u57y3.png" tvg-chno="48",Rai News 24
+#EXTINF:-1 tvg-id="rainews24.it" tvg-logo="https://i.imgur.com/n2u57y3.png" tvg-chno="48",RaiNews24
 null
 #EXTINF:-1 tvg-id="italia2.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Logo_Italia2.svg/512px-Logo_Italia2.svg.png" tvg-chno="49",Italia 2
 null
-#EXTINF:-1 tvg-id="skytg24.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Sky_TG24_-_Logo_2021.svg/512px-Sky_TG24_-_Logo_2021.svg.png" tvg-chno="50",Sky TG24
+#EXTINF:-1 tvg-id="skytg24.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Sky_TG24_-_Logo_2021.svg/512px-Sky_TG24_-_Logo_2021.svg.png" tvg-chno="50",Sky Tg24
 null
 #EXTINF:-1 tvg-id="tgcom24.it" tvg-logo="https://i.imgur.com/fPmvbGH.png" tvg-chno="51",Tgcom24
 null
@@ -67,9 +67,9 @@ null
 null
 #EXTINF:-1 tvg-id="raiscuola.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Rai_Scuola_-_Logo_2017.svg/512px-Rai_Scuola_-_Logo_2017.svg.png" tvg-chno="57",Rai Scuola
 null
-#EXTINF:-1 tvg-id="raisport.it" tvg-logo="https://i.imgur.com/6PEevOM.png" tvg-chno="58",RAI Sport
+#EXTINF:-1 tvg-id="raisport.it" tvg-logo="https://i.imgur.com/6PEevOM.png" tvg-chno="58",RaiSport
 null
-#EXTINF:-1 tvg-id="motortrend.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Motor_Trend_logo.svg/512px-Motor_Trend_logo.svg.png" tvg-chno="59",Motor Trend HD
+#EXTINF:-1 tvg-id="motortrend.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Motor_Trend_logo.svg/512px-Motor_Trend_logo.svg.png" tvg-chno="59",Motor Trend
 null
 #EXTINF:-1 tvg-id="sportitalia.it" tvg-logo="https://i.imgur.com/0CJGGgd.png" tvg-chno="60",Sportitalia
 null
@@ -91,23 +91,19 @@ null
 null
 #EXTINF:-1 tvg-id="60940a07d88ba90007b9cb71" tvg-logo="https://images.pluto.tv/channels/60940a07d88ba90007b9cb71/colorLogoPNG.png",16 Anni e Incinta
 null
-#EXTINF:-1 tvg-id="20/sky-intrattenimento/443" tvg-logo="",20
-null
-#EXTINF:-1 tvg-id="20hd.it" tvg-logo="https://i.imgur.com/ygKoWan.png",20Mediaset HD
-null
-#EXTINF:-1 tvg-id="twentysevenhd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Twentyseven_logo.svg/512px-Twentyseven_logo.svg.png",27Twentyseven HD
+#EXTINF:-1 tvg-id="twentysevenhd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Twentyseven_logo.svg/512px-Twentyseven_logo.svg.png",27Twentyseven
 null
 #EXTINF:-1 tvg-id="acisporttv.it" tvg-logo="https://i.imgur.com/U8cHMOt.png",ACI Sport Tv
 null
 #EXTINF:-1 tvg-id="64ec5c6644fe100009d114ae" tvg-logo="https://images.pluto.tv/channels/64ec5c6644fe100009d114ae/colorLogoPNG.png",Affare Fatto
 null
-#EXTINF:-1 tvg-id="aljazeeraenglishhd.qa" tvg-logo="https://d2n0069hmnqmmx.cloudfront.net/epgdata/1.0/newchanlogos/512/512/skychb1023.png",Al Jazeera Intl. HD
+#EXTINF:-1 tvg-id="aljazeeraenglish.qa" tvg-logo="https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Aljazeera_eng.svg/512px-Aljazeera_eng.svg.png",Al Jazeera
 null
 #EXTINF:-1 tvg-id="66d9aa4315d2c60008d4ac40" tvg-logo="https://images.pluto.tv/channels/66d9aa4315d2c60008d4ac40/colorLogoPNG.png",Alice Nevers
 null
 #EXTINF:-1 tvg-id="60802d37ee238e0007c94e64" tvg-logo="https://images.pluto.tv/channels/60802d37ee238e0007c94e64/colorLogoPNG.png",Andromeda
 null
-#EXTINF:-1 tvg-id="93" tvg-logo="",Arte HD
+#EXTINF:-1 tvg-id="93" tvg-logo="",Arte
 null
 #EXTINF:-1 tvg-id="638f286445264d00084ec6dc" tvg-logo="https://images.pluto.tv/channels/638f286445264d00084ec6dc/colorLogoPNG.png",Autostop per il cielo
 null
@@ -135,25 +131,17 @@ null
 null
 #EXTINF:-1 tvg-id="boomerang.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Boomerang_2014_logo.svg/512px-Boomerang_2014_logo.svg.png",Boomerang
 null
-#EXTINF:-1 tvg-id="boomerangplus1.it" tvg-logo="https://i.imgur.com/Ou4GIBh.png",Boomerang +1
+#EXTINF:-1 tvg-id="boomerangplus1.it" tvg-logo="https://i.imgur.com/Ou4GIBh.png",Boomerang + 1
 null
-#EXTINF:-1 tvg-id="cacciaepesca.it" tvg-logo="https://i.imgur.com/uZr0cXB.png",CACCIA e Pesca
-null
-#EXTINF:-1 tvg-id="pescaecaccia.it" tvg-logo="https://i.imgur.com/nW5dJBl.png",Caccia e PESCA
-null
-#EXTINF:-1 tvg-id="canale5hd.it" tvg-logo="https://i.imgur.com/B9rgcy9.png",Canale 5 HD
+#EXTINF:-1 tvg-id="cacciaepesca.it" tvg-logo="https://i.imgur.com/uZr0cXB.png",Caccia e Pesca
 null
 #EXTINF:-1 tvg-id="65a939fad77d450008863835" tvg-logo="https://images.pluto.tv/channels/65a939fad77d450008863835/colorLogoPNG.png",Car Chase
 null
 #EXTINF:-1 tvg-id="66a0eea88561260008b1c5d0" tvg-logo="https://images.pluto.tv/channels/66a0eea88561260008b1c5d0/colorLogoPNG.png",Carabinieri
 null
-#EXTINF:-1 tvg-id="cartoonnetworkplus1.it" tvg-logo="https://i.imgur.com/ZgnZzlL.png",Cartoon +1
-null
 #EXTINF:-1 tvg-id="cartoonnetwork.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Cartoon_Network_2010_logo.svg/512px-Cartoon_Network_2010_logo.svg.png",Cartoon Network
 null
-#EXTINF:-1 tvg-id="cartoonnetworkhd.it" tvg-logo="https://i.imgur.com/QjXPjln.png",Cartoon Network HD
-null
-#EXTINF:-1 tvg-id="cartoonito.it" tvg-logo="https://i.imgur.com/6vYWCD0.png",CARTOONITO DTT
+#EXTINF:-1 tvg-id="cartoonito.it" tvg-logo="https://i.imgur.com/6vYWCD0.png",Cartoonito
 null
 #EXTINF:-1 tvg-id="626bb07a58b8dd0007e9f36e" tvg-logo="https://images.pluto.tv/channels/626bb07a58b8dd0007e9f36e/colorLogoPNG.png",Case Pazzesche
 null
@@ -163,29 +151,23 @@ null
 null
 #EXTINF:-1 tvg-id="66a8c7aefe11e500085b1587" tvg-logo="https://images.pluto.tv/channels/66a8c7aefe11e500085b1587/colorLogoPNG.png",Cherif
 null
-#EXTINF:-1 tvg-id="cielo.it" tvg-logo="https://i.imgur.com/tWUy3yx.png",cielo
-null
-#EXTINF:-1 tvg-id="cielo-hd/sky-intrattenimento/17" tvg-logo="",Cielo HD
+#EXTINF:-1 tvg-id="cielo.it" tvg-logo="https://i.imgur.com/tWUy3yx.png",Cielo
 null
 #EXTINF:-1 tvg-id="65cb78b83a116800079e2e35" tvg-logo="https://images.pluto.tv/channels/65cb78b83a116800079e2e35/colorLogoPNG.png",Cin Cin
 null
-#EXTINF:-1 tvg-id="cine34hd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Cine34_logo.svg/512px-Cine34_logo.svg.png",Cine34 HD
-null
 #EXTINF:-1 tvg-id="671754d8e482950008962aaf" tvg-logo="https://images.pluto.tv/channels/671754d8e482950008962aaf/colorLogoPNG_1730889294434.png",Cinema Poliziottesco
 null
-#EXTINF:-1 tvg-id="classcnbc.it" tvg-logo="https://i.imgur.com/3Ei5VHa.png",Class CNBC
+#EXTINF:-1 tvg-id="classcnbc.it" tvg-logo="https://i.imgur.com/3Ei5VHa.png",Class-Cnbc
 null
-#EXTINF:-1 tvg-id="classicahd.it" tvg-logo="https://i.imgur.com/UJL3ibv.png",Classica HD
+#EXTINF:-1 tvg-id="classicahd.it" tvg-logo="https://i.imgur.com/UJL3ibv.png",Classica
+null
+#EXTINF:-1 tvg-id="cartoonnetworkplus1.it" tvg-logo="https://i.imgur.com/ZgnZzlL.png",CN +1
 null
 #EXTINF:-1 tvg-id="cnbceurope.uk" tvg-logo="https://i.imgur.com/B6sfpDa.png",CNBC
 null
-#EXTINF:-1 tvg-id="194" tvg-logo="",CNBC
-null
-#EXTINF:-1 tvg-id="dth#10713" tvg-logo="",CNBC HD
-null
 #EXTINF:-1 tvg-id="66c45ba803e3b20008d8c294" tvg-logo="https://images.pluto.tv/channels/66c45ba803e3b20008d8c294/colorLogoPNG.png",CNN Fast
 null
-#EXTINF:-1 tvg-id="cnninternationaleurope.us" tvg-logo="https://i.imgur.com/dfxefQw.png",CNN Intl.
+#EXTINF:-1 tvg-id="cnninternationaleurope.us" tvg-logo="https://i.imgur.com/dfxefQw.png",CNN Intl
 null
 #EXTINF:-1 tvg-id="comedycentralplus1.it" tvg-logo="https://i.imgur.com/2cdWTrt.png",Comedy +1
 null
@@ -197,29 +179,25 @@ null
 null
 #EXTINF:-1 tvg-id="dazn/dazn/459" tvg-logo="",DAZN
 null
-#EXTINF:-1 tvg-id="deajunior.it" tvg-logo="https://i.imgur.com/vBNBCNd.png",DeAJunior
+#EXTINF:-1 tvg-id="deajunior.it" tvg-logo="https://i.imgur.com/vBNBCNd.png",DeA Junior
 null
 #EXTINF:-1 tvg-id="deakids.it" tvg-logo="https://i.imgur.com/ixnJAuq.png",DeAKids
 null
-#EXTINF:-1 tvg-id="deakidsplus1.it" tvg-logo="https://i.imgur.com/2rAUs8S.png",DeAKids +1
+#EXTINF:-1 tvg-id="deakidsplus1.it" tvg-logo="https://i.imgur.com/2rAUs8S.png",DeAKids+1
 null
 #EXTINF:-1 tvg-id="66c3139c21a4740008466116" tvg-logo="https://images.pluto.tv/channels/66c3139c21a4740008466116/colorLogoPNG.png",Desi Play TV
 null
 #EXTINF:-1 tvg-id="66461e4394d5580008cfd9c5" tvg-logo="https://images.pluto.tv/channels/66461e4394d5580008cfd9c5/colorLogoPNG.png",DFB Play TV
 null
-#EXTINF:-1 tvg-id="discoverychannelplus1.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/2019_Discovery_logo.svg/512px-2019_Discovery_logo.svg.png",Discovery +1
+#EXTINF:-1 tvg-id="discoverychannelplus1.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/2019_Discovery_logo.svg/512px-2019_Discovery_logo.svg.png",Discovery Ch +1
 null
-#EXTINF:-1 tvg-id="discoverychannel.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/2019_Discovery_logo.svg/512px-2019_Discovery_logo.svg.png",Discovery Channel HD
+#EXTINF:-1 tvg-id="discoverychannel.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/2019_Discovery_logo.svg/512px-2019_Discovery_logo.svg.png",Discovery Channel
 null
-#EXTINF:-1 tvg-id="discoverychannelhd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/2019_Discovery_logo.svg/512px-2019_Discovery_logo.svg.png",Discovery HD
-null
-#EXTINF:-1 tvg-id="discoveryscience.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Discovery_science_new_logo_2017.png/512px-Discovery_science_new_logo_2017.png",Discovery Science HD
+#EXTINF:-1 tvg-id="discoveryscience.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Discovery_science_new_logo_2017.png/512px-Discovery_science_new_logo_2017.png",Discovery Science
 null
 #EXTINF:-1 tvg-id="dmax.it" tvg-logo="https://i.imgur.com/uGd9fnn.png",DMAX
 null
 #EXTINF:-1 tvg-id="dmaxhd.it" tvg-logo="https://i.imgur.com/uGd9fnn.png",DMAX HD
-null
-#EXTINF:-1 tvg-id="dmax-hd/sky-intrattenimento/27" tvg-logo="",DMAX HD
 null
 #EXTINF:-1 tvg-id="62e7f8db27ce19000732d1aa" tvg-logo="https://images.pluto.tv/channels/62e7f8db27ce19000732d1aa/colorLogoPNG.png",Doctor Who
 null
@@ -233,15 +211,11 @@ null
 null
 #EXTINF:-1 tvg-id="equtv.it" tvg-logo="https://i.imgur.com/qGwFGQ4.png",EQUtv
 null
-#EXTINF:-1 tvg-id="euronewsenglish.fr" tvg-logo="https://i.imgur.com/8t9mdg9.png",Euronews
-null
 #EXTINF:-1 tvg-id="euronewsitalian.fr" tvg-logo="https://i.imgur.com/8t9mdg9.png",Euronews
 null
-#EXTINF:-1 tvg-id="61b86ea479a4390007c6d5fc" tvg-logo="https://images.pluto.tv/channels/61b86ea479a4390007c6d5fc/colorLogoPNG.png",Euronews
+#EXTINF:-1 tvg-id="eurosport1.it" tvg-logo="https://i.imgur.com/olQJgm7.png",Eurosport
 null
-#EXTINF:-1 tvg-id="eurosport2.it" tvg-logo="https://i.imgur.com/f56dHgR.png",Eurosport 2 HD
-null
-#EXTINF:-1 tvg-id="eurosport1.it" tvg-logo="https://i.imgur.com/olQJgm7.png",Eurosport HD
+#EXTINF:-1 tvg-id="eurosport2.it" tvg-logo="https://i.imgur.com/f56dHgR.png",Eurosport 2
 null
 #EXTINF:-1 tvg-id="60940ebad67fd900072382db" tvg-logo="https://images.pluto.tv/channels/60940ebad67fd900072382db/colorLogoPNG.png",Ex On The Beach
 null
@@ -255,43 +229,25 @@ null
 null
 #EXTINF:-1 tvg-id="660bfc4424e1d000085b5f93" tvg-logo="https://images.pluto.tv/channels/660bfc4424e1d000085b5f93/colorLogoPNG.png",FIFA+
 null
-#EXTINF:-1 tvg-id="focushd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/it/thumb/1/11/Focus_Logo.svg/512px-Focus_Logo.svg.png",Focus HD
-null
-#EXTINF:-1 tvg-id="foodnetworkhd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Food_Network_New_Logo.png/512px-Food_Network_New_Logo.png",Food Network HD
-null
 #EXTINF:-1 tvg-id="foodnetwork.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Food_Network_New_Logo.png/512px-Food_Network_New_Logo.png",FoodNetwork
 null
 #EXTINF:-1 tvg-id="64ec5cf50f73a800081310a5" tvg-logo="https://images.pluto.tv/channels/64ec5cf50f73a800081310a5/colorLogoPNG.png",Forensic Files
+null
+#EXTINF:-1 tvg-id="fox.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/FOX_wordmark-orange.svg/512px-FOX_wordmark-orange.svg.png",Fox
 null
 #EXTINF:-1 tvg-id="foxplus1.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/FOX_wordmark-orange.svg/512px-FOX_wordmark-orange.svg.png",Fox +1
 null
 #EXTINF:-1 tvg-id="foxbusinessnetwork.us" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Fox_Business.svg/512px-Fox_Business.svg.png",Fox Business
 null
-#EXTINF:-1 tvg-id="fox.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/FOX_wordmark-orange.svg/512px-FOX_wordmark-orange.svg.png",Fox HD
-null
 #EXTINF:-1 tvg-id="foxnewschannel.us" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Fox_News_Channel_logo.svg/512px-Fox_News_Channel_logo.svg.png",Fox News
 null
 #EXTINF:-1 tvg-id="france24french.fr" tvg-logo="https://i.imgur.com/u8N6uoj.png",France 24
 null
-#EXTINF:-1 tvg-id="france-24/252" tvg-logo="",France 24
-null
 #EXTINF:-1 tvg-id="france24english.fr" tvg-logo="https://i.imgur.com/B76eSg2.png",France 24 English
 null
-#EXTINF:-1 tvg-id="france24englishhd.fr" tvg-logo="https://i.imgur.com/B76eSg2.png",France 24 English HD
-null
-#EXTINF:-1 tvg-id="france24frenchhd.fr" tvg-logo="https://i.imgur.com/u8N6uoj.png",France 24 Francais HD
-null
-#EXTINF:-1 tvg-id="frisbee/sky-bambini/246" tvg-logo="",Frisbee
-null
-#EXTINF:-1 tvg-id="gamberorossochannelhd.it" tvg-logo="https://i.imgur.com/x5cwb1q.png",Gambero Rosso HD
-null
-#EXTINF:-1 tvg-id="gamberorossochannel.it" tvg-logo="https://i.imgur.com/x5cwb1q.png",Gambero Rosso HD
+#EXTINF:-1 tvg-id="gamberorossochannel.it" tvg-logo="https://i.imgur.com/x5cwb1q.png",Gambero Rosso
 null
 #EXTINF:-1 tvg-id="619263ee9541940007d20d60" tvg-logo="https://images.pluto.tv/channels/619263ee9541940007d20d60/colorLogoPNG.png",Geordie Shore
-null
-#EXTINF:-1 tvg-id="giallo/sky-intrattenimento/244" tvg-logo="",Giallo
-null
-#EXTINF:-1 tvg-id="giallohd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Giallo_-_Logo_2014.svg/512px-Giallo_-_Logo_2014.svg.png",GIALLO HD
 null
 #EXTINF:-1 tvg-id="gm24.it" tvg-logo="https://i.imgur.com/PoXd0su.png",GM24
 null
@@ -303,17 +259,13 @@ null
 null
 #EXTINF:-1 tvg-id="hgtv.it" tvg-logo="https://i.imgur.com/ejPii8T.png",HGTV - Home&Garden
 null
-#EXTINF:-1 tvg-id="hgtvhd.it" tvg-logo="https://i.imgur.com/ejPii8T.png",HGTV HD
+#EXTINF:-1 tvg-id="history.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/History_%282021%29.svg/512px-History_%282021%29.svg.png",History
 null
 #EXTINF:-1 tvg-id="historyplus1.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/History_Logo.svg/512px-History_Logo.svg.png",History +1
 null
-#EXTINF:-1 tvg-id="historyhd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/History_%282021%29.svg/512px-History_%282021%29.svg.png",History HD
-null
-#EXTINF:-1 tvg-id="history.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/History_%282021%29.svg/512px-History_%282021%29.svg.png",History HD
-null
 #EXTINF:-1 tvg-id="66c35c0c92b1af0008c8e83a" tvg-logo="https://images.pluto.tv/channels/66c35c0c92b1af0008c8e83a/colorLogoPNG.png",Horror Club
 null
-#EXTINF:-1 tvg-id="horsetvhd.it" tvg-logo="https://i.imgur.com/9lctpnP.png",Horse TV HD
+#EXTINF:-1 tvg-id="horsetvhd.it" tvg-logo="https://i.imgur.com/9lctpnP.png",Horse TV
 null
 #EXTINF:-1 tvg-id="62442f28afe626000747f195" tvg-logo="https://images.pluto.tv/channels/62442f28afe626000747f195/colorLogoPNG-1652710570039.png",I Jefferson
 null
@@ -321,7 +273,7 @@ null
 null
 #EXTINF:-1 tvg-id="6602acadb2abe500081cf28a" tvg-logo="https://images.pluto.tv/channels/6602acadb2abe500081cf28a/colorLogoPNG.png",I soliti idioti
 null
-#EXTINF:-1 tvg-id="i24newsenglishworld.il" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/LOGO_i24NEWS.png/512px-LOGO_i24NEWS.png",i24news
+#EXTINF:-1 tvg-id="i24newsenglishworld.il" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/LOGO_i24NEWS.png/512px-LOGO_i24NEWS.png",I24news
 null
 #EXTINF:-1 tvg-id="60e4507a06171800072339a3" tvg-logo="https://images.pluto.tv/channels/60e4507a06171800072339a3/colorLogoPNG.png",Il Banco dei Pugni
 null
@@ -331,31 +283,19 @@ null
 null
 #EXTINF:-1 tvg-id="intertv.it" tvg-logo="https://i.imgur.com/FUTqh2L.png",Inter TV
 null
-#EXTINF:-1 tvg-id="irishd.it" tvg-logo="https://i.imgur.com/ZLnSLh4.png",Iris HD
-null
-#EXTINF:-1 tvg-id="italia1hd.it" tvg-logo="https://i.imgur.com/6mYr74i.png",Italia 1 HD
-null
-#EXTINF:-1 tvg-id="italia-2/sky-intrattenimento/191" tvg-logo="",Italia 2
-null
 #EXTINF:-1 tvg-id="7gold.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/7gold.jpg/512px-7gold.jpg",Italia 7 Gold
+null
+#EXTINF:-1 tvg-id="italia2hd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Logo_Italia2.svg/512px-Logo_Italia2.svg.png",Italia2
 null
 #EXTINF:-1 tvg-id="6093f48c95132a00075fd859" tvg-logo="https://images.pluto.tv/channels/6093f48c95132a00075fd859/colorLogoPNG.png",Just for Laughs
 null
-#EXTINF:-1 tvg-id="k2/sky-bambini/245" tvg-logo="",K2
+#EXTINF:-1 tvg-id="kbsworld.kr" tvg-logo="https://i.imgur.com/7DqgELX.png",KBS
 null
 #EXTINF:-1 tvg-id="rsila1.ch" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/RSI_La_1_2012.svg/512px-RSI_La_1_2012.svg.png",La 1
 null
 #EXTINF:-1 tvg-id="rsila2.ch" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/RSI_La_2_2012.svg/512px-RSI_La_2_2012.svg.png",La 2
 null
-#EXTINF:-1 tvg-id="la-5/sky-intrattenimento/190" tvg-logo="",La 5
-null
-#EXTINF:-1 tvg-id="la5hd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/La5_Mediaset.svg/512px-La5_Mediaset.svg.png",La 5 HD
-null
-#EXTINF:-1 tvg-id="la7dhd.it" tvg-logo="https://i.imgur.com/sM0A3GD.png",LA7 HD
-null
 #EXTINF:-1 tvg-id="laziostylechannel.it" tvg-logo="https://i.imgur.com/vDB8HFq.png",Lazio Style Channel
-null
-#EXTINF:-1 tvg-id="laziostylechannelhd.it" tvg-logo="https://i.imgur.com/vDB8HFq.png",Lazio Style HD
 null
 #EXTINF:-1 tvg-id="60a2837f8154ab0007c4dcdf" tvg-logo="https://images.pluto.tv/channels/60a2837f8154ab0007c4dcdf/colorLogoPNG.png",Le sorelle McLeod
 null
@@ -369,13 +309,9 @@ null
 null
 #EXTINF:-1 tvg-id="6349279ed5023700078f2bc2" tvg-logo="https://images.pluto.tv/channels/6349279ed5023700078f2bc2/colorLogoPNG.png",Mai dire sì
 null
-#EXTINF:-1 tvg-id="mediaset-extra/sky-intrattenimento/194" tvg-logo="",Mediaset Extra
-null
-#EXTINF:-1 tvg-id="mediasetextrahd.it" tvg-logo="https://i.imgur.com/G51Lvah.png",Mediaset Extra HD
-null
-#EXTINF:-1 tvg-id="italia2hd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Logo_Italia2.svg/512px-Logo_Italia2.svg.png",Mediaset Italia2 HD
-null
 #EXTINF:-1 tvg-id="65cb71d711ced70008205ec0" tvg-logo="https://images.pluto.tv/channels/65cb71d711ced70008205ec0/colorLogoPNG.png",Medium
+null
+#EXTINF:-1 tvg-id="mezzo.fr" tvg-logo="https://i.imgur.com/auNdGeW.png",MEZZO
 null
 #EXTINF:-1 tvg-id="milantv.it" tvg-logo="https://i.imgur.com/gAMQfUw.png",Milan TV
 null
@@ -385,47 +321,45 @@ null
 null
 #EXTINF:-1 tvg-id="65bce7f1d77d450008b3a430" tvg-logo="https://images.pluto.tv/channels/65bce7f1d77d450008b3a430/colorLogoPNG.png",Monster Jam
 null
-#EXTINF:-1 tvg-id="motortrendhd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Motor_Trend_logo.svg/512px-Motor_Trend_logo.svg.png",Motor Trend HD
-null
-#EXTINF:-1 tvg-id="motor-trend-hd/sky-doc-e-lifestyle/444" tvg-logo="",Motor Trend HD
-null
 #EXTINF:-1 tvg-id="mtv.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/MTV-2021.svg/512px-MTV-2021.svg.png",MTV
 null
-#EXTINF:-1 tvg-id="mtvhd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/MTV-2021.svg/512px-MTV-2021.svg.png",MTV HD
-null
-#EXTINF:-1 tvg-id="mtvmusic.it" tvg-logo="https://i.imgur.com/Vyu5Mx4.png",MTV Music
+#EXTINF:-1 tvg-id="mtvmusic.it" tvg-logo="https://i.imgur.com/Vyu5Mx4.png",Mtv Music
 null
 #EXTINF:-1 tvg-id="179" tvg-logo="",Museum
 null
 #EXTINF:-1 tvg-id="60802c209a26320007c92ad5" tvg-logo="https://images.pluto.tv/channels/60802c209a26320007c92ad5/colorLogoPNG.png",Mutant X
 null
+#EXTINF:-1 tvg-id="myzentv4k.fr" tvg-logo="https://i.imgur.com/hjEKyR1.png",MyZen TV
+null
+#EXTINF:-1 tvg-id="nasatvuhd.us" tvg-logo="https://i.imgur.com/3R6ejrG.png",NASA
+null
+#EXTINF:-1 tvg-id="nationalgeographic.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Natgeologo.svg/512px-Natgeologo.svg.png",Nat Geo
+null
+#EXTINF:-1 tvg-id="nationalgeographicplus1.it" tvg-logo="https://i.imgur.com/5IVRucB.png",Nat Geo +1
+null
+#EXTINF:-1 tvg-id="nationalgeographicwild.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/National_Geographic_Wild_logo.svg/512px-National_Geographic_Wild_logo.svg.png",Nat Geo Wild
+null
 #EXTINF:-1 tvg-id="nationalgeographicwildplus1.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/National_Geographic_Wild_logo.svg/512px-National_Geographic_Wild_logo.svg.png",Nat Geo Wild +1
-null
-#EXTINF:-1 tvg-id="nationalgeographic.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Natgeologo.svg/512px-Natgeologo.svg.png",National Geo HD
-null
-#EXTINF:-1 tvg-id="nationalgeographicwild.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/National_Geographic_Wild_logo.svg/512px-National_Geographic_Wild_logo.svg.png",National Geographic Wild
-null
-#EXTINF:-1 tvg-id="nationalgeographicplus1.it" tvg-logo="https://i.imgur.com/5IVRucB.png",NationalGeo +1
 null
 #EXTINF:-1 tvg-id="610a9ebe8c2ac2000734776e" tvg-logo="https://images.pluto.tv/channels/610a9ebe8c2ac2000734776e/colorLogoPNG.png",Naturescape
 null
-#EXTINF:-1 tvg-id="dth#6862" tvg-logo="",NHK World TV HD
+#EXTINF:-1 tvg-id="dth#6862" tvg-logo="",NHK World TV
 null
-#EXTINF:-1 tvg-id="nickjr.it" tvg-logo="https://i.imgur.com/6p3eFgf.png",Nick Jr
+#EXTINF:-1 tvg-id="nhkworldjapan.jp" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/NHK_World-Japan_TV.svg/512px-NHK_World-Japan_TV.svg.png",NHK WORLD-JAPAN
 null
-#EXTINF:-1 tvg-id="nickjrplus1.it" tvg-logo="https://i.imgur.com/umRg8vF.png",Nick Jr +1
+#EXTINF:-1 tvg-id="nickjr.it" tvg-logo="https://i.imgur.com/6p3eFgf.png",Nick Junior
+null
+#EXTINF:-1 tvg-id="nickjrplus1.it" tvg-logo="https://i.imgur.com/umRg8vF.png",Nick Juniorc +1
 null
 #EXTINF:-1 tvg-id="nickelodeon.it" tvg-logo="https://i.imgur.com/E84jnP8.png",Nickelodeon
 null
-#EXTINF:-1 tvg-id="nickelodeonplus1.it" tvg-logo="https://i.imgur.com/Q2Re7IX.png",Nickelodeon +1
-null
-#EXTINF:-1 tvg-id="nove/sky-intrattenimento/238" tvg-logo="",Nove
-null
-#EXTINF:-1 tvg-id="novehd.it" tvg-logo="https://i.imgur.com/rTjIkGO.png",NOVE HD
+#EXTINF:-1 tvg-id="nickelodeonplus1.it" tvg-logo="https://i.imgur.com/Q2Re7IX.png",Nickelodeon + 1
 null
 #EXTINF:-1 tvg-id="65a67ace0d9ab400080b8f6f" tvg-logo="https://images.pluto.tv/channels/65a67ace0d9ab400080b8f6f/colorLogoPNG.png",NUMB3RS
 null
 #EXTINF:-1 tvg-id="608017cbe375e400070cc981" tvg-logo="https://images.pluto.tv/channels/608017cbe375e400070cc981/colorLogoPNG.png",People are Awesome
+null
+#EXTINF:-1 tvg-id="pescaecaccia.it" tvg-logo="https://i.imgur.com/nW5dJBl.png",Pesca e Caccia
 null
 #EXTINF:-1 tvg-id="654a299cab05240008a12639" tvg-logo="https://images.pluto.tv/channels/654a299cab05240008a12639/colorLogoPNG.png",PFL MMA
 null
@@ -519,47 +453,35 @@ null
 null
 #EXTINF:-1 tvg-id="qvc/sky-doc-e-lifestyle/242" tvg-logo="",QVC
 null
-#EXTINF:-1 tvg-id="radioitaliatrendtvhd.it" tvg-logo="https://i.imgur.com/HNrKqGM.png",Radio Italia Trend Tv HD
+#EXTINF:-1 tvg-id="radiofrecciahd.it" tvg-logo="https://i.imgur.com/RxeRlar.png",Radio Freccia
 null
-#EXTINF:-1 tvg-id="radioitaliatvhd.it" tvg-logo="https://i.imgur.com/XqNhQp6.png",Radio Italia TV HD
+#EXTINF:-1 tvg-id="radioitaliatrendtvhd.it" tvg-logo="https://i.imgur.com/HNrKqGM.png",Radio Italia Trend Tv
 null
 #EXTINF:-1 tvg-id="radiomontecarlotv.it" tvg-logo="https://i.imgur.com/by9XvWF.png",Radio Monte Carlo
 null
-#EXTINF:-1 tvg-id="radiofrecciahd.it" tvg-logo="https://i.imgur.com/RxeRlar.png",RADIOFRECCIA HD
+#EXTINF:-1 tvg-id="radionorbatv.it" tvg-logo="https://i.imgur.com/Tucoyzy.png",Radionorba TV
 null
-#EXTINF:-1 tvg-id="radionorbatv.it" tvg-logo="https://i.imgur.com/Tucoyzy.png",RADIONORBA TV
+#EXTINF:-1 tvg-id="rai-radio-2" tvg-logo="",RAI RADIO 2
 null
-#EXTINF:-1 tvg-id="rai1hd.it" tvg-logo="https://i.imgur.com/0H9sGp3.png",Rai 1 HD
+#EXTINF:-1 tvg-id="raisport.it" tvg-logo="https://i.imgur.com/b7md85o.png",Rai Sport
 null
-#EXTINF:-1 tvg-id="rai2hd.it" tvg-logo="https://i.imgur.com/fvAcZ02.png",Rai 2 HD
+#EXTINF:-1 tvg-id="raiplay" tvg-logo="",RAIPLAY
 null
-#EXTINF:-1 tvg-id="rai3hd.it" tvg-logo="https://i.imgur.com/VYgkKzj.png",Rai 3 HD
+#EXTINF:-1 tvg-id="raiplay-2" tvg-logo="",RAIPLAY 2
 null
-#EXTINF:-1 tvg-id="raisporthd.it" tvg-logo="https://i.imgur.com/b7md85o.png",Rai Sport + HD
+#EXTINF:-1 tvg-id="raiplay-3" tvg-logo="",RAIPLAY 3
 null
 #EXTINF:-1 tvg-id="realtime.it" tvg-logo="https://i.imgur.com/SPlk2Gx.png",Real Time
-null
-#EXTINF:-1 tvg-id="realtimehd.it" tvg-logo="https://i.imgur.com/SPlk2Gx.png",Real Time HD
-null
-#EXTINF:-1 tvg-id="real-time-hd/sky-intrattenimento/22" tvg-logo="",Real Time HD
 null
 #EXTINF:-1 tvg-id="65f955ff18036500084e88fc" tvg-logo="https://images.pluto.tv/channels/65f955ff18036500084e88fc/colorLogoPNG.png",Realmadrid TV
 null
 #EXTINF:-1 tvg-id="634926e4b51d2d00077819a2" tvg-logo="https://images.pluto.tv/channels/634926e4b51d2d00077819a2/colorLogoPNG.png",Renegade
 null
-#EXTINF:-1 tvg-id="rete4hd.it" tvg-logo="https://i.imgur.com/9l0nHN4.png",Rete 4 HD
-null
 #EXTINF:-1 tvg-id="651581ba6a84140008593586" tvg-logo="https://images.pluto.tv/channels/651581ba6a84140008593586/colorLogoPNG.png",Robot Wars by MECH+
 null
-#EXTINF:-1 tvg-id="rt-doc-hd/sky-news/128" tvg-logo="",RT Doc HD
-null
-#EXTINF:-1 tvg-id="rtl1025tvhd.it" tvg-logo="https://i.imgur.com/75qUdR7.png",RTL 102.5 HD
-null
-#EXTINF:-1 tvg-id="rtl-1025-tv/sky-musica/243" tvg-logo="",RTL 102.5 TV
+#EXTINF:-1 tvg-id="rt-doc-hd/sky-news/128" tvg-logo="",RT Doc
 null
 #EXTINF:-1 tvg-id="russia-today/sky-news/125" tvg-logo="",Russia Today
-null
-#EXTINF:-1 tvg-id="sanmarinortv.sm" tvg-logo="https://i.imgur.com/ZJSWusT.png",San Marino RTV
 null
 #EXTINF:-1 tvg-id="63eb57d6c111bc0008fe2658" tvg-logo="https://images.pluto.tv/channels/63eb57d6c111bc0008fe2658/colorLogoPNG.png",Sanctuary
 null
@@ -571,17 +493,13 @@ null
 null
 #EXTINF:-1 tvg-id="skyarteplus1hd.it" tvg-logo="https://i.imgur.com/IK4Hlwt.png",Sky Arte +1
 null
-#EXTINF:-1 tvg-id="sky-arte-hd-400/sky-doc-e-lifestyle/88" tvg-logo="",Sky Arte HD-400
-null
 #EXTINF:-1 tvg-id="skyatlantic.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Sky_Atlantic_-_Logo_2020.svg/512px-Sky_Atlantic_-_Logo_2020.svg.png",Sky Atlantic
-null
-#EXTINF:-1 tvg-id="dth#8453" tvg-logo="",Sky Atlantic +1
 null
 #EXTINF:-1 tvg-id="skyatlanticmaratone.it" tvg-logo="https://i.imgur.com/4gU9diR.png",Sky Atlantic +1
 null
 #EXTINF:-1 tvg-id="skycinemaaction.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Sky_Cinema_Action_-_Logo_2021.svg/512px-Sky_Cinema_Action_-_Logo_2021.svg.png",Sky Cinema Action
 null
-#EXTINF:-1 tvg-id="skycinemacollection.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Sky_Cinema_Collection_-_Logo_2021.svg/512px-Sky_Cinema_Collection_-_Logo_2021.svg.png",Sky Cinema Collection HD
+#EXTINF:-1 tvg-id="skycinemacollection.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Sky_Cinema_Collection_-_Logo_2021.svg/512px-Sky_Cinema_Collection_-_Logo_2021.svg.png",Sky Cinema Collection
 null
 #EXTINF:-1 tvg-id="skycinemacomedy.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Sky_Cinema_Comedy_-_Logo_2021.svg/512px-Sky_Cinema_Comedy_-_Logo_2021.svg.png",Sky Cinema Comedy
 null
@@ -601,59 +519,23 @@ null
 null
 #EXTINF:-1 tvg-id="skycinemaunoplus24.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Sky_Cinema_Uno_%2B24_-_Logo_2021.svg/512px-Sky_Cinema_Uno_%2B24_-_Logo_2021.svg.png",Sky Cinema Uno +24
 null
-#EXTINF:-1 tvg-id="dth#8336" tvg-logo="",Sky Crime
-null
-#EXTINF:-1 tvg-id="dth#11216" tvg-logo="",Sky Crime
+#EXTINF:-1 tvg-id="skycrime" tvg-logo="",Sky Crime
 null
 #EXTINF:-1 tvg-id="skydocumentaries.it" tvg-logo="https://i.imgur.com/bCJZZo6.png",Sky Documentaries
 null
-#EXTINF:-1 tvg-id="skydocumentariesplus1.it" tvg-logo="https://i.imgur.com/S3xtu4a.png",Sky Documentaries +1
-null
-#EXTINF:-1 tvg-id="sky-documentaries-1-hd/sky-intrattenimento/596" tvg-logo="",Sky Documentaries +1 HD
-null
-#EXTINF:-1 tvg-id="sky-documentaries-hd/sky-intrattenimento/595" tvg-logo="",Sky Documentaries HD
-null
 #EXTINF:-1 tvg-id="skyinvestigation.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Sky_Investigation.svg/512px-Sky_Investigation.svg.png",Sky Investigation
 null
-#EXTINF:-1 tvg-id="skyinvestigationplus1.it" tvg-logo="https://i.imgur.com/TzSGkSY.png",Sky Investigation +1 HD
+#EXTINF:-1 tvg-id="skyinvestigationplus1.it" tvg-logo="https://i.imgur.com/TzSGkSY.png",Sky Investigation +1
 null
 #EXTINF:-1 tvg-id="skymeteo24.it" tvg-logo="https://i.imgur.com/9lsHabx.png",Sky Meteo24
 null
 #EXTINF:-1 tvg-id="skynature.it" tvg-logo="https://i.imgur.com/NWKIfXy.png",Sky Nature
 null
-#EXTINF:-1 tvg-id="sky-nature-hd/sky-intrattenimento/597" tvg-logo="",Sky Nature HD
-null
-#EXTINF:-1 tvg-id="dth#445" tvg-logo="",Sky News
-null
 #EXTINF:-1 tvg-id="sky-news/sky-news/118" tvg-logo="",Sky News
 null
 #EXTINF:-1 tvg-id="skyserie.it" tvg-logo="https://i.imgur.com/ofaaIKf.png",Sky Serie
 null
-#EXTINF:-1 tvg-id="dth#11247" tvg-logo="",Sky Serie +1
-null
-#EXTINF:-1 tvg-id="sky-serie-1-hd/sky-intrattenimento/592" tvg-logo="",Sky Serie +1 HD
-null
-#EXTINF:-1 tvg-id="dth#617" tvg-logo="",Sky Sport
-null
-#EXTINF:-1 tvg-id="dth#11490" tvg-logo="",Sky Sport
-null
-#EXTINF:-1 tvg-id="dth#11491" tvg-logo="",Sky Sport
-null
-#EXTINF:-1 tvg-id="dth#11492" tvg-logo="",Sky Sport
-null
-#EXTINF:-1 tvg-id="dth#11494" tvg-logo="",Sky Sport
-null
-#EXTINF:-1 tvg-id="dth#11496" tvg-logo="",Sky Sport
-null
-#EXTINF:-1 tvg-id="dth#11497" tvg-logo="",Sky Sport
-null
-#EXTINF:-1 tvg-id="skysport8.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Sky_Sport_-_Logo_2020.svg/512px-Sky_Sport_-_Logo_2020.svg.png",Sky Sport
-null
-#EXTINF:-1 tvg-id="skysport9.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Sky_Sport_-_Logo_2020.svg/512px-Sky_Sport_-_Logo_2020.svg.png",Sky Sport
-null
-#EXTINF:-1 tvg-id="skysport10.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Sky_Sport_-_Logo_2020.svg/512px-Sky_Sport_-_Logo_2020.svg.png",Sky Sport
-null
-#EXTINF:-1 tvg-id="skysport11.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Sky_Sport_-_Logo_2020.svg/512px-Sky_Sport_-_Logo_2020.svg.png",Sky Sport
+#EXTINF:-1 tvg-id="sky-serie-1-hd/sky-intrattenimento/592" tvg-logo="",Sky Serie +1
 null
 #EXTINF:-1 tvg-id="sky-sport-251/sky-sport/584" tvg-logo="",Sky Sport 251
 null
@@ -679,7 +561,7 @@ null
 null
 #EXTINF:-1 tvg-id="skysport4k.it" tvg-logo="https://i.imgur.com/J74SMxj.png",Sky Sport 4K
 null
-#EXTINF:-1 tvg-id="skysportaction.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Sky_Sport_Action.svg/512px-Sky_Sport_Action.svg.png",Sky Sport Action HD
+#EXTINF:-1 tvg-id="skysportaction.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Sky_Sport_Action.svg/512px-Sky_Sport_Action.svg.png",Sky Sport Action
 null
 #EXTINF:-1 tvg-id="skysportarena.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Sky_Sport_Arena_-_Logo_2020.svg/512px-Sky_Sport_Arena_-_Logo_2020.svg.png",Sky Sport Arena
 null
@@ -687,7 +569,7 @@ null
 null
 #EXTINF:-1 tvg-id="skysportf1.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Sky_Sport_F1_-_Logo_2020.svg/512px-Sky_Sport_F1_-_Logo_2020.svg.png",Sky Sport F1
 null
-#EXTINF:-1 tvg-id="skysportfootball.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Sky_Sport_Football_-_Logo_2020.svg/512px-Sky_Sport_Football_-_Logo_2020.svg.png",Sky Sport Football HD
+#EXTINF:-1 tvg-id="skysportfootball.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Sky_Sport_Football_-_Logo_2020.svg/512px-Sky_Sport_Football_-_Logo_2020.svg.png",Sky Sport Football
 null
 #EXTINF:-1 tvg-id="skysportgolf.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Sky_Sport_Golf_Logo_2022.svg/512px-Sky_Sport_Golf_Logo_2022.svg.png",Sky Sport Golf
 null
@@ -703,11 +585,11 @@ null
 null
 #EXTINF:-1 tvg-id="skysport24.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Sky_Sport_24_-_Logo_2020.svg/512px-Sky_Sport_24_-_Logo_2020.svg.png",Sky Sport24
 null
-#EXTINF:-1 tvg-id="sky-tg24/sky-news/240" tvg-logo="",Sky Tg24
-null
 #EXTINF:-1 tvg-id="skyuno.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Sky_Uno_-_Logo_2021.svg/512px-Sky_Uno_-_Logo_2021.svg.png",Sky Uno
 null
 #EXTINF:-1 tvg-id="skyunoplus1.it" tvg-logo="https://i.imgur.com/iUI7MAc.png",Sky Uno +1
+null
+#EXTINF:-1 tvg-id="sanmarinortv.sm" tvg-logo="https://i.imgur.com/ZJSWusT.png",SMtv San Marino
 null
 #EXTINF:-1 tvg-id="62bc1f502b70e3000706298e" tvg-logo="https://images.pluto.tv/channels/62bc1f502b70e3000706298e/colorLogoPNG.png",South Park
 null
@@ -725,8 +607,6 @@ null
 null
 #EXTINF:-1 tvg-id="66d9a98961dbf00008efb5fc" tvg-logo="https://images.pluto.tv/channels/66d9a98961dbf00008efb5fc/colorLogoPNG.png",Sulle tracce del crimine
 null
-#EXTINF:-1 tvg-id="super/sky-bambini/247" tvg-logo="",Super!
-null
 #EXTINF:-1 tvg-id="666174c9f999220008769012" tvg-logo="https://images.pluto.tv/channels/666174c9f999220008769012/colorLogoPNG.png",Super! Big Time Rush
 null
 #EXTINF:-1 tvg-id="609401db8cf51c00084b592e" tvg-logo="https://images.pluto.tv/channels/609401db8cf51c00084b592e/colorLogoPNG.png",Super! iCarly
@@ -741,9 +621,7 @@ null
 null
 #EXTINF:-1 tvg-id="6304ed62410a4c00083c0291" tvg-logo="https://images.pluto.tv/channels/6304ed62410a4c00083c0291/colorLogoPNG.png",Super! Zoey 101
 null
-#EXTINF:-1 tvg-id="supertennishd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/it/thumb/6/6a/SuperTennis_-_Logo_2016.svg/512px-SuperTennis_-_Logo_2016.svg.png",SuperTennis HD
-null
-#EXTINF:-1 tvg-id="supertennis-hd/sky-sport/53" tvg-logo="",SuperTennis HD
+#EXTINF:-1 tvg-id="supertennishd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/it/thumb/6/6a/SuperTennis_-_Logo_2016.svg/512px-SuperTennis_-_Logo_2016.svg.png",SuperTennis
 null
 #EXTINF:-1 tvg-id="66a8c8b3d2d50d000821fc4c" tvg-logo="https://images.pluto.tv/channels/66a8c8b3d2d50d000821fc4c/colorLogoPNG.png",Tandem
 null
@@ -751,11 +629,9 @@ null
 null
 #EXTINF:-1 tvg-id="62619405c733e8000732d1fe" tvg-logo="https://images.pluto.tv/channels/62619405c733e8000732d1fe/colorLogoPNG.png",Teenage Mutant Ninja Turtles
 null
-#EXTINF:-1 tvg-id="tgnorba24.it" tvg-logo="https://i.imgur.com/zAZcSgz.png",TG NORBA 24
+#EXTINF:-1 tvg-id="tgnorba24.it" tvg-logo="https://i.imgur.com/zAZcSgz.png",TG Norba24
 null
 #EXTINF:-1 tvg-id="skytg24primopiano.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Sky_TG24_Primo_Piano_-_Logo_2021.png/512px-Sky_TG24_Primo_Piano_-_Logo_2021.png",TG24PrimoPiano
-null
-#EXTINF:-1 tvg-id="tgcom24hd.it" tvg-logo="https://i.imgur.com/fPmvbGH.png",TgCom24 HD
 null
 #EXTINF:-1 tvg-id="62e8d5369e48940007fc1dc1" tvg-logo="https://images.pluto.tv/channels/62e8d5369e48940007fc1dc1/colorLogoPNG.png",The Asylum
 null
@@ -765,11 +641,9 @@ null
 null
 #EXTINF:-1 tvg-id="topcalcio24.it" tvg-logo="https://i.imgur.com/qYPiXlB.png",Top Calcio 24
 null
-#EXTINF:-1 tvg-id="top-crime/sky-intrattenimento/193" tvg-logo="",Top Crime
-null
 #EXTINF:-1 tvg-id="64c109a4798def0008a6e03e" tvg-logo="https://images.pluto.tv/channels/64c109a4798def0008a6e03e/colorLogoPNG.png",Top Gear
 null
-#EXTINF:-1 tvg-id="topcrimehd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Top_Crime_-_Logo_2013.svg/512px-Top_Crime_-_Logo_2013.svg.png",TOPcrime HD
+#EXTINF:-1 tvg-id="travelxp4keurope.in" tvg-logo="https://i.imgur.com/aHA4LkS.png",Travel XP
 null
 #EXTINF:-1 tvg-id="6616a51124e1d00008761a7e" tvg-logo="https://images.pluto.tv/channels/6616a51124e1d00008761a7e/colorLogoPNG.png",Triton Poker
 null
@@ -779,21 +653,11 @@ null
 null
 #EXTINF:-1 tvg-id="tv2000.it" tvg-logo="https://upload.wikimedia.org/wikipedia/it/thumb/0/0d/Logo_tv2000_2015.svg/512px-Logo_tv2000_2015.svg.png",TV2000
 null
-#EXTINF:-1 tvg-id="tv2000/sky-intrattenimento/241" tvg-logo="",TV2000
-null
-#EXTINF:-1 tvg-id="tv2000hd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/it/thumb/0/0d/Logo_tv2000_2015.svg/512px-Logo_tv2000_2015.svg.png",TV2000 HD
-null
-#EXTINF:-1 tvg-id="tv8/sky-intrattenimento/237" tvg-logo="",TV8
-null
-#EXTINF:-1 tvg-id="tv8hd.it" tvg-logo="https://upload.wikimedia.org/wikipedia/it/thumb/6/6d/TV8_Logo_2016.svg/512px-TV8_Logo_2016.svg.png",TV8 HD
-null
 #EXTINF:-1 tvg-id="twentyseven.it" tvg-logo="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Twentyseven_logo.svg/512px-Twentyseven_logo.svg.png",Twenty Seven
 null
 #EXTINF:-1 tvg-id="65cb72b833ea860008860418" tvg-logo="https://images.pluto.tv/channels/65cb72b833ea860008860418/colorLogoPNG.png",Twin Peaks
 null
 #EXTINF:-1 tvg-id="vh1.it" tvg-logo="https://i.imgur.com/ZZEvehR.png",VH1
-null
-#EXTINF:-1 tvg-id="vh1hd.it" tvg-logo="https://i.imgur.com/ZZEvehR.png",VH1 HD
 null
 #EXTINF:-1 tvg-id="6552085aab05240008b05f6c" tvg-logo="https://images.pluto.tv/channels/6552085aab05240008b05f6c/colorLogoPNG.png",VH1+ Back to 90's
 null
