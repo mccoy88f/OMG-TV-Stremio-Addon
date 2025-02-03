@@ -284,6 +284,19 @@ class PlaylistTransformer {
                 epgUrls: Array.from(epgUrls)
             };
 
+            // Nuova logica per gestire i canali senza flussi
+            finalResult.channels.forEach(channel => {
+                channel.streamInfo.urls = channel.streamInfo.urls.map(stream => {
+                    if (stream.url === null) {
+                        return {
+                            url: 'https://static.vecteezy.com/system/resources/previews/001/803/236/mp4/no-signal-bad-tv-free-video.mp4',
+                            name: 'Nessuno flusso presente nelle playlist m3u'
+                        };
+                    }
+                    return stream;
+                });
+            });
+
             this.channelsMap.clear();
             this.channelsWithoutStreams = [];
             return finalResult;
