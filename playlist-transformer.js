@@ -251,6 +251,24 @@ class PlaylistTransformer {
             console.warn(`⚠️ Canali senza flussi riproducibili: ${this.channelsWithoutStreams.length}`);
         }
 
+        // Verifica canali con solo flusso dummy
+        const channelsWithOnlyDummy = [];
+        for (const [id, channel] of this.channelsMap.entries()) {
+            if (channel.streamInfo.urls.length === 1 && 
+                channel.streamInfo.urls[0].name === 'Nessuno flusso presente nelle playlist m3u') {
+                channelsWithOnlyDummy.push(channel.name);
+            }
+        }
+
+        if (channelsWithOnlyDummy.length > 0) {
+            console.log('\n=== Canali con solo flusso dummy ===');
+            channelsWithOnlyDummy.forEach(name => {
+                console.log(`${name}`);
+            });
+            console.log(`✓ Totale canali con solo flusso dummy: ${channelsWithOnlyDummy.length}`);
+            console.log('================================\n');
+        }
+
         return {
             genres: Array.from(genres),
             epgUrl
