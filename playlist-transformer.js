@@ -189,23 +189,10 @@ class PlaylistTransformer {
     }
 
     addStreamToChannel(channel, url, name) {
-        // Rimuovi eventuali stream null esistenti
-        channel.streamInfo.urls = channel.streamInfo.urls.filter(stream => stream.url !== null);
-
-        // Se l'URL è valido, aggiungi il nuovo stream
-        if (url && url.toLowerCase() !== 'null') {
-            channel.streamInfo.urls.push({
-                url,
-                name
-            });
-        } 
-        // Se non ci sono stream, aggiungi quello null
-        else if (channel.streamInfo.urls.length === 0) {
-            channel.streamInfo.urls.push({
-                url: null,
-                name: "Nessun flusso disponibile per questo canale, configura una playlist m3u."
-            });
-        }
+        channel.streamInfo.urls.push({
+            url,
+            name
+        });
     }
 
     async parseM3UContent(content) {
