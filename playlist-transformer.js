@@ -26,8 +26,6 @@ class PlaylistTransformer {
         
         try {
             const content = await fs.promises.readFile(remappingPath, 'utf8');
-
-            const content = await fs.promises.readFile(remappingPath, 'utf8');
             let ruleCount = 0;
 
             content.split('\n').forEach(line => {
