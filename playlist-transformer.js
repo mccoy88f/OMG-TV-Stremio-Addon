@@ -152,13 +152,13 @@ class PlaylistTransformer {
         const originalId = channel.tvg.id;
         const normalizedId = this.normalizeId(originalId);
         const remappedId = this.remappingRules.get(normalizedId);
-        
+    
         if (remappedId) {
             console.log(`✓ Remapping: ${originalId} -> ${remappedId}`);
-            return remappedId;
+            return this.normalizeId(remappedId);  // Normalizza anche l'output
         }
-        
-        return originalId;
+    
+        return this.normalizeId(originalId);  // Normalizza anche in caso di mancato remapping
     }
 
     createChannelObject(channel, channelId) {
