@@ -26,6 +26,8 @@ class PlaylistTransformer {
         
         try {
             const content = await fs.promises.readFile(remappingPath, 'utf8');
+
+            const content = await fs.promises.readFile(remappingPath, 'utf8');
             let ruleCount = 0;
 
             content.split('\n').forEach(line => {
@@ -34,8 +36,9 @@ class PlaylistTransformer {
 
                 const [m3uId, epgId] = line.split('=').map(s => s.trim());
                 if (m3uId && epgId) {
-                    const normalizedM3uId = this.normalizeId(m3uId);
-                    this.remappingRules.set(normalizedM3uId, epgId);
+                    const normalizedM3uId = this.normalizeId(m3uId);  // Normalizza lato sinistro
+                    const normalizedEpgId = this.normalizeId(epgId);  // Normalizza lato destro
+                    this.remappingRules.set(normalizedM3uId, normalizedEpgId);
                     ruleCount++;
                 }
             });
@@ -43,6 +46,7 @@ class PlaylistTransformer {
             if (ruleCount > 0) {
                 console.log(`✓ Caricate ${ruleCount} regole di remapping`);
             }
+            
         } catch (error) {
             if (error.code !== 'ENOENT') {
                 console.error('❌ Errore remapping:', error.message);
