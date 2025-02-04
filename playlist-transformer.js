@@ -6,6 +6,7 @@ class PlaylistTransformer {
     constructor() {
         this.remappingRules = new Map();
         this.channelsMap = new Map();
+        this.channelsWithoutStreams = [];
     }
 
     normalizeId(id) {
@@ -14,10 +15,10 @@ class PlaylistTransformer {
 
     cleanChannelName(name) {
         return name
-            .replace(/[\(\[].*?[\)\]]/g, '') // Rimuove contenuto tra parentesi
-            .trim()                          // Rimuove spazi iniziali e finali
-            .toLowerCase()                    // Converte in minuscolo
-            .replace(/\s+/g, '');            // Rimuove tutti gli spazi
+            .replace(/[\(\[].*?[\)\]]/g, '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '');
     }
 
     async loadRemappingRules() {
@@ -33,13 +34,17 @@ class PlaylistTransformer {
 
                 const [m3uId, epgId] = line.split('=').map(s => s.trim());
                 if (m3uId && epgId) {
-                    const normalizedM3uId = this.normalizeId(m3uId);
-                    this.remappingRules.set(normalizedM3uId, epgId);
+                    const normalizedM3uId = this.normalizeId(m3uId);  // Normalizza lato sinistro
+                    const normalizedEpgId = this.normalizeId(epgId);  // Normalizza lato destro
+                    this.remappingRules.set(normalizedM3uId, normalizedEpgId);
                     ruleCount++;
                 }
             });
 
-            console.log(`✓ Caricate ${ruleCount} regole di remapping`);
+            if (ruleCount > 0) {
+                console.log(`✓ Caricate ${ruleCount} regole di remapping`);
+            }
+            
         } catch (error) {
             if (error.code !== 'ENOENT') {
                 console.error('❌ Errore remapping:', error.message);
@@ -81,15 +86,19 @@ class PlaylistTransformer {
             }
         }
 
-        if ((!headers['User-Agent'] || !headers['Referer']) && extinf) {
+        if ((!headers['User-Agent'] || !headers['Referer'] || !headers['Origin']) && extinf) {
             const userAgent = extinf.match(/http-user-agent="([^"]+)"/);
             const referrer = extinf.match(/http-referrer="([^"]+)"/);
-            
+            const origin = extinf.match(/http-origin="([^"]+)"/);
+
             if (!headers['User-Agent'] && userAgent) {
                 headers['User-Agent'] = userAgent[1];
             }
             if (!headers['Referer'] && referrer) {
                 headers['Referer'] = referrer[1];
+            }
+            if (!headers['Origin'] && origin) {
+                headers['Origin'] = origin[1];
             }
         }
 
@@ -124,7 +133,6 @@ class PlaylistTransformer {
         const nameParts = metadata.split(',');
         const name = nameParts[nameParts.length - 1].trim();
 
-        // Genera tvg.id se non presente
         if (!tvgData.id) {
             const suffix = process.env.ID_SUFFIX || '';
             tvgData.id = this.cleanChannelName(name) + (suffix ? `.${suffix}` : '');
@@ -142,13 +150,13 @@ class PlaylistTransformer {
         const originalId = channel.tvg.id;
         const normalizedId = this.normalizeId(originalId);
         const remappedId = this.remappingRules.get(normalizedId);
-        
+    
         if (remappedId) {
             console.log(`✓ Remapping: ${originalId} -> ${remappedId}`);
-            return remappedId;
+            return this.normalizeId(remappedId);  // Normalizza anche l'output
         }
-        
-        return originalId;
+    
+        return this.normalizeId(originalId);  // Normalizza anche in caso di mancato remapping
     }
 
     createChannelObject(channel, channelId) {
@@ -182,13 +190,30 @@ class PlaylistTransformer {
         };
     }
 
-    addStreamToChannel(channel, url, name) {
-        channel.streamInfo.urls.push({
-            url,
-            name
-        });
-    }
+    addStreamToChannel(channel, url, name, genres) {  // Aggiungiamo il parametro genres
+        // Aggiungi i nuovi generi se non sono già presenti
+        if (genres && Array.isArray(genres)) {
+            genres.forEach(newGenre => {
+                if (!channel.genre.includes(newGenre)) {
+                    channel.genre.push(newGenre);
+                }
+            });
+        }
 
+        if (url === null || url.toLowerCase() === 'null') {
+            channel.streamInfo.urls.push({
+                url: 'https://static.vecteezy.com/system/resources/previews/001/803/236/mp4/no-signal-bad-tv-free-video.mp4',
+                name: 'Nessuno flusso presente nelle playlist m3u'
+            });
+        } else {
+            channel.streamInfo.urls.push({
+                url,
+                name
+            });
+        }
+    }
+    
+    
     async parseM3UContent(content) {
         const lines = content.split('\n');
         let currentChannel = null;
@@ -199,7 +224,6 @@ class PlaylistTransformer {
             const match = lines[0].match(/url-tvg="([^"]+)"/);
             if (match) {
                 epgUrl = match[1];
-                console.log('✓ EPG URL trovato:', epgUrl);
             }
         }
     
@@ -210,24 +234,54 @@ class PlaylistTransformer {
                 const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1, line);
                 i = nextIndex - 1;
                 currentChannel = this.parseChannelFromLine(line, headers);
-            } else if (line.startsWith('http') && currentChannel) {
+
+            } else if ((line.startsWith('http') || line.toLowerCase() === 'null') && currentChannel) {
                 const remappedId = this.getRemappedId(currentChannel);
                 const normalizedId = this.normalizeId(remappedId);
-            
+
                 if (!this.channelsMap.has(normalizedId)) {
                     const channelObj = this.createChannelObject(currentChannel, remappedId);
                     this.channelsMap.set(normalizedId, channelObj);
                     currentChannel.group.forEach(genre => genres.add(genre));
                 }
-            
+
                 const channelObj = this.channelsMap.get(normalizedId);
-                this.addStreamToChannel(channelObj, line, currentChannel.name);
-                
+                this.addStreamToChannel(channelObj, line, currentChannel.name, currentChannel.group);  // Passiamo currentChannel.group
+    
                 currentChannel = null;
+            }
+            
+        }
+
+        // Verifica canali senza flussi
+        this.channelsWithoutStreams = [];
+        for (const [id, channel] of this.channelsMap.entries()) {
+            if (channel.streamInfo.urls.length === 0) {
+                this.channelsWithoutStreams.push(channel.name);
             }
         }
 
-        console.log(`✓ Canali processati: ${this.channelsMap.size}`);
+        if (this.channelsWithoutStreams.length > 0) {
+            console.warn(`⚠️ Canali senza flussi riproducibili: ${this.channelsWithoutStreams.length}`);
+        }
+
+        // Verifica canali con solo flusso dummy
+        const channelsWithOnlyDummy = [];
+        for (const [id, channel] of this.channelsMap.entries()) {
+            if (channel.streamInfo.urls.length === 1 && 
+                channel.streamInfo.urls[0].name === 'Nessuno flusso presente nelle playlist m3u') {
+                channelsWithOnlyDummy.push(channel.name);
+            }
+        }
+
+        if (channelsWithOnlyDummy.length > 0) {
+            console.log('\n=== Canali con solo flusso dummy ===');
+            channelsWithOnlyDummy.forEach(name => {
+                console.log(`${name}`);
+            });
+            console.log(`✓ Totale canali con solo flusso dummy: ${channelsWithOnlyDummy.length}`);
+            console.log('================================\n');
+        }
 
         return {
             genres: Array.from(genres),
@@ -237,9 +291,6 @@ class PlaylistTransformer {
 
     async loadAndTransform(url) {
         try {
-            console.log('=== Inizio Processamento Playlist ===');
-            console.log(`URL: ${url}`);
-            
             await this.loadRemappingRules();
             
             const response = await axios.get(url);
@@ -252,7 +303,6 @@ class PlaylistTransformer {
             const epgUrls = new Set();
             
             for (const playlistUrl of playlistUrls) {
-                console.log(`\nProcesso playlist: ${playlistUrl}`);
                 const playlistResponse = await axios.get(playlistUrl);
                 const result = await this.parseM3UContent(playlistResponse.data);
                 
@@ -273,12 +323,23 @@ class PlaylistTransformer {
                 epgUrls: Array.from(epgUrls)
             };
 
-            console.log('\n=== Riepilogo ===');
-            console.log(`✓ Canali: ${finalResult.channels.length}`);
-            console.log(`✓ Generi: ${finalResult.genres.length}`);
-            console.log(`✓ URL EPG: ${finalResult.epgUrls.length}`);
+            // Rimuovi i flussi dummy se ci sono altri flussi per quel canale
+            finalResult.channels.forEach(channel => {
+                if (channel.streamInfo.urls.length > 1) {
+                    channel.streamInfo.urls = channel.streamInfo.urls.filter(
+                        stream => stream.name !== 'Nessuno flusso presente nelle playlist m3u'
+                    );
+                }
+            });
+
+            console.log(`✓ Totale canali processati: ${finalResult.channels.length}`);
+            console.log(`✓ Totale generi trovati: ${finalResult.genres.length}`);
+            if (epgUrls.size > 0) {
+                console.log(`✓ URL EPG trovati: ${epgUrls.size}`);
+            }
 
             this.channelsMap.clear();
+            this.channelsWithoutStreams = [];
             return finalResult;
 
         } catch (error) {

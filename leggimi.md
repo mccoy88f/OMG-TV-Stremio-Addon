@@ -105,6 +105,11 @@ IMPORTANTE: Prima di tutto...
 
 ## 🔄 Changelog
 
+### v3.3.0
+- Migliorato il remapping
+- Gestione di categorie/generi multipli per lo stesso canale se definito nella playlist m3u
+- Miglior abbinamento dell'epg, ora tutti i confronti sono fatti in minuscolo (ovunque)
+
 ### v3.2.0
 - Aggiunto supporto per file EPG compressi
 - Aggiunta variabile ID_SUFFIX per personalizzare ID canali
@@ -153,6 +158,7 @@ npm start
 - Team di [Stremio Italia](https://www.reddit.com/r/Stremio_Italia/)
 - Comunità Telegram [Stremio ITA](https://t.me/Stremio_ITA)
 - Iconic Panda per l'[icona](https://www.flaticon.com/free-icon/tv_18223703?term=tv&page=1&position=2&origin=tag&related_id=18223703)
+- Video Demo: https://www.vecteezy.com/video/1803236-no-signal-bad-tv
 
 ## 📜 Licenza
 Progetto rilasciato sotto licenza MIT.
