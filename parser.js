@@ -3,12 +3,6 @@ const fs = require('fs');
 
 async function readExternalFile(url) {
     try {
-        // Handle semicolon-separated URLs
-        if (url.includes(';')) {
-            console.log('Detected multiple URLs separated by semicolons');
-            return url.split(';').map(u => u.trim()).filter(u => u.length > 0);
-        }
-
         const response = await axios.get(url);
         const content = response.data;
 
@@ -19,6 +13,11 @@ async function readExternalFile(url) {
 
         console.log('Detected URL list file');
         return content.split('\n').filter(line => line.trim() !== '');
+    } catch (error) {
+        console.error('Error reading external file:', error);
+        throw error;
+    }
+}
 
 class PlaylistTransformer {
     constructor() {
