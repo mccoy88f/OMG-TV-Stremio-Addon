@@ -105,6 +105,11 @@ IMPORTANTE: Prima di tutto...
 
 ## 🔄 Changelog
 
+### v3.3.0
+- Migliorato il remapping
+- Gestione di categorie/generi multipli per lo stesso canale se definito nella playlist m3u
+- Miglior abbinamento dell'epg, ora tutti i confronti sono fatti in minuscolo (ovunque)
+
 ### v3.2.0
 - Aggiunto supporto per file EPG compressi
 - Aggiunta variabile ID_SUFFIX per personalizzare ID canali
