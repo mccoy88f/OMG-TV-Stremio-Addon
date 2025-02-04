@@ -190,7 +190,16 @@ class PlaylistTransformer {
         };
     }
 
-    addStreamToChannel(channel, url, name) {
+    addStreamToChannel(channel, url, name, genres) {  // Aggiungiamo il parametro genres
+        // Aggiungi i nuovi generi se non sono già presenti
+        if (genres && Array.isArray(genres)) {
+            genres.forEach(newGenre => {
+                if (!channel.genre.includes(newGenre)) {
+                    channel.genre.push(newGenre);
+                }
+            });
+        }
+
         if (url === null || url.toLowerCase() === 'null') {
             channel.streamInfo.urls.push({
                 url: 'https://static.vecteezy.com/system/resources/previews/001/803/236/mp4/no-signal-bad-tv-free-video.mp4',
@@ -203,7 +212,8 @@ class PlaylistTransformer {
             });
         }
     }
-
+    
+    
     async parseM3UContent(content) {
         const lines = content.split('\n');
         let currentChannel = null;
@@ -224,21 +234,23 @@ class PlaylistTransformer {
                 const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1, line);
                 i = nextIndex - 1;
                 currentChannel = this.parseChannelFromLine(line, headers);
+
             } else if ((line.startsWith('http') || line.toLowerCase() === 'null') && currentChannel) {
                 const remappedId = this.getRemappedId(currentChannel);
                 const normalizedId = this.normalizeId(remappedId);
-            
+
                 if (!this.channelsMap.has(normalizedId)) {
                     const channelObj = this.createChannelObject(currentChannel, remappedId);
                     this.channelsMap.set(normalizedId, channelObj);
                     currentChannel.group.forEach(genre => genres.add(genre));
                 }
-            
+
                 const channelObj = this.channelsMap.get(normalizedId);
-                this.addStreamToChannel(channelObj, line, currentChannel.name);
-                
+                this.addStreamToChannel(channelObj, line, currentChannel.name, currentChannel.group);  // Passiamo currentChannel.group
+    
                 currentChannel = null;
             }
+            
         }
 
         // Verifica canali senza flussi
