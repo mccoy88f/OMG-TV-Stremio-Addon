@@ -105,6 +105,11 @@ IMPORTANT: First of all...
 
 ## 🔄 Changelog
 
+### v3.3.0
+- Improved remapping
+- Multiple category/genre for same channel if set in m3u playlist
+- Better epg parsing, now all id is managed lowercase (everywhere)
+
 ### v3.2.0
 - Added compressed EPG file support
 - Added ID_SUFFIX variable for custom channel IDs
