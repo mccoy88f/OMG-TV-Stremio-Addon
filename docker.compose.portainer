@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  omg-tv-stremio-addon:
+    image: node:16-slim
+    container_name: omg-tv-stremio-addon
+
+    environment:
+      - PORT=7860
+      - HOST=0.0.0.0
+      - ENABLE_EPG=no
+      
+    working_dir: /app
+    volumes:
+      - .:/app # Monta la directory corrente nel container (opzionale, se vuoi lavorare con file locali)
+    command: >
+      sh -c "
+        apt-get update && apt-get install -y git &&
+        rm -rf /tmp/repo &&
+        git clone --branch 4-0beta https://github.com/mccoy88f/OMG-TV-Stremio-Addon.git /tmp/repo &&
+        cp -r /tmp/repo/* /app/ &&
+        cd /app &&
+
+        npm install &&
+        node index.js
+      "
