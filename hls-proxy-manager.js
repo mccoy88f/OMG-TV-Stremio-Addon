@@ -77,6 +77,8 @@ class HlsProxyManager {
            return null;
        }
 
+       const baseUrl = this.config.PROXY_URL.replace(/\/+$/, '');
+
        const params = new URLSearchParams({
            api_password: this.config.PROXY_PASSWORD,
            d: streamUrl,
@@ -85,7 +87,7 @@ class HlsProxyManager {
            'origin': headers['Origin'] || ''
        });
 
-       return `${this.config.PROXY_URL}/proxy/hls/manifest.m3u8?${params.toString()}`;
+       return `${baseUrl}/proxy/hls/manifest.m3u8?${params.toString()}`;
    }
 
    async getProxyStreams(channel) {
