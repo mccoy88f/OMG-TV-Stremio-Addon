@@ -1,7 +1,7 @@
 FROM node:16-slim
 
 # Define build argument for branch
-ARG BRANCH=4.0beta
+ARG BRANCH=4-0beta
 
 # Install git
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
