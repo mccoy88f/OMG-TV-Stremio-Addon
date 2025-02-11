@@ -8,7 +8,6 @@ services:
     environment:
       - PORT=7860
       - HOST=0.0.0.0
-      - ENABLE_EPG=no
       
     working_dir: /app
     volumes:
@@ -20,7 +19,6 @@ services:
         git clone --branch 4-0beta https://github.com/mccoy88f/OMG-TV-Stremio-Addon.git /tmp/repo &&
         cp -r /tmp/repo/* /app/ &&
         cd /app &&
-
         npm install &&
         node index.js
       "
