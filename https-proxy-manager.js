@@ -125,8 +125,8 @@ class HttpsProxyManager {
            }
 
            const proxyStream = {
-               name: `${channel.name} (Proxy HTTPS)`,
-               title: `${channel.name} (Proxy HTTPS)`,
+               name: `${channel.name} [P](HTTPS)`,
+               title: `${channel.name} [P](HTTPS)`,
                url: proxyUrl,
                behaviorHints: {
                    notWebReady: false,
