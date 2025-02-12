@@ -124,8 +124,8 @@ class HlsProxyManager {
            }
 
            const proxyStream = {
-               name: `${channel.name} (Proxy HLS)`,
-               title: `${channel.name} (Proxy HLS)`,
+               name: `${channel.name} [P](HLS)`,
+               title: `${channel.name} [P](HLS)`,
                url: proxyUrl,
                behaviorHints: {
                    notWebReady: false,
