@@ -87,7 +87,7 @@ class HlsProxyManager {
            'origin': headers['Origin'] || ''
        });
 
-       return `${baseUrl}/proxy/hls/manifest.m3u8?${params.toString()}`;
+       return `${baseUrl}/proxy/mpd/manifest.m3u8?${params.toString()}`;
    }
 
    async getProxyStreams(channel) {
