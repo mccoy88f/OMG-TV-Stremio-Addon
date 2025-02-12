@@ -87,7 +87,7 @@ class DashProxyManager {
             'origin': headers['Origin'] || ''
         });
 
-        return `${baseUrl}/proxy/mpd/manifest.mpd?${params.toString()}`;
+        return `${baseUrl}/proxy/mpd/manifest.m3u8${params.toString()}`;
     }
 
     async getProxyStreams(channel) {
