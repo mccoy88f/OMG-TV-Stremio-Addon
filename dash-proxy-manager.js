@@ -14,19 +14,9 @@ class DashProxyManager {
             
             const networkHeaders = {
                 ...headers,
-                'User-Agent': headers['User-Agent'] || [
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-                    'Mozilla/5.0 (X11; Linux x86_64)'
-                ][Math.floor(Math.random() * 3)],
-                'Accept': 'application/dash+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3',
-                'Referer': headers.Referer || 'https://vavoo.to/',
-                'Origin': headers.Origin || 'https://vavoo.to',
-                'Connection': 'keep-alive',
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'cross-site'
+                'User-Agent': headers['User-Agent'] || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                'Referer': headers.Referer || '',
+                'Origin': headers.Origin || ''
             };
 
             const response = await axios({
@@ -43,10 +33,7 @@ class DashProxyManager {
 
             return {
                 finalUrl,
-                headers: {
-                    ...networkHeaders,
-                    ...response.headers
-                },
+                headers: networkHeaders,
                 status: response.status
             };
 
@@ -72,14 +59,14 @@ class DashProxyManager {
 
     async checkProxyHealth(proxyUrl) {
         try {
-            const response = await axios.head(proxyUrl, {
+            const response = await axios.get(proxyUrl, {
                 timeout: 5000,
-                validateStatus: status => status === 200 || status === 302,
+                validateStatus: status => status < 400,
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
                 }
             });
-            return response.status === 200 || response.status === 302;
+            return response.status < 400;
         } catch {
             return false;
         }
@@ -90,18 +77,17 @@ class DashProxyManager {
             return null;
         }
 
+        const baseUrl = this.config.PROXY_URL.replace(/\/+$/, '');
+
         const params = new URLSearchParams({
             api_password: this.config.PROXY_PASSWORD,
-            d: streamUrl
+            d: streamUrl,
+            'user-agent': headers['User-Agent'] || 'Mozilla/5.0',
+            'referer': headers['Referer'] || '',
+            'origin': headers['Origin'] || ''
         });
 
-        if (headers) {
-            Object.entries(headers).forEach(([key, value]) => {
-                params.append(`h_${key}`, value);
-            });
-        }
-
-        return `${this.config.PROXY_URL}/proxy/mpd/manifest.mpd?${params.toString()}`;
+        return `${baseUrl}/proxy/mpd/manifest.mpd?${params.toString()}`;
     }
 
     async getProxyStreams(channel) {
@@ -112,13 +98,11 @@ class DashProxyManager {
         }
 
         try {
-            // Risolvi l'URL del flusso con headers dinamici
             const { finalUrl, headers, status } = await this.resolveStreamUrl(
                 channel.url, 
                 channel.headers
             );
 
-            // Verifica URL finale
             if (status === 404 || !finalUrl) {
                 console.log(`Canale DASH non disponibile: ${channel.name}`);
                 return streams;
@@ -140,7 +124,6 @@ class DashProxyManager {
                 return [];
             }
 
-            // Costruisci stream proxy
             const proxyStream = {
                 name: `${channel.name} (Proxy DASH)`,
                 title: `${channel.name} (Proxy DASH)`,
