@@ -5,7 +5,7 @@ const baseConfig = {
     port: process.env.PORT || 10000,
     M3U_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.playlist',
     EPG_URL: 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.epg',
-    enableEPG: process.env.ENABLE_EPG !== 'no',
+    enableEPG: process.env.ENABLE_EPG || true,
     PROXY_URL: process.env.PROXY_URL || null,
     PROXY_PASSWORD: process.env.PROXY_PASSWORD || null,
     FORCE_PROXY: process.env.FORCE_PROXY === 'yes',
