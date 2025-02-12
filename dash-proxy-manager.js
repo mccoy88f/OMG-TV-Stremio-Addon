@@ -125,8 +125,8 @@ class DashProxyManager {
             }
 
             const proxyStream = {
-                name: `${channel.name} (Proxy DASH)`,
-                title: `${channel.name} (Proxy DASH)`,
+                name: `${channel.name} [P](DASH)`,
+                title: `${channel.name} [P](DASH)`,
                 url: proxyUrl,
                 behaviorHints: {
                     notWebReady: false,
