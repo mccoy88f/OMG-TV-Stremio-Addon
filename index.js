@@ -5,23 +5,30 @@ const PlaylistTransformer = require('./playlist-transformer');
 const { catalogHandler, streamHandler } = require('./handlers');
 const metaHandler = require('./meta-handler');
 const EPGManager = require('./epg-manager');
-const config = require('./config');
+const ConfigManager = require('./config-manager');
 
 async function generateConfig() {
     try {
         console.log('\n=== Generazione Configurazione Iniziale ===');
-        
+        const savedConfig = await ConfigManager.loadConfig();
         const transformer = new PlaylistTransformer();
-        const data = await transformer.loadAndTransform(config.M3U_URL);
-        console.log(`Trovati ${data.genres.length} generi`);
-        console.log('EPG URL configurato:', config.EPG_URL);
-
+        const data = await transformer.loadAndTransform(savedConfig.M3U_URL);
+        
         const finalConfig = {
-            ...config,
+            ...savedConfig,
             manifest: {
-                ...config.manifest,
+                id: savedConfig.addonId,
+                version: savedConfig.addonVersion,
+                name: savedConfig.addonName,
+                description: savedConfig.addonDescription,
+                logo: savedConfig.addonLogo,
+                resources: ['stream', 'catalog', 'meta'],
+                types: ['tv'],
+                idPrefixes: ['tv'],
                 catalogs: [{
-                    ...config.manifest.catalogs[0],
+                    type: 'tv',
+                    id: 'omg_tv',
+                    name: savedConfig.addonName,
                     extra: [{
                         name: 'genre',
                         isRequired: false,
@@ -36,9 +43,6 @@ async function generateConfig() {
                 }]
             }
         };
-
-        console.log('Configurazione generata con successo');
-        console.log('\n=== Fine Generazione Configurazione ===\n');
 
         return finalConfig;
     } catch (error) {
@@ -60,7 +64,23 @@ async function startAddon() {
         const app = express();
         
         app.use(cors());
+        app.use(express.json());
         
+        app.get('/config', async (req, res) => {
+            const config = await ConfigManager.loadConfig();
+            res.json(config);
+        });
+
+        app.post('/config', async (req, res) => {
+            try {
+                const updatedConfig = await ConfigManager.updateConfig(req.body);
+                res.json(updatedConfig);
+                process.exit(0); // Riavvia l'addon per applicare le modifiche
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+
         app.get('/manifest.json', (req, res) => {
             res.setHeader('Content-Type', 'application/json');
             res.send(addonInterface.manifest);
@@ -92,10 +112,10 @@ async function startAddon() {
                             margin: 0 auto;
                             display: block;
                         }
-                        .buttons {
+                        .buttons, .config-form {
                             margin: 30px 0;
                         }
-                        button {
+                        button, input[type="submit"] {
                             background: #8A5AAB;
                             color: white;
                             border: none;
@@ -106,7 +126,7 @@ async function startAddon() {
                             font-size: 16px;
                             transition: background 0.3s;
                         }
-                        button:hover {
+                        button:hover, input[type="submit"]:hover {
                             background: #7141A1;
                         }
                         .description {
@@ -130,6 +150,30 @@ async function startAddon() {
                             border-radius: 4px;
                             display: none;
                             animation: fadeIn 0.3s, fadeOut 0.3s 1.7s;
+                        }
+                        .config-form {
+                            text-align: left;
+                            background: rgba(255,255,255,0.1);
+                            padding: 20px;
+                            border-radius: 4px;
+                        }
+                        .config-form label {
+                            display: block;
+                            margin: 10px 0 5px;
+                        }
+                        .config-form input[type="text"], 
+                        .config-form input[type="url"], 
+                        .config-form input[type="password"] {
+                            width: 100%;
+                            padding: 8px;
+                            margin-bottom: 10px;
+                            border-radius: 4px;
+                            border: 1px solid #666;
+                            background: #333;
+                            color: white;
+                        }
+                        .config-form input[type="checkbox"] {
+                            margin-right: 10px;
                         }
                         @keyframes fadeIn {
                             from {opacity: 0;}
@@ -159,6 +203,53 @@ async function startAddon() {
                         </button>
                     </div>
                     <div id="toast" class="toast">URL Copiato!</div>
+
+                    <div class="config-form">
+                        <h2>Configurazione Addon</h2>
+                        <form id="configForm">
+                            <label>Nome Addon:</label>
+                            <input type="text" name="addonName" required>
+                            
+                            <label>ID Addon:</label>
+                            <input type="text" name="addonId" required>
+                            
+                            <label>Descrizione:</label>
+                            <input type="text" name="addonDescription" required>
+                            
+                            <label>Versione:</label>
+                            <input type="text" name="addonVersion" required>
+                            
+                            <label>Logo URL:</label>
+                            <input type="url" name="addonLogo" required>
+                            
+                            <label>M3U URL:</label>
+                            <input type="url" name="M3U_URL" required>
+                            
+                            <label>EPG URL:</label>
+                            <input type="url" name="EPG_URL">
+                            
+                            <label>ID Suffix:</label>
+                            <input type="text" name="ID_SUFFIX">
+                            
+                            <label>Proxy URL:</label>
+                            <input type="url" name="PROXY_URL">
+                            
+                            <label>Proxy Password:</label>
+                            <input type="password" name="PROXY_PASSWORD">
+                            
+                            <label>
+                                <input type="checkbox" name="enableEPG">
+                                Abilita EPG
+                            </label>
+                            
+                            <label>
+                                <input type="checkbox" name="FORCE_PROXY">
+                                Forza Proxy
+                            </label>
+                            
+                            <input type="submit" value="Salva Configurazione">
+                        </form>
+                    </div>
                     
                     <script>
                         function copyManifestUrl() {
@@ -171,6 +262,55 @@ async function startAddon() {
                                 }, 2000);
                             });
                         }
+
+                        // Carica la configurazione corrente
+                        fetch('/config')
+                            .then(response => response.json())
+                            .then(config => {
+                                Object.entries(config).forEach(([key, value]) => {
+                                    const input = document.querySelector(\`[name="\${key}"]\`);
+                                    if (input) {
+                                        if (input.type === 'checkbox') {
+                                            input.checked = value;
+                                        } else {
+                                            input.value = value;
+                                        }
+                                    }
+                                });
+                            });
+
+                        // Gestione del form
+                        document.getElementById('configForm').addEventListener('submit', async (e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.target);
+                            const config = {};
+                            formData.forEach((value, key) => {
+                                if (key === 'enableEPG' || key === 'FORCE_PROXY') {
+                                    config[key] = e.target.elements[key].checked;
+                                } else {
+                                    config[key] = value;
+                                }
+                            });
+
+                            try {
+                                const response = await fetch('/config', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify(config)
+                                });
+                                
+                                if (response.ok) {
+                                    alert('Configurazione salvata. L\'addon verrà riavviato.');
+                                    location.reload();
+                                } else {
+                                    alert('Errore nel salvataggio della configurazione');
+                                }
+                            } catch (error) {
+                                alert('Errore nel salvataggio della configurazione');
+                            }
+                        });
                     </script>
                 </body>
                 </html>
