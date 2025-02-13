@@ -71,6 +71,7 @@ async function startAddon() {
             const builder = new addonBuilder(generatedConfig.manifest);
             builder.defineCatalogHandler(catalogHandler);
             builder.defineStreamHandler(streamHandler);
+            builder.defineMetaHandler(metaHandler);
             const manifest = builder.getInterface().manifest;
             res.setHeader('Content-Type', 'application/json');
             res.send(manifest);
