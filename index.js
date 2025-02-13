@@ -5,30 +5,42 @@ const PlaylistTransformer = require('./playlist-transformer');
 const { catalogHandler, streamHandler } = require('./handlers');
 const metaHandler = require('./meta-handler');
 const EPGManager = require('./epg-manager');
-const ConfigManager = require('./config-manager');
+const config = require('./config');
 
-async function generateConfig() {
+const defaultConfig = {
+    M3U_URL: process.env.M3U_URL || 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.playlist',
+    EPG_URL: process.env.EPG_URL || 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.epg',
+    enableEPG: process.env.ENABLE_EPG === 'false' ? false : true,
+    PROXY_URL: process.env.PROXY_URL || null,
+    PROXY_PASSWORD: process.env.PROXY_PASSWORD || null,
+    FORCE_PROXY: process.env.FORCE_PROXY === 'yes',
+    ID_SUFFIX: process.env.ID_SUFFIX || ''
+};
+
+async function generateConfig(urlParams = {}) {
     try {
         console.log('\n=== Generazione Configurazione Iniziale ===');
-        const savedConfig = await ConfigManager.loadConfig();
-        const transformer = new PlaylistTransformer();
-        const data = await transformer.loadAndTransform(savedConfig.M3U_URL);
         
-        const finalConfig = {
-            ...savedConfig,
+        const currentConfig = {
+            ...defaultConfig,
+            M3U_URL: urlParams.m3u || defaultConfig.M3U_URL,
+            EPG_URL: urlParams.epg || defaultConfig.EPG_URL,
+            enableEPG: urlParams.epg_enabled === 'true' || defaultConfig.enableEPG,
+            PROXY_URL: urlParams.proxy || defaultConfig.PROXY_URL,
+            PROXY_PASSWORD: urlParams.proxy_pwd || defaultConfig.PROXY_PASSWORD,
+            FORCE_PROXY: urlParams.force_proxy === 'true' || defaultConfig.FORCE_PROXY,
+            ID_SUFFIX: urlParams.suffix || defaultConfig.ID_SUFFIX
+        };
+
+        const transformer = new PlaylistTransformer();
+        const data = await transformer.loadAndTransform(currentConfig.M3U_URL);
+        
+        return {
+            ...currentConfig,
             manifest: {
-                id: savedConfig.addonId,
-                version: savedConfig.addonVersion,
-                name: savedConfig.addonName,
-                description: savedConfig.addonDescription,
-                logo: savedConfig.addonLogo,
-                resources: ['stream', 'catalog', 'meta'],
-                types: ['tv'],
-                idPrefixes: ['tv'],
+                ...config.manifest,
                 catalogs: [{
-                    type: 'tv',
-                    id: 'omg_tv',
-                    name: savedConfig.addonName,
+                    ...config.manifest.catalogs[0],
                     extra: [{
                         name: 'genre',
                         isRequired: false,
@@ -43,8 +55,6 @@ async function generateConfig() {
                 }]
             }
         };
-
-        return finalConfig;
     } catch (error) {
         console.error('Errore durante la generazione della configurazione:', error);
         throw error;
@@ -53,50 +63,39 @@ async function generateConfig() {
 
 async function startAddon() {
     try {
-        const generatedConfig = await generateConfig();
-        const builder = new addonBuilder(generatedConfig.manifest);
-        
-        builder.defineStreamHandler(streamHandler);
-        builder.defineCatalogHandler(catalogHandler);
-        builder.defineMetaHandler(metaHandler);
-
-        const addonInterface = builder.getInterface();
         const app = express();
-        
         app.use(cors());
-        app.use(express.json());
         
-        app.get('/config', async (req, res) => {
-            const config = await ConfigManager.loadConfig();
-            res.json(config);
-        });
-
-        app.post('/config', async (req, res) => {
-            try {
-                const updatedConfig = await ConfigManager.updateConfig(req.body);
-                res.json(updatedConfig);
-                process.exit(0); // Riavvia l'addon per applicare le modifiche
-            } catch (error) {
-                res.status(500).json({ error: error.message });
-            }
-        });
-
-        app.get('/manifest.json', (req, res) => {
+        app.get('/manifest.json', async (req, res) => {
+            const generatedConfig = await generateConfig(req.query);
+            const builder = new addonBuilder(generatedConfig.manifest);
+            const manifest = builder.getInterface().manifest;
             res.setHeader('Content-Type', 'application/json');
-            res.send(addonInterface.manifest);
+            res.send(manifest);
         });
 
-        app.get('/', (req, res) => {
+        app.get('/', async (req, res) => {
             const protocol = req.headers['x-forwarded-proto'] || req.protocol;
             const host = req.headers['x-forwarded-host'] || req.get('host');
-            const manifestUrl = `${protocol}://${host}/manifest.json`;
+            const currentConfig = {
+                m3u: req.query.m3u || defaultConfig.M3U_URL,
+                epg: req.query.epg || defaultConfig.EPG_URL,
+                epg_enabled: req.query.epg_enabled === 'true' || defaultConfig.enableEPG,
+                proxy: req.query.proxy || defaultConfig.PROXY_URL,
+                proxy_pwd: req.query.proxy_pwd || defaultConfig.PROXY_PASSWORD,
+                force_proxy: req.query.force_proxy === 'true' || defaultConfig.FORCE_PROXY,
+                suffix: req.query.suffix || defaultConfig.ID_SUFFIX
+            };
+
+            const manifestUrl = `${protocol}://${host}/manifest.json?${new URLSearchParams(currentConfig)}`;
+            const configQueryString = new URLSearchParams(currentConfig).toString();
             
             res.send(`
                 <!DOCTYPE html>
                 <html>
                 <head>
                     <meta charset="utf-8">
-                    <title>${addonInterface.manifest.name} - Stremio Addon</title>
+                    <title>${config.manifest.name} - Stremio Addon</title>
                     <style>
                         body {
                             background: #000;
@@ -161,8 +160,8 @@ async function startAddon() {
                             display: block;
                             margin: 10px 0 5px;
                         }
-                        .config-form input[type="text"], 
-                        .config-form input[type="url"], 
+                        .config-form input[type="text"],
+                        .config-form input[type="url"],
                         .config-form input[type="password"] {
                             width: 100%;
                             padding: 8px;
@@ -171,9 +170,6 @@ async function startAddon() {
                             border: 1px solid #666;
                             background: #333;
                             color: white;
-                        }
-                        .config-form input[type="checkbox"] {
-                            margin-right: 10px;
                         }
                         @keyframes fadeIn {
                             from {opacity: 0;}
@@ -186,16 +182,16 @@ async function startAddon() {
                     </style>
                 </head>
                 <body>
-                    <img class="logo" src="${addonInterface.manifest.logo}" alt="logo">
-                    <h1>${addonInterface.manifest.name} v${addonInterface.manifest.version}</h1>
+                    <img class="logo" src="${config.manifest.logo}" alt="logo">
+                    <h1>${config.manifest.name} v${config.manifest.version}</h1>
                     <div class="description">
-                        ${addonInterface.manifest.description}
+                        ${config.manifest.description}
                     </div>
                     <div class="manifest-url">
                         ${manifestUrl}
                     </div>
                     <div class="buttons">
-                        <button onclick="location.href='stremio://${host}/manifest.json'">
+                        <button onclick="installAddon()">
                             INSTALLA SU STREMIO
                         </button>
                         <button onclick="copyManifestUrl()">
@@ -205,55 +201,71 @@ async function startAddon() {
                     <div id="toast" class="toast">URL Copiato!</div>
 
                     <div class="config-form">
-                        <h2>Configurazione Addon</h2>
-                        <form id="configForm">
-                            <label>Nome Addon:</label>
-                            <input type="text" name="addonName" required>
-                            
-                            <label>ID Addon:</label>
-                            <input type="text" name="addonId" required>
-                            
-                            <label>Descrizione:</label>
-                            <input type="text" name="addonDescription" required>
-                            
-                            <label>Versione:</label>
-                            <input type="text" name="addonVersion" required>
-                            
-                            <label>Logo URL:</label>
-                            <input type="url" name="addonLogo" required>
-                            
+                        <h2>Configurazione</h2>
+                        <form id="configForm" onsubmit="updateConfig(event)">
                             <label>M3U URL:</label>
-                            <input type="url" name="M3U_URL" required>
+                            <input type="url" name="m3u" value="${currentConfig.m3u}">
                             
                             <label>EPG URL:</label>
-                            <input type="url" name="EPG_URL">
-                            
-                            <label>ID Suffix:</label>
-                            <input type="text" name="ID_SUFFIX">
-                            
-                            <label>Proxy URL:</label>
-                            <input type="url" name="PROXY_URL">
-                            
-                            <label>Proxy Password:</label>
-                            <input type="password" name="PROXY_PASSWORD">
+                            <input type="url" name="epg" value="${currentConfig.epg}">
                             
                             <label>
-                                <input type="checkbox" name="enableEPG">
+                                <input type="checkbox" name="epg_enabled" ${currentConfig.epg_enabled ? 'checked' : ''}>
                                 Abilita EPG
                             </label>
                             
+                            <label>Proxy URL:</label>
+                            <input type="url" name="proxy" value="${currentConfig.proxy || ''}">
+                            
+                            <label>Proxy Password:</label>
+                            <input type="password" name="proxy_pwd" value="${currentConfig.proxy_pwd || ''}">
+                            
                             <label>
-                                <input type="checkbox" name="FORCE_PROXY">
+                                <input type="checkbox" name="force_proxy" ${currentConfig.force_proxy ? 'checked' : ''}>
                                 Forza Proxy
                             </label>
                             
-                            <input type="submit" value="Salva Configurazione">
+                            <label>ID Suffix:</label>
+                            <input type="text" name="suffix" value="${currentConfig.suffix}">
+                            
+                            <input type="submit" value="Aggiorna">
                         </form>
                     </div>
                     
                     <script>
+                        function getConfigQueryString() {
+                            const form = document.getElementById('configForm');
+                            const formData = new FormData(form);
+                            const params = new URLSearchParams();
+                            
+                            formData.forEach((value, key) => {
+                                if (value) {
+                                    if (key === 'epg_enabled' || key === 'force_proxy') {
+                                        params.append(key, form.elements[key].checked);
+                                    } else {
+                                        params.append(key, value);
+                                    }
+                                }
+                            });
+                            
+                            return params.toString();
+                        }
+
+                        function updateConfig(e) {
+                            e.preventDefault();
+                            const queryString = getConfigQueryString();
+                            window.location.href = '/?' + queryString;
+                        }
+
+                        function installAddon() {
+                            const queryString = getConfigQueryString();
+                            window.location.href = 'stremio://${host}/manifest.json?' + queryString;
+                        }
+
                         function copyManifestUrl() {
-                            const manifestUrl = '${manifestUrl}';
+                            const queryString = getConfigQueryString();
+                            const manifestUrl = '${protocol}://${host}/manifest.json?' + queryString;
+                            
                             navigator.clipboard.writeText(manifestUrl).then(() => {
                                 const toast = document.getElementById('toast');
                                 toast.style.display = 'block';
@@ -262,55 +274,6 @@ async function startAddon() {
                                 }, 2000);
                             });
                         }
-
-                        // Carica la configurazione corrente
-                        fetch('/config')
-                            .then(response => response.json())
-                            .then(config => {
-                                Object.entries(config).forEach(([key, value]) => {
-                                    const input = document.querySelector(\`[name="\${key}"]\`);
-                                    if (input) {
-                                        if (input.type === 'checkbox') {
-                                            input.checked = value;
-                                        } else {
-                                            input.value = value;
-                                        }
-                                    }
-                                });
-                            });
-
-                        // Gestione del form
-                        document.getElementById('configForm').addEventListener('submit', async (e) => {
-                            e.preventDefault();
-                            const formData = new FormData(e.target);
-                            const config = {};
-                            formData.forEach((value, key) => {
-                                if (key === 'enableEPG' || key === 'FORCE_PROXY') {
-                                    config[key] = e.target.elements[key].checked;
-                                } else {
-                                    config[key] = value;
-                                }
-                            });
-
-                            try {
-                                const response = await fetch('/config', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify(config)
-                                });
-                                
-                                if (response.ok) {
-                                    alert('Configurazione salvata. L\'addon verrà riavviato.');
-                                    location.reload();
-                                } else {
-                                    alert('Errore nel salvataggio della configurazione');
-                                }
-                            } catch (error) {
-                                alert('Errore nel salvataggio della configurazione');
-                            }
-                        });
                     </script>
                 </body>
                 </html>
@@ -318,6 +281,7 @@ async function startAddon() {
         });
 
         app.get('/:resource/:type/:id/:extra?.json', async (req, res, next) => {
+            const generatedConfig = await generateConfig(req.query);
             const { resource, type, id } = req.params;
             const extra = req.params.extra ? JSON.parse(decodeURIComponent(req.params.extra)) : {};
             
@@ -346,20 +310,21 @@ async function startAddon() {
             }
         });
 
-        const CacheManager = require('./cache-manager')(generatedConfig);
+        const initialConfig = await generateConfig();
+        const CacheManager = require('./cache-manager')(initialConfig);
         await CacheManager.updateCache(true);
 
         const cachedData = CacheManager.getCachedData();
-        const allEpgUrls = [generatedConfig.EPG_URL, ...(cachedData.epgUrls || [])];
+        const allEpgUrls = [initialConfig.EPG_URL, ...(cachedData.epgUrls || [])];
         
         if (allEpgUrls.length > 0) {
             await EPGManager.initializeEPG(allEpgUrls.join(','));
-            if (generatedConfig.enableEPG) {
+            if (initialConfig.enableEPG) {
                 EPGManager.checkMissingEPG(cachedData.channels);
             }
         }
 
-        const port = generatedConfig.port;
+        const port = process.env.PORT || 10000;
         app.listen(port, () => {
             console.log('Addon attivo su:', `http://localhost:${port}`);
             console.log('URL Manifest:', `http://localhost:${port}/manifest.json`);
