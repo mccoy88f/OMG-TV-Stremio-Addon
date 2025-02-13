@@ -1,9 +1,7 @@
 const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
-const HlsProxyManager = require('./hls-proxy-manager');
-const DashProxyManager = require('./dash-proxy-manager');
-const HttpsProxyManager = require('./https-proxy-manager');
+const StreamProxyManager = require('./stream-proxy-manager')(config);
 
 function normalizeId(id) {
     return id?.toLowerCase().trim().replace(/\s+/g, '') || '';
@@ -131,24 +129,12 @@ async function streamHandler({ id }) {
             if (config.PROXY_URL && config.PROXY_PASSWORD) {
                 if (channel.streamInfo && channel.streamInfo.urls) {
                     for (const stream of channel.streamInfo.urls) {
-                        let proxyStreams = [];
                         const streamDetails = {
                             name: stream.name || channel.name,
                             url: stream.url,
-                            headers: channel.streamInfo.headers  // Propagate headers to proxy
+                            headers: channel.streamInfo.headers
                         };
-
-                        if (stream.url.endsWith('.m3u8')) {
-                            const hlsProxy = new HlsProxyManager(config);
-                            proxyStreams = await hlsProxy.getProxyStreams(streamDetails);
-                        } else if (stream.url.endsWith('.mpd')) {
-                            const dashProxy = new DashProxyManager(config);
-                            proxyStreams = await dashProxy.getProxyStreams(streamDetails);
-                        } else if (stream.url.startsWith('https://')) {
-                            const httpsProxy = new HttpsProxyManager(config);
-                            proxyStreams = await httpsProxy.getProxyStreams(streamDetails);
-                        }
-
+                        const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails);
                         streams.push(...proxyStreams);
                     }
                 }
@@ -156,12 +142,12 @@ async function streamHandler({ id }) {
         } else {
             if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
                 for (const stream of channel.streamInfo.urls) {
-                    // Add direct stream with headers
+                    // Add direct stream
                     streams.push({
                         name: stream.name || channel.name,
                         title: stream.name || channel.name,
                         url: stream.url,
-                        headers: channel.streamInfo.headers,  // Include headers in direct stream
+                        headers: channel.streamInfo.headers,
                         behaviorHints: {
                             notWebReady: false,
                             bingeGroup: "tv"
@@ -170,24 +156,12 @@ async function streamHandler({ id }) {
 
                     // Add proxy streams if enabled
                     if (config.PROXY_URL && config.PROXY_PASSWORD) {
-                        let proxyStreams = [];
                         const streamDetails = {
                             name: stream.name || channel.name,
                             url: stream.url,
-                            headers: channel.streamInfo.headers  // Propagate headers to proxy
+                            headers: channel.streamInfo.headers
                         };
-
-                        if (stream.url.endsWith('.m3u8')) {
-                            const hlsProxy = new HlsProxyManager(config);
-                            proxyStreams = await hlsProxy.getProxyStreams(streamDetails);
-                        } else if (stream.url.endsWith('.mpd')) {
-                            const dashProxy = new DashProxyManager(config);
-                            proxyStreams = await dashProxy.getProxyStreams(streamDetails);
-                        } else if (stream.url.startsWith('https://')) {
-                            const httpsProxy = new HttpsProxyManager(config);
-                            proxyStreams = await httpsProxy.getProxyStreams(streamDetails);
-                        }
-
+                        const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails);
                         streams.push(...proxyStreams);
                     }
                 }
