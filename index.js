@@ -61,13 +61,11 @@ async function startAddon() {
         
         app.use(cors());
         
-        // Manifest endpoint
         app.get('/manifest.json', (req, res) => {
             res.setHeader('Content-Type', 'application/json');
             res.send(addonInterface.manifest);
         });
 
-        // Landing page
         app.get('/', (req, res) => {
             const protocol = req.headers['x-forwarded-proto'] || req.protocol;
             const host = req.headers['x-forwarded-host'] || req.get('host');
@@ -131,6 +129,15 @@ async function startAddon() {
                             padding: 15px 30px;
                             border-radius: 4px;
                             display: none;
+                            animation: fadeIn 0.3s, fadeOut 0.3s 1.7s;
+                        }
+                        @keyframes fadeIn {
+                            from {opacity: 0;}
+                            to {opacity: 1;}
+                        }
+                        @keyframes fadeOut {
+                            from {opacity: 1;}
+                            to {opacity: 0;}
                         }
                     </style>
                 </head>
@@ -170,7 +177,6 @@ async function startAddon() {
             `);
         });
 
-        // API endpoints
         app.get('/:resource/:type/:id/:extra?.json', async (req, res, next) => {
             const { resource, type, id } = req.params;
             const extra = req.params.extra ? JSON.parse(decodeURIComponent(req.params.extra)) : {};
@@ -179,13 +185,13 @@ async function startAddon() {
                 let result;
                 switch (resource) {
                     case 'stream':
-                        result = await addonInterface.stream({ type, id });
+                        result = await streamHandler({ type, id });
                         break;
                     case 'catalog':
-                        result = await addonInterface.catalog({ type, id, extra });
+                        result = await catalogHandler({ type, id, extra });
                         break;
                     case 'meta':
-                        result = await addonInterface.meta({ type, id, extra });
+                        result = await metaHandler({ type, id });
                         break;
                     default:
                         next();
@@ -200,7 +206,6 @@ async function startAddon() {
             }
         });
 
-        // Initialize cache and EPG
         const CacheManager = require('./cache-manager')(generatedConfig);
         await CacheManager.updateCache(true);
 
@@ -214,7 +219,6 @@ async function startAddon() {
             }
         }
 
-        // Start server
         const port = generatedConfig.port;
         app.listen(port, () => {
             console.log('Addon attivo su:', `http://localhost:${port}`);
