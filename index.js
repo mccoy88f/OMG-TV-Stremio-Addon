@@ -7,65 +7,7 @@ const metaHandler = require('./meta-handler');
 const EPGManager = require('./epg-manager');
 const config = require('./config');
 const settingsManager = require('./settings-manager');
-
-async function generateConfig(urlParams = {}, req = null) {
-   try {
-       console.log('\n=== Generazione Configurazione Iniziale ===');
-       
-       const settings = await settingsManager.loadSettings();
-       const protocol = req ? (req.headers['x-forwarded-proto'] || req.protocol) : 'http';
-       const host = req ? (req.headers['x-forwarded-host'] || req.get('host')) : 'localhost:' + config.port;
-       
-       const currentConfig = {
-           ...settings,
-           ...urlParams
-       };
-
-       if (!currentConfig.M3U_URL) {
-           return {
-               ...config,
-               manifest: {
-                   ...config.manifest,
-                   behaviorHints: {
-                       configurationURL: `${protocol}://${host}`,
-                       reloadRequired: true
-                   }
-               }
-           };
-       }
-
-       const transformer = new PlaylistTransformer();
-       const data = await transformer.loadAndTransform(currentConfig.M3U_URL);
-       
-       return {
-           ...currentConfig,
-           manifest: {
-               ...config.manifest,
-               behaviorHints: {
-                   configurationURL: `${protocol}://${host}`,
-                   reloadRequired: true
-               },
-               catalogs: [{
-                   ...config.manifest.catalogs[0],
-                   extra: [{
-                       name: 'genre',
-                       isRequired: false,
-                       options: data.genres
-                   }, {
-                       name: 'search',
-                       isRequired: false
-                   }, {
-                       name: 'skip',
-                       isRequired: false
-                   }]
-               }]
-           }
-       };
-   } catch (error) {
-       console.error('Errore durante la generazione della configurazione:', error);
-       throw error;
-   }
-}
+const generateConfig = require('./config-generator');
 
 async function startAddon() {
    try {
@@ -162,7 +104,7 @@ async function startAddon() {
                                <input type="url" name="epg">
                                
                                <label>
-                                   <input type="checkbox" name="epg_enabled" checked>
+                                   <input type="checkbox" name="epg_enabled">
                                    Abilita EPG
                                </label>
                                
@@ -440,18 +382,16 @@ async function startAddon() {
            }
        });
 
-       const initialConfig = await generateConfig();
+       const settings = await settingsManager.loadSettings();
+       const initialConfig = await generateConfig(settings);
        const CacheManager = require('./cache-manager')(initialConfig);
        await CacheManager.updateCache(true);
 
        const cachedData = CacheManager.getCachedData();
-       const settings = await settingsManager.loadSettings();
        
-       if (settings.EPG_URL) {
+       if (settings.EPG_URL && settings.enableEPG) {
            await EPGManager.initializeEPG(settings.EPG_URL);
-           if (settings.enableEPG) {
-               EPGManager.checkMissingEPG(cachedData.channels);
-           }
+           EPGManager.checkMissingEPG(cachedData.channels);
        }
 
        const port = process.env.PORT || 10000;
