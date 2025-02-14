@@ -91,7 +91,12 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
 }
 
 function enrichWithEPG(meta, channelId, userConfig) {
-   if (!userConfig.epg_enabled || !channelId) return meta;
+   if (!userConfig.epg_enabled || !channelId) {
+        // Aggiungi descrizione base se EPG non è abilitata
+        meta.description = `Canale live: ${meta.name}`;
+        meta.releaseInfo = 'LIVE';
+        return meta;
+   }
 
    const currentProgram = EPGManager.getCurrentProgram(normalizeId(channelId));
    const upcomingPrograms = EPGManager.getUpcomingPrograms(normalizeId(channelId));
