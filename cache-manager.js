@@ -1,10 +1,10 @@
 const EventEmitter = require('events');
 const PlaylistTransformer = require('./playlist-transformer');
+const settingsManager = require('./settings-manager');
 
 class CacheManager extends EventEmitter {
-    constructor(config) {
+    constructor() {
         super();
-        this.config = config;
         this.transformer = new PlaylistTransformer();
         this.cache = {
             stremioData: null,
@@ -14,7 +14,6 @@ class CacheManager extends EventEmitter {
     }
 
     normalizeId(id) {
-        // Solo conversione lowercase, mantiene spazi, punti e trattini
         return id?.toLowerCase() || '';
     }
 
@@ -25,13 +24,19 @@ class CacheManager extends EventEmitter {
         }
 
         try {
+            const settings = await settingsManager.loadSettings();
+            if (!settings.M3U_URL) {
+                console.log('⚠️  URL M3U non configurato');
+                return;
+            }
+
             this.cache.updateInProgress = true;
             console.log('\n=== Inizio Aggiornamento Cache ===');
             console.log(`Forza aggiornamento: ${force ? 'Sì' : 'No'}`);
             console.log(`Ultimo aggiornamento: ${this.cache.lastUpdated ? new Date(this.cache.lastUpdated).toLocaleString() : 'Mai'}`);
 
             const needsUpdate = force || !this.cache.lastUpdated || 
-                (Date.now() - this.cache.lastUpdated) > this.config.cacheSettings.updateInterval;
+                (Date.now() - this.cache.lastUpdated) > 12 * 60 * 60 * 1000; // 12 ore
 
             if (!needsUpdate) {
                 console.log('ℹ️  Cache ancora valida, skip aggiornamento');
@@ -39,16 +44,14 @@ class CacheManager extends EventEmitter {
                 return;
             }
 
-            console.log('Caricamento playlist da:', this.config.M3U_URL);
-            const stremioData = await this.transformer.loadAndTransform(this.config.M3U_URL);
+            console.log('Caricamento playlist da:', settings.M3U_URL);
+            const stremioData = await this.transformer.loadAndTransform(settings.M3U_URL);
             
             this.cache = {
                 stremioData,
                 lastUpdated: Date.now(),
                 updateInProgress: false
             };
-
-            this.config.manifest.catalogs[0].extra[0].options = stremioData.genres;
 
             console.log('\nRiepilogo Cache:');
             console.log(`✓ Canali in cache: ${stremioData.channels.length}`);
@@ -68,7 +71,6 @@ class CacheManager extends EventEmitter {
 
     getCachedData() {
         if (!this.cache.stremioData) return { channels: [], genres: [] };
-        
         return {
             channels: this.cache.stremioData.channels,
             genres: this.cache.stremioData.genres
@@ -116,8 +118,8 @@ class CacheManager extends EventEmitter {
 
     isStale() {
         if (!this.cache.lastUpdated) return true;
-        return (Date.now() - this.cache.lastUpdated) >= this.config.cacheSettings.updateInterval;
+        return (Date.now() - this.cache.lastUpdated) >= 12 * 60 * 60 * 1000; // 12 ore
     }
 }
 
-module.exports = config => new CacheManager(config);
+module.exports = () => new CacheManager();
