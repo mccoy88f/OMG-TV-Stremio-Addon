@@ -16,7 +16,6 @@ class CacheManager extends EventEmitter {
     normalizeId(id) {
         return id?.toLowerCase() || '';
     }
-
     async updateCache(force = false) {
         if (this.cache.updateInProgress) {
             console.log('⚠️  Aggiornamento cache già in corso, skip...');
@@ -33,10 +32,10 @@ class CacheManager extends EventEmitter {
             this.cache.updateInProgress = true;
             console.log('\n=== Inizio Aggiornamento Cache ===');
             console.log(`Forza aggiornamento: ${force ? 'Sì' : 'No'}`);
-            console.log(`Ultimo aggiornamento: ${this.cache.lastUpdated ? new Date(this.cache.lastUpdated).toLocaleString() : 'Mai'}`);
 
+        // Forza sempre l'aggiornamento se richiesto
             const needsUpdate = force || !this.cache.lastUpdated || 
-                (Date.now() - this.cache.lastUpdated) > 12 * 60 * 60 * 1000; // 12 ore
+                (Date.now() - this.cache.lastUpdated) > 12 * 60 * 60 * 1000;
 
             if (!needsUpdate) {
                 console.log('ℹ️  Cache ancora valida, skip aggiornamento');
@@ -46,13 +45,14 @@ class CacheManager extends EventEmitter {
 
             console.log('Caricamento playlist da:', settings.M3U_URL);
             const stremioData = await this.transformer.loadAndTransform(settings.M3U_URL);
-            
+        
             this.cache = {
                 stremioData,
                 lastUpdated: Date.now(),
                 updateInProgress: false
             };
 
+        // Log dettagliato come prima
             console.log('\nRiepilogo Cache:');
             console.log(`✓ Canali in cache: ${stremioData.channels.length}`);
             console.log(`✓ Generi trovati: ${stremioData.genres.length}`);
