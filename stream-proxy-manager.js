@@ -1,6 +1,5 @@
 const axios = require('axios');
 const { URL } = require('url');
-const settingsManager = require('./settings-manager');
 
 class StreamProxyManager {
     constructor() {
@@ -66,15 +65,14 @@ class StreamProxyManager {
         }
     }
 
-    async buildProxyUrl(streamUrl, headers = {}) {
-        const settings = await settingsManager.loadSettings();
-        if (!settings.PROXY_URL || !settings.PROXY_PASSWORD) {
+    async buildProxyUrl(streamUrl, headers = {}, config = {}) {
+        if (!config.proxy_url || !config.proxy_pwd) {
             return null;
         }
 
-        const baseUrl = settings.PROXY_URL.replace(/\/+$/, '');
+        const baseUrl = config.proxy_url.replace(/\/+$/, '');
         const params = new URLSearchParams({
-            api_password: settings.PROXY_PASSWORD,
+            api_password: config.proxy_pwd,
             d: streamUrl,
             'user-agent': headers['User-Agent'] || 'Mozilla/5.0',
             'referer': headers['Referer'] || '',
@@ -92,11 +90,10 @@ class StreamProxyManager {
         return null;
     }
 
-    async getProxyStreams(channel) {
+    async getProxyStreams(channel, config = {}) {
         const streams = [];
-        const settings = await settingsManager.loadSettings();
 
-        if (!settings.PROXY_URL || !settings.PROXY_PASSWORD) {
+        if (!config.proxy_url || !config.proxy_pwd) {
             return streams;
         }
 
@@ -111,7 +108,7 @@ class StreamProxyManager {
                 return streams;
             }
 
-            const proxyUrl = await this.buildProxyUrl(finalUrl, headers);
+            const proxyUrl = await this.buildProxyUrl(finalUrl, headers, config);
             if (!proxyUrl) {
                 console.log(`Formato stream non supportato per: ${channel.name}`);
                 return streams;
