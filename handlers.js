@@ -45,8 +45,9 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
            return { metas: [], genres: [] };
        }
 
-       if (CacheManager.isStale()) {
-           await CacheManager.updateCache();
+       // Forza l'aggiornamento della cache se stale o se non ci sono dati
+       if (CacheManager.isStale() || !CacheManager.getCachedData().channels.length) {
+           await CacheManager.updateCache(false, userConfig.m3u);
        }
 
        const cachedData = CacheManager.getCachedData();
@@ -118,6 +119,14 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
 
 async function streamHandler({ id, config: userConfig }) {
    try {
+       if (!userConfig.m3u) {
+           return { streams: [] };
+       }
+
+       if (CacheManager.isStale() || !CacheManager.getCachedData().channels.length) {
+           await CacheManager.updateCache(false, userConfig.m3u);
+       }
+
        const channelId = id.split('|')[1];
        const channel = CacheManager.getChannel(channelId);
 
