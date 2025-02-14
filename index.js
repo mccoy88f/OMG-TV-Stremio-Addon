@@ -128,11 +128,7 @@ app.get('/', async (req, res) => {
                                 }
                             }
                         });
-                        
-                        // Aggiungi delay di 2 secondi
-                        setTimeout(() => {
-                            window.location.href = '/?' + params.toString();
-                        }, 2000);
+
                     }
                 </script>
             </body>
@@ -339,6 +335,17 @@ app.get('/', async (req, res) => {
                         }, 2000);
                     });
                 }
+            </script>
+            <script>
+            // Aggiungi questo script alla fine del body
+                document.addEventListener('DOMContentLoaded', () => {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('m3u')) {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                });
             </script>
         </body>
         </html>
