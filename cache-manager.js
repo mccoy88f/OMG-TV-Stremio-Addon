@@ -1,6 +1,5 @@
 const EventEmitter = require('events');
 const PlaylistTransformer = require('./playlist-transformer');
-const settingsManager = require('./settings-manager');
 
 class CacheManager extends EventEmitter {
     constructor() {
@@ -16,6 +15,7 @@ class CacheManager extends EventEmitter {
     normalizeId(id) {
         return id?.toLowerCase() || '';
     }
+
     async updateCache(force = false) {
         if (this.cache.updateInProgress) {
             console.log('⚠️  Aggiornamento cache già in corso, skip...');
@@ -23,17 +23,10 @@ class CacheManager extends EventEmitter {
         }
 
         try {
-            const settings = await settingsManager.loadSettings();
-            if (!settings.M3U_URL) {
-                console.log('⚠️  URL M3U non configurato');
-                return;
-            }
-
             this.cache.updateInProgress = true;
             console.log('\n=== Inizio Aggiornamento Cache ===');
             console.log(`Forza aggiornamento: ${force ? 'Sì' : 'No'}`);
 
-        // Forza sempre l'aggiornamento se richiesto
             const needsUpdate = force || !this.cache.lastUpdated || 
                 (Date.now() - this.cache.lastUpdated) > 12 * 60 * 60 * 1000;
 
@@ -43,21 +36,20 @@ class CacheManager extends EventEmitter {
                 return;
             }
 
-            console.log('Caricamento playlist da:', settings.M3U_URL);
-            const stremioData = await this.transformer.loadAndTransform(settings.M3U_URL);
-        
             this.cache = {
-                stremioData,
+                stremioData: null,
                 lastUpdated: Date.now(),
                 updateInProgress: false
             };
 
-        // Log dettagliato come prima
-            console.log('\nRiepilogo Cache:');
-            console.log(`✓ Canali in cache: ${stremioData.channels.length}`);
-            console.log(`✓ Generi trovati: ${stremioData.genres.length}`);
-            console.log(`✓ Ultimo aggiornamento: ${new Date().toLocaleString()}`);
-            console.log('\n=== Cache Aggiornata con Successo ===\n');
+            // Log dettagliato
+            if (this.cache.stremioData) {
+                console.log('\nRiepilogo Cache:');
+                console.log(`✓ Canali in cache: ${this.cache.stremioData.channels.length}`);
+                console.log(`✓ Generi trovati: ${this.cache.stremioData.genres.length}`);
+                console.log(`✓ Ultimo aggiornamento: ${new Date().toLocaleString()}`);
+                console.log('\n=== Cache Aggiornata con Successo ===\n');
+            }
 
             this.emit('cacheUpdated', this.cache);
 
