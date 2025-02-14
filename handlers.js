@@ -2,21 +2,16 @@ const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
 const StreamProxyManager = require('./stream-proxy-manager')(config);
-const settingsManager = require('./settings-manager');
 
 function normalizeId(id) {
    return id?.toLowerCase().trim().replace(/\s+/g, '') || '';
 }
 
-async function enrichWithEPG(meta, channelId) {
-   if (!channelId) return meta;
+async function enrichWithEPG(meta, channelId, userConfig) {
+   if (!channelId || !userConfig.epg_enabled) return meta;
 
-   const settings = await settingsManager.loadSettings();
-   if (!settings.enableEPG) return meta;
-
-   const normalizedId = normalizeId(channelId);
-   const currentProgram = EPGManager.getCurrentProgram(normalizedId);
-   const upcomingPrograms = EPGManager.getUpcomingPrograms(normalizedId);
+   const currentProgram = EPGManager.getCurrentProgram(normalizeId(channelId));
+   const upcomingPrograms = EPGManager.getUpcomingPrograms(normalizeId(channelId));
 
    if (currentProgram) {
        meta.description = `IN ONDA ORA:\n${currentProgram.title}`;
@@ -44,8 +39,12 @@ async function enrichWithEPG(meta, channelId) {
    return meta;
 }
 
-async function catalogHandler({ type, id, extra }) {
+async function catalogHandler({ type, id, extra, config: userConfig }) {
    try {
+       if (!userConfig.m3u) {
+           return { metas: [], genres: [] };
+       }
+
        if (CacheManager.isStale()) {
            await CacheManager.updateCache();
        }
@@ -103,7 +102,7 @@ async function catalogHandler({ type, id, extra }) {
                }
            }
 
-           return await enrichWithEPG(meta, channel.streamInfo?.tvg?.id);
+           return await enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
        }));
 
        return {
@@ -117,9 +116,8 @@ async function catalogHandler({ type, id, extra }) {
    }
 }
 
-async function streamHandler({ id }) {
+async function streamHandler({ id, config: userConfig }) {
    try {
-       const settings = await settingsManager.loadSettings();
        const channelId = id.split('|')[1];
        const channel = CacheManager.getChannel(channelId);
 
@@ -130,8 +128,8 @@ async function streamHandler({ id }) {
 
        let streams = [];
 
-       if (settings.FORCE_PROXY === true) {
-           if (settings.PROXY_URL && settings.PROXY_PASSWORD) {
+       if (userConfig.force_proxy === 'true') {
+           if (userConfig.proxy_url && userConfig.proxy_pwd) {
                if (channel.streamInfo && channel.streamInfo.urls) {
                    for (const stream of channel.streamInfo.urls) {
                        const streamDetails = {
@@ -158,7 +156,7 @@ async function streamHandler({ id }) {
                        }
                    });
 
-                   if (settings.PROXY_URL && settings.PROXY_PASSWORD) {
+                   if (userConfig.proxy_url && userConfig.proxy_pwd) {
                        const streamDetails = {
                            name: stream.name || channel.name,
                            url: stream.url,
@@ -197,7 +195,7 @@ async function streamHandler({ id }) {
            }
        }
 
-       const enrichedMeta = await enrichWithEPG(meta, channel.streamInfo?.tvg?.id);
+       const enrichedMeta = await enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
        streams.forEach(stream => {
            stream.meta = enrichedMeta;
        });
