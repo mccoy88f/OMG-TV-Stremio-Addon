@@ -3,7 +3,7 @@ const path = require('path');
 
 class SettingsManager {
     constructor() {
-        this.settingsPath = path.join(__dirname, 'settings.json');
+        this.settingsPath = path.join(__dirname, 'config', 'settings.json');
         this.defaultSettings = {
             M3U_URL: "",
             EPG_URL: "",
