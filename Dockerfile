@@ -11,6 +11,8 @@ RUN npm install
 # Copia il resto del codice
 COPY . .
 
+RUN mkdir -p /app/data && chown -R node:node /app/data
+
 # Esponi la porta 10000 (usata dal server)
 EXPOSE 10000
 
