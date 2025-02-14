@@ -1,5 +1,6 @@
 const PlaylistTransformer = require('./playlist-transformer');
 const settingsManager = require('./settings-manager');
+const config = require('./config');
 
 async function generateConfig(urlParams = {}, req = null) {
     try {
