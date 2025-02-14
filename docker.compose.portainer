@@ -18,6 +18,7 @@ services:
         rm -rf /tmp/repo &&
         git clone --branch main https://github.com/mccoy88f/OMG-TV-Stremio-Addon.git /tmp/repo &&
         cp -r /tmp/repo/* /app/ &&
+        mkdir -p /app/data && chown -R node:node /app/data &&
         cd /app &&
         npm install &&
         node index.js
