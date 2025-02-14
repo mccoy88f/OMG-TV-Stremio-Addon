@@ -32,6 +32,8 @@ class CacheManager extends EventEmitter {
 
         // Aggiorna l'URL M3U se fornito
         if (m3uUrl) {
+            // Force update if M3U URL has changed
+            force = force || (this.cache.m3uUrl !== m3uUrl);
             this.cache.m3uUrl = m3uUrl;
         }
 
