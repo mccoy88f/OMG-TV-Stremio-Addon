@@ -7,38 +7,6 @@ function normalizeId(id) {
    return id?.toLowerCase().trim().replace(/\s+/g, '') || '';
 }
 
-async function enrichWithEPG(meta, channelId, userConfig) {
-   if (!channelId || !userConfig.epg_enabled) return meta;
-
-   const currentProgram = EPGManager.getCurrentProgram(normalizeId(channelId));
-   const upcomingPrograms = EPGManager.getUpcomingPrograms(normalizeId(channelId));
-
-   if (currentProgram) {
-       meta.description = `IN ONDA ORA:\n${currentProgram.title}`;
-
-       if (currentProgram.description) {
-           meta.description += `\n${currentProgram.description}`;
-       }
-
-       meta.description += `\nOrario: ${currentProgram.start} - ${currentProgram.stop}`;
-
-       if (currentProgram.category) {
-           meta.description += `\nCategoria: ${currentProgram.category}`;
-       }
-
-       if (upcomingPrograms && upcomingPrograms.length > 0) {
-           meta.description += '\n\nPROSSIMI PROGRAMMI:';
-           upcomingPrograms.forEach(program => {
-               meta.description += `\n${program.start} - ${program.title}`;
-           });
-       }
-
-       meta.releaseInfo = `In onda: ${currentProgram.title}`;
-   }
-
-   return meta;
-}
-
 async function catalogHandler({ type, id, extra, config: userConfig }) {
    try {
        if (!userConfig.m3u) {
@@ -76,7 +44,7 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
        const startIdx = parseInt(skip) || 0;
        const paginatedChannels = channels.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
-       const metas = await Promise.all(paginatedChannels.map(async channel => {
+       const metas = paginatedChannels.map(channel => {
            const meta = {
                id: channel.id,
                type: 'tv',
@@ -91,7 +59,8 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
                behaviorHints: {
                    isLive: true,
                    ...channel.behaviorHints
-               }
+               },
+               streamInfo: channel.streamInfo
            };
 
            if (channel.streamInfo?.tvg?.chno) {
@@ -107,8 +76,8 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
                }
            }
 
-           return await enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
-       }));
+           return enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
+       });
 
        return {
            metas,
@@ -119,6 +88,38 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
        console.error('[Handlers] Errore nella gestione del catalogo:', error);
        return { metas: [], genres: [] };
    }
+}
+
+function enrichWithEPG(meta, channelId, userConfig) {
+   if (!userConfig.epg_enabled || !channelId) return meta;
+
+   const currentProgram = EPGManager.getCurrentProgram(normalizeId(channelId));
+   const upcomingPrograms = EPGManager.getUpcomingPrograms(normalizeId(channelId));
+
+   if (currentProgram) {
+       meta.description = `IN ONDA ORA:\n${currentProgram.title}`;
+
+       if (currentProgram.description) {
+           meta.description += `\n${currentProgram.description}`;
+       }
+
+       meta.description += `\nOrario: ${currentProgram.start} - ${currentProgram.stop}`;
+
+       if (currentProgram.category) {
+           meta.description += `\nCategoria: ${currentProgram.category}`;
+       }
+
+       if (upcomingPrograms && upcomingPrograms.length > 0) {
+           meta.description += '\n\nPROSSIMI PROGRAMMI:';
+           upcomingPrograms.forEach(program => {
+               meta.description += `\n${program.start} - ${program.title}`;
+           });
+       }
+
+       meta.releaseInfo = `In onda: ${currentProgram.title}`;
+   }
+
+   return meta;
 }
 
 async function streamHandler({ id, config: userConfig }) {
@@ -201,7 +202,8 @@ async function streamHandler({ id, config: userConfig }) {
            behaviorHints: {
                isLive: true,
                ...channel.behaviorHints
-           }
+           },
+           streamInfo: channel.streamInfo
        };
 
        if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
@@ -213,7 +215,7 @@ async function streamHandler({ id, config: userConfig }) {
            }
        }
 
-       const enrichedMeta = await enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
+       const enrichedMeta = enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
        streams.forEach(stream => {
            stream.meta = enrichedMeta;
        });
