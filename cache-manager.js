@@ -8,7 +8,8 @@ class CacheManager extends EventEmitter {
         this.cache = {
             stremioData: null,
             lastUpdated: null,
-            updateInProgress: false
+            updateInProgress: false,
+            m3uUrl: null
         };
     }
 
@@ -22,8 +23,14 @@ class CacheManager extends EventEmitter {
             return;
         }
 
-        if (!m3uUrl) {
-            console.log('⚠️ Nessun URL M3U fornito, skip aggiornamento');
+        // Aggiorna l'URL M3U se fornito
+        if (m3uUrl) {
+            this.cache.m3uUrl = m3uUrl;
+        }
+
+        // Usa l'URL M3U memorizzato
+        if (!this.cache.m3uUrl) {
+            console.log('⚠️ Nessun URL M3U disponibile, skip aggiornamento');
             return;
         }
 
@@ -31,7 +38,7 @@ class CacheManager extends EventEmitter {
             this.cache.updateInProgress = true;
             console.log('\n=== Inizio Aggiornamento Cache ===');
             console.log(`Forza aggiornamento: ${force ? 'Sì' : 'No'}`);
-            console.log('Caricamento playlist da:', m3uUrl);
+            console.log('Caricamento playlist da:', this.cache.m3uUrl);
 
             const needsUpdate = force || !this.cache.lastUpdated || 
                 (Date.now() - this.cache.lastUpdated) > 12 * 60 * 60 * 1000;
@@ -42,12 +49,13 @@ class CacheManager extends EventEmitter {
                 return;
             }
 
-            const data = await this.transformer.loadAndTransform(m3uUrl);
+            const data = await this.transformer.loadAndTransform(this.cache.m3uUrl);
             
             this.cache = {
                 stremioData: data,
                 lastUpdated: Date.now(),
-                updateInProgress: false
+                updateInProgress: false,
+                m3uUrl: this.cache.m3uUrl
             };
 
             console.log('\nRiepilogo Cache:');
