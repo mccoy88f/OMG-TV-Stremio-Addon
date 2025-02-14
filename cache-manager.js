@@ -16,9 +16,14 @@ class CacheManager extends EventEmitter {
         return id?.toLowerCase() || '';
     }
 
-    async updateCache(force = false) {
+    async updateCache(force = false, m3uUrl = null) {
         if (this.cache.updateInProgress) {
             console.log('⚠️  Aggiornamento cache già in corso, skip...');
+            return;
+        }
+
+        if (!m3uUrl) {
+            console.log('⚠️ Nessun URL M3U fornito, skip aggiornamento');
             return;
         }
 
@@ -26,6 +31,7 @@ class CacheManager extends EventEmitter {
             this.cache.updateInProgress = true;
             console.log('\n=== Inizio Aggiornamento Cache ===');
             console.log(`Forza aggiornamento: ${force ? 'Sì' : 'No'}`);
+            console.log('Caricamento playlist da:', m3uUrl);
 
             const needsUpdate = force || !this.cache.lastUpdated || 
                 (Date.now() - this.cache.lastUpdated) > 12 * 60 * 60 * 1000;
@@ -36,20 +42,19 @@ class CacheManager extends EventEmitter {
                 return;
             }
 
+            const data = await this.transformer.loadAndTransform(m3uUrl);
+            
             this.cache = {
-                stremioData: null,
+                stremioData: data,
                 lastUpdated: Date.now(),
                 updateInProgress: false
             };
 
-            // Log dettagliato
-            if (this.cache.stremioData) {
-                console.log('\nRiepilogo Cache:');
-                console.log(`✓ Canali in cache: ${this.cache.stremioData.channels.length}`);
-                console.log(`✓ Generi trovati: ${this.cache.stremioData.genres.length}`);
-                console.log(`✓ Ultimo aggiornamento: ${new Date().toLocaleString()}`);
-                console.log('\n=== Cache Aggiornata con Successo ===\n');
-            }
+            console.log('\nRiepilogo Cache:');
+            console.log(`✓ Canali in cache: ${data.channels.length}`);
+            console.log(`✓ Generi trovati: ${data.genres.length}`);
+            console.log(`✓ Ultimo aggiornamento: ${new Date().toLocaleString()}`);
+            console.log('\n=== Cache Aggiornata con Successo ===\n');
 
             this.emit('cacheUpdated', this.cache);
 
