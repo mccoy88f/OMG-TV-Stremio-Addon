@@ -5,6 +5,11 @@ class CacheManager extends EventEmitter {
     constructor() {
         super();
         this.transformer = new PlaylistTransformer();
+        this.cache = null;
+        this.initCache();
+    }
+
+    initCache() {
         this.cache = {
             stremioData: null,
             lastUpdated: null,
@@ -18,6 +23,8 @@ class CacheManager extends EventEmitter {
     }
 
     async updateCache(force = false, m3uUrl = null) {
+        if (!this.cache) this.initCache();
+
         if (this.cache.updateInProgress) {
             console.log('⚠️  Aggiornamento cache già in corso, skip...');
             return;
@@ -28,7 +35,6 @@ class CacheManager extends EventEmitter {
             this.cache.m3uUrl = m3uUrl;
         }
 
-        // Usa l'URL M3U memorizzato
         if (!this.cache.m3uUrl) {
             console.log('⚠️ Nessun URL M3U disponibile, skip aggiornamento');
             return;
@@ -40,7 +46,7 @@ class CacheManager extends EventEmitter {
             console.log(`Forza aggiornamento: ${force ? 'Sì' : 'No'}`);
             console.log('Caricamento playlist da:', this.cache.m3uUrl);
 
-            const needsUpdate = force || !this.cache.lastUpdated || 
+            const needsUpdate = force || !this.cache.lastUpdated || !this.cache.stremioData ||
                 (Date.now() - this.cache.lastUpdated) > 12 * 60 * 60 * 1000;
 
             if (!needsUpdate) {
@@ -51,12 +57,9 @@ class CacheManager extends EventEmitter {
 
             const data = await this.transformer.loadAndTransform(this.cache.m3uUrl);
             
-            this.cache = {
-                stremioData: data,
-                lastUpdated: Date.now(),
-                updateInProgress: false,
-                m3uUrl: this.cache.m3uUrl
-            };
+            this.cache.stremioData = data;
+            this.cache.lastUpdated = Date.now();
+            this.cache.updateInProgress = false;
 
             console.log('\nRiepilogo Cache:');
             console.log(`✓ Canali in cache: ${data.channels.length}`);
@@ -75,7 +78,7 @@ class CacheManager extends EventEmitter {
     }
 
     getCachedData() {
-        if (!this.cache.stremioData) return { channels: [], genres: [] };
+        if (!this.cache || !this.cache.stremioData) return { channels: [], genres: [] };
         return {
             channels: this.cache.stremioData.channels,
             genres: this.cache.stremioData.genres
@@ -83,10 +86,10 @@ class CacheManager extends EventEmitter {
     }
 
     getChannel(channelId) {
-        if (!channelId) return null;
+        if (!channelId || !this.cache?.stremioData?.channels) return null;
         const normalizedSearchId = this.normalizeId(channelId);
         
-        const channel = this.cache.stremioData?.channels.find(ch => {
+        const channel = this.cache.stremioData.channels.find(ch => {
             const normalizedChannelId = this.normalizeId(ch.id);
             const normalizedTvgId = this.normalizeId(ch.streamInfo?.tvg?.id);
             
@@ -95,7 +98,7 @@ class CacheManager extends EventEmitter {
         });
 
         if (!channel) {
-            return this.cache.stremioData?.channels.find(ch => 
+            return this.cache.stremioData.channels.find(ch => 
                 this.normalizeId(ch.name) === normalizedSearchId
             );
         }
@@ -104,26 +107,27 @@ class CacheManager extends EventEmitter {
     }
 
     getChannelsByGenre(genre) {
-        if (!genre) return this.cache.stremioData?.channels || [];
+        if (!genre || !this.cache?.stremioData?.channels) return [];
         
         const normalizedGenre = this.normalizeId(genre);
-        return this.cache.stremioData?.channels.filter(
+        return this.cache.stremioData.channels.filter(
             channel => channel.genre?.some(g => this.normalizeId(g) === normalizedGenre)
         ) || [];
     }
 
     searchChannels(query) {
-        if (!query) return this.cache.stremioData?.channels || [];
+        if (!this.cache?.stremioData?.channels) return [];
+        if (!query) return this.cache.stremioData.channels;
         
         const normalizedQuery = this.normalizeId(query);
-        return this.cache.stremioData?.channels.filter(channel => 
+        return this.cache.stremioData.channels.filter(channel => 
             this.normalizeId(channel.name).includes(normalizedQuery)
-        ) || [];
+        );
     }
 
     isStale() {
-        if (!this.cache.lastUpdated) return true;
-        return (Date.now() - this.cache.lastUpdated) >= 12 * 60 * 60 * 1000; // 12 ore
+        if (!this.cache || !this.cache.lastUpdated || !this.cache.stremioData) return true;
+        return (Date.now() - this.cache.lastUpdated) >= 12 * 60 * 60 * 1000;
     }
 }
 
