@@ -217,33 +217,50 @@ app.get('/manifest.json', async (req, res) => {
 });
 
 app.get('/:resource/:type/:id/:extra?.json', async (req, res, next) => {
-   const { resource, type, id } = req.params;
-   const extra = req.params.extra ? JSON.parse(decodeURIComponent(req.params.extra)) : {};
-   
-   try {
-       let result;
-       switch (resource) {
-           case 'stream':
-               result = await streamHandler({ type, id, config: req.query });
-               break;
-           case 'catalog':
-               result = await catalogHandler({ type, id, extra, config: req.query });
-               break;
-           case 'meta':
-               result = await metaHandler({ type, id, config: req.query });
-               break;
-           default:
-               next();
-               return;
-       }
-       
-       res.setHeader('Content-Type', 'application/json');
-       res.send(result);
-   } catch (error) {
-       console.error('Error handling request:', error);
-       res.status(500).json({ error: 'Internal server error' });
-   }
+    const { resource, type, id } = req.params;
+    const extra = req.params.extra 
+        ? safeParseExtra(req.params.extra) 
+        : {};
+    
+    try {
+        let result;
+        switch (resource) {
+            case 'stream':
+                result = await streamHandler({ type, id, config: req.query });
+                break;
+            case 'catalog':
+                result = await catalogHandler({ type, id, extra, config: req.query });
+                break;
+            case 'meta':
+                result = await metaHandler({ type, id, config: req.query });
+                break;
+            default:
+                next();
+                return;
+        }
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.send(result);
+    } catch (error) {
+        console.error('Error handling request:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
+
+function safeParseExtra(extraParam) {
+    try {
+        // Decodifica prima di parsare
+        const decodedExtra = decodeURIComponent(extraParam);
+        return JSON.parse(decodedExtra);
+    } catch (error) {
+        console.error('Errore nel parsing extra:', error);
+        // Gestisci il caso del parametro skip
+        if (extraParam.startsWith('skip=')) {
+            return { skip: parseInt(extraParam.split('=')[1], 10) || 0 };
+        }
+        return {};
+    }
+}
 
 async function startAddon() {
    try {
