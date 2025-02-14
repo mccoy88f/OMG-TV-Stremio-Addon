@@ -40,7 +40,10 @@ class SettingsManager {
 
     async saveSettings(settings) {
         await this.ensureSettingsDirectory();
-        await fs.writeFile(this.settingsPath, JSON.stringify(settings, null, 2), { mode: 0o666 });
+        await fs.writeFile(this.settingsPath, JSON.stringify(settings, null, 2), { 
+            mode: 0o666,
+            flag: 'w'  // Sovrascrivi sempre
+        });
         return settings;
     }
 
