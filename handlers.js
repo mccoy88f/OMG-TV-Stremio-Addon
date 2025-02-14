@@ -2,13 +2,17 @@ const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
 const StreamProxyManager = require('./stream-proxy-manager')(config);
+const settingsManager = require('./settings-manager');
 
 function normalizeId(id) {
     return id?.toLowerCase().trim().replace(/\s+/g, '') || '';
 }
 
 function enrichWithEPG(meta, channelId) {
-    if (!config.enableEPG || !channelId) return meta;
+    if (!channelId) return meta;
+
+    const settings = await settingsManager.loadSettings();
+    if (!settings.enableEPG) return meta;
 
     const normalizedId = normalizeId(channelId);
     const currentProgram = EPGManager.getCurrentProgram(normalizedId);
@@ -115,6 +119,7 @@ async function catalogHandler({ type, id, extra }) {
 
 async function streamHandler({ id }) {
     try {
+        const settings = await settingsManager.loadSettings();
         const channelId = id.split('|')[1];
         const channel = CacheManager.getChannel(channelId);
 
@@ -125,8 +130,8 @@ async function streamHandler({ id }) {
 
         let streams = [];
 
-        if (config.FORCE_PROXY === true) {
-            if (config.PROXY_URL && config.PROXY_PASSWORD) {
+        if (settings.FORCE_PROXY === true) {
+            if (settings.PROXY_URL && settings.PROXY_PASSWORD) {
                 if (channel.streamInfo && channel.streamInfo.urls) {
                     for (const stream of channel.streamInfo.urls) {
                         const streamDetails = {
@@ -142,7 +147,6 @@ async function streamHandler({ id }) {
         } else {
             if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
                 for (const stream of channel.streamInfo.urls) {
-                    // Add direct stream
                     streams.push({
                         name: stream.name || channel.name,
                         title: stream.name || channel.name,
@@ -154,8 +158,7 @@ async function streamHandler({ id }) {
                         }
                     });
 
-                    // Add proxy streams if enabled
-                    if (config.PROXY_URL && config.PROXY_PASSWORD) {
+                    if (settings.PROXY_URL && settings.PROXY_PASSWORD) {
                         const streamDetails = {
                             name: stream.name || channel.name,
                             url: stream.url,
