@@ -276,6 +276,12 @@ app.get('/manifest.json', async (req, res) => {
    };
 
    const builder = new addonBuilder(manifestConfig);
+   
+   // Inizializzazione EPG se presente
+   if (req.query.epg) {
+       await EPGManager.initializeEPG(req.query.epg);
+   }
+
    builder.defineCatalogHandler(async (args) => catalogHandler({ ...args, config: req.query }));
    builder.defineStreamHandler(async (args) => streamHandler({ ...args, config: req.query }));
    builder.defineMetaHandler(async (args) => metaHandler({ ...args, config: req.query }));
