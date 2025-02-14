@@ -92,11 +92,4 @@ function loadCustomConfig() {
 }
 
 const config = loadCustomConfig();
-
-config.updateEPGUrl = function(url) {
-    if (!this.EPG_URL && url) {
-        this.EPG_URL = url;
-    }
-};
-
 module.exports = config;
