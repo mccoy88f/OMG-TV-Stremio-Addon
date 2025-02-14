@@ -70,6 +70,10 @@ function loadCustomConfig() {
                     description: customConfig.addonDescription || baseConfig.manifest.description,
                     version: customConfig.addonVersion || baseConfig.manifest.version,
                     logo: customConfig.addonLogo || baseConfig.manifest.logo,
+                    behaviorHints: {
+                        configurationURL: 'http://localhost:10000',
+                        reloadRequired: true
+                    },
                     catalogs: [{
                         ...baseConfig.manifest.catalogs[0],
                         id: addonConfigExists ? 'omg_plus_tv' : baseConfig.manifest.catalogs[0].id,
@@ -88,5 +92,11 @@ function loadCustomConfig() {
 }
 
 const config = loadCustomConfig();
+
+config.updateEPGUrl = function(url) {
+    if (!this.EPG_URL && url) {
+        this.EPG_URL = url;
+    }
+};
 
 module.exports = config;
