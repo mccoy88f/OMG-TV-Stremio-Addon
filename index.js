@@ -399,18 +399,20 @@ app.get('/:resource/:type/:id/:extra?.json', async (req, res, next) => {
 });
 
 async function startAddon() {
-   try {
-       const settings = await settingsManager.loadSettings();
-       const initialConfig = await generateConfig(settings);
-       const CacheManager = require('./cache-manager')(initialConfig);
-       await CacheManager.updateCache(true);
+    try {
+        const settings = await settingsManager.loadSettings();
+        const initialConfig = await generateConfig(settings);
+        const CacheManager = require('./cache-manager')(initialConfig);
+        
+        // Forza aggiornamento del cache sempre, non solo al primo avvio
+        await CacheManager.updateCache(true);
 
-       const cachedData = CacheManager.getCachedData();
-       
-       if (settings.EPG_URL && settings.enableEPG) {
-           await EPGManager.initializeEPG(settings.EPG_URL);
-           EPGManager.checkMissingEPG(cachedData.channels);
-       }
+        const cachedData = CacheManager.getCachedData();
+        
+        if (settings.EPG_URL && settings.enableEPG) {
+            await EPGManager.initializeEPG(settings.EPG_URL);
+            EPGManager.checkMissingEPG(cachedData.channels);
+        }
 
        const port = process.env.PORT || 10000;
        app.listen(port, () => {
