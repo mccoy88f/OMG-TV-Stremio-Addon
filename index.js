@@ -88,19 +88,22 @@ app.get('/', async (req, res) => {
                    border-radius: 4px;
                    display: none;
                }
+               input[type="submit"] {
+                   background: #8A5AAB;
+                   color: white;
+                   border: none;
+                   padding: 12px 24px;
+                   border-radius: 4px;
+                   cursor: pointer;
+                   font-size: 16px;
+                   width: 100%;
+                   margin-top: 20px;
+               }
            </style>
        </head>
        <body>
            <img class="logo" src="${config.manifest.logo}" alt="logo">
            <h1>${config.manifest.name}</h1>
-           <div class="manifest-url">
-               ${manifestUrl}
-           </div>
-           <div class="buttons">
-               <button onclick="installAddon()">INSTALLA SU STREMIO</button>
-               <button onclick="copyManifestUrl()">COPIA URL MANIFEST</button>
-           </div>
-           <div id="toast" class="toast">URL Copiato!</div>
            
            <div class="config-form">
                <h2>Configurazione</h2>
@@ -130,6 +133,17 @@ app.get('/', async (req, res) => {
                    <input type="submit" value="Aggiorna Configurazione">
                </form>
            </div>
+
+           <div class="manifest-url">
+               <strong>URL Manifest:</strong><br>
+               ${manifestUrl}
+           </div>
+           
+           <div class="buttons">
+               <button onclick="installAddon()">INSTALLA SU STREMIO</button>
+               <button onclick="copyManifestUrl()">COPIA URL MANIFEST</button>
+           </div>
+           <div id="toast" class="toast">URL Copiato!</div>
            
            <script>
                function getConfigQueryString() {
@@ -170,7 +184,13 @@ app.get('/', async (req, res) => {
 
                function updateConfig(e) {
                    e.preventDefault();
-                   window.location.href = '/?' + getConfigQueryString();
+                   const queryString = getConfigQueryString();
+                   const configUrl = '${protocol}://${host}/?' + queryString;
+                   
+                   // Aggiorna solo se ci sono modifiche
+                   if (window.location.href !== configUrl) {
+                       window.location.href = configUrl;
+                   }
                }
            </script>
        </body>
