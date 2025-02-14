@@ -49,6 +49,11 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
        // Forza l'aggiornamento della cache con l'URL M3U
        await CacheManager.updateCache(false, userConfig.m3u);
 
+       // Inizializzazione EPG
+       if (userConfig.epg) {
+           await EPGManager.initializeEPG(userConfig.epg);
+       }
+
        const cachedData = CacheManager.getCachedData();
        const { search, genre, skip = 0 } = extra || {};
        const ITEMS_PER_PAGE = 100;
@@ -125,6 +130,11 @@ async function streamHandler({ id, config: userConfig }) {
 
        // Aggiorna sempre la cache con l'URL M3U corrente
        await CacheManager.updateCache(false, userConfig.m3u);
+
+       // Inizializzazione EPG
+       if (userConfig.epg) {
+           await EPGManager.initializeEPG(userConfig.epg);
+       }
 
        const channelId = id.split('|')[1];
        const channel = CacheManager.getChannel(channelId);
