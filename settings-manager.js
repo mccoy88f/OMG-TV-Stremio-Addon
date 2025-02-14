@@ -31,20 +31,28 @@ class SettingsManager {
     async loadSettings() {
         try {
             await this.ensureSettingsDirectory();
-            console.log('Caricamento settings da:', this.settingsPath);
+            console.log('[Settings] Verifica esistenza file:', this.settingsPath);
+            
+            try {
+                await fs.access(this.settingsPath);
+                console.log('[Settings] File esistente, caricamento...');
+            } catch {
+                console.log('[Settings] File non trovato');
+                throw { code: 'ENOENT' };
+            }
             
             const data = await fs.readFile(this.settingsPath, 'utf8');
             const settings = JSON.parse(data);
             
-            console.log('Settings caricati con successo:', settings);
+            console.log('[Settings] Contenuto file:', settings);
             return { ...this.defaultSettings, ...settings };
         } catch (error) {
             if (error.code === 'ENOENT') {
-                console.log('File settings non trovato, creazione con valori default');
+                console.log('[Settings] Creazione nuovo file con default settings');
                 await this.saveSettings(this.defaultSettings);
                 return this.defaultSettings;
             }
-            console.error('Errore nel caricamento settings:', error);
+            console.error('[Settings] Errore critico:', error);
             throw error;
         }
     }
