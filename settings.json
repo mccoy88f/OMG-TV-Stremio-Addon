@@ -1,1 +1,9 @@
-
+{
+  "M3U_URL": "",
+  "EPG_URL": "",
+  "enableEPG": true,
+  "PROXY_URL": null,
+  "PROXY_PASSWORD": null,
+  "FORCE_PROXY": false,
+  "ID_SUFFIX": ""
+}
