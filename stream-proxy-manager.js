@@ -1,9 +1,9 @@
 const axios = require('axios');
 const { URL } = require('url');
+const settingsManager = require('./settings-manager');
 
 class StreamProxyManager {
-    constructor(config) {
-        this.config = config;
+    constructor() {
         this.proxyCache = new Map();
         this.lastCheck = new Map();
     }
@@ -66,21 +66,21 @@ class StreamProxyManager {
         }
     }
 
-    buildProxyUrl(streamUrl, headers = {}) {
-        if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
+    async buildProxyUrl(streamUrl, headers = {}) {
+        const settings = await settingsManager.loadSettings();
+        if (!settings.PROXY_URL || !settings.PROXY_PASSWORD) {
             return null;
         }
 
-        const baseUrl = this.config.PROXY_URL.replace(/\/+$/, '');
+        const baseUrl = settings.PROXY_URL.replace(/\/+$/, '');
         const params = new URLSearchParams({
-            api_password: this.config.PROXY_PASSWORD,
+            api_password: settings.PROXY_PASSWORD,
             d: streamUrl,
             'user-agent': headers['User-Agent'] || 'Mozilla/5.0',
             'referer': headers['Referer'] || '',
             'origin': headers['Origin'] || ''
         });
 
-        // Determina il tipo di stream e restituisce l'URL del proxy appropriato
         if (streamUrl.endsWith('.m3u8')) {
             return `${baseUrl}/proxy/hls/manifest.m3u8?${params.toString()}`;
         } else if (streamUrl.endsWith('.mpd')) {
@@ -94,8 +94,9 @@ class StreamProxyManager {
 
     async getProxyStreams(channel) {
         const streams = [];
+        const settings = await settingsManager.loadSettings();
 
-        if (!this.config.PROXY_URL || !this.config.PROXY_PASSWORD) {
+        if (!settings.PROXY_URL || !settings.PROXY_PASSWORD) {
             return streams;
         }
 
@@ -110,7 +111,7 @@ class StreamProxyManager {
                 return streams;
             }
 
-            const proxyUrl = this.buildProxyUrl(finalUrl, headers);
+            const proxyUrl = await this.buildProxyUrl(finalUrl, headers);
             if (!proxyUrl) {
                 console.log(`Formato stream non supportato per: ${channel.name}`);
                 return streams;
@@ -130,7 +131,6 @@ class StreamProxyManager {
                 return [];
             }
 
-            // Determina il tipo di stream per il suffisso del nome
             let streamType = 'HTTP';
             if (finalUrl.endsWith('.m3u8')) streamType = 'HLS';
             else if (finalUrl.endsWith('.mpd')) streamType = 'DASH';
@@ -160,4 +160,4 @@ class StreamProxyManager {
     }
 }
 
-module.exports = config => new StreamProxyManager(config);
+module.exports = () => new StreamProxyManager();
