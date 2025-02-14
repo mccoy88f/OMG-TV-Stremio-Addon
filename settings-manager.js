@@ -15,8 +15,19 @@ class SettingsManager {
         };
     }
 
+    async ensureSettingsDirectory() {
+        const dir = path.dirname(this.settingsPath);
+        try {
+            await fs.access(dir);
+        } catch {
+            await fs.mkdir(dir, { recursive: true, mode: 0o777 });
+        }
+    }
+
     async loadSettings() {
         try {
+            await this.ensureSettingsDirectory();
+            await fs.access(this.settingsPath);
             const data = await fs.readFile(this.settingsPath, 'utf8');
             const settings = JSON.parse(data);
             
@@ -49,18 +60,8 @@ class SettingsManager {
     }
 
     async saveSettings(settings) {
-        // Validazioni prima del salvataggio
-        if (!settings.EPG_URL) {
-            settings.enableEPG = false;
-        }
-        
-        if (!settings.PROXY_URL || !settings.PROXY_PASSWORD) {
-            settings.FORCE_PROXY = false;
-            settings.PROXY_URL = null;
-            settings.PROXY_PASSWORD = null;
-        }
-
-        await fs.writeFile(this.settingsPath, JSON.stringify(settings, null, 2));
+        await this.ensureSettingsDirectory();
+        await fs.writeFile(this.settingsPath, JSON.stringify(settings, null, 2), { mode: 0o666 });
         return settings;
     }
 
