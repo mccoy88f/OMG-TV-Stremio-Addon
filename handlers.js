@@ -137,7 +137,7 @@ async function streamHandler({ id, config: userConfig }) {
                            url: stream.url,
                            headers: channel.streamInfo.headers
                        };
-                       const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails);
+                       const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
                        streams.push(...proxyStreams);
                    }
                }
@@ -162,7 +162,7 @@ async function streamHandler({ id, config: userConfig }) {
                            url: stream.url,
                            headers: channel.streamInfo.headers
                        };
-                       const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails);
+                       const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
                        streams.push(...proxyStreams);
                    }
                }
