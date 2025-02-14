@@ -42,13 +42,12 @@ async function enrichWithEPG(meta, channelId, userConfig) {
 async function catalogHandler({ type, id, extra, config: userConfig }) {
    try {
        if (!userConfig.m3u) {
+           console.log('[Handlers] URL M3U mancante nella configurazione');
            return { metas: [], genres: [] };
        }
 
-       // Forza l'aggiornamento della cache se stale o se non ci sono dati
-       if (CacheManager.isStale() || !CacheManager.getCachedData().channels.length) {
-           await CacheManager.updateCache(false, userConfig.m3u);
-       }
+       // Forza l'aggiornamento della cache con l'URL M3U
+       await CacheManager.updateCache(false, userConfig.m3u);
 
        const cachedData = CacheManager.getCachedData();
        const { search, genre, skip = 0 } = extra || {};
@@ -120,12 +119,12 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
 async function streamHandler({ id, config: userConfig }) {
    try {
        if (!userConfig.m3u) {
+           console.log('[Handlers] URL M3U mancante nella configurazione');
            return { streams: [] };
        }
 
-       if (CacheManager.isStale() || !CacheManager.getCachedData().channels.length) {
-           await CacheManager.updateCache(false, userConfig.m3u);
-       }
+       // Aggiorna sempre la cache con l'URL M3U corrente
+       await CacheManager.updateCache(false, userConfig.m3u);
 
        const channelId = id.split('|')[1];
        const channel = CacheManager.getChannel(channelId);
