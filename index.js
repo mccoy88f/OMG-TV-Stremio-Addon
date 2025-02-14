@@ -9,6 +9,8 @@ const config = require('./config');
 
 const app = express();
 app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/', async (req, res) => {
    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -57,7 +59,8 @@ app.get('/', async (req, res) => {
                }
                .config-form input[type="text"],
                .config-form input[type="url"],
-               .config-form input[type="password"] {
+               .config-form input[type="password"],
+               .config-form input[type="file"] {
                    width: 100%;
                    padding: 8px;
                    margin-bottom: 10px;
@@ -80,6 +83,12 @@ app.get('/', async (req, res) => {
                    border-radius: 4px;
                    cursor: pointer;
                    font-size: 16px;
+               }
+               .bottom-buttons {
+                   margin-top: 20px;
+                   display: flex;
+                   justify-content: center;
+                   gap: 20px;
                }
                .toast {
                    position: fixed;
@@ -145,6 +154,12 @@ app.get('/', async (req, res) => {
                    
                    <input type="submit" value="Genera Configurazione">
                </form>
+
+               <div class="bottom-buttons">
+                   <button onclick="backupConfig()">BACKUP CONFIGURAZIONE</button>
+                   <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreConfig(event)">
+                   <button onclick="document.getElementById('restoreFile').click()">RIPRISTINA CONFIGURAZIONE</button>
+               </div>
            </div>
            
            <div id="toast" class="toast">URL Copiato!</div>
@@ -195,6 +210,55 @@ app.get('/', async (req, res) => {
                    if (window.location.href !== configUrl) {
                        window.location.href = configUrl;
                    }
+               }
+
+               function backupConfig() {
+                   const queryString = getConfigQueryString();
+                   const params = Object.fromEntries(new URLSearchParams(queryString));
+                   
+                   // Converti i valori booleani di checkbox
+                   params.epg_enabled = params.epg_enabled === 'true';
+                   params.force_proxy = params.force_proxy === 'true';
+
+                   const configBlob = new Blob([JSON.stringify(params, null, 2)], {type: 'application/json'});
+                   const url = URL.createObjectURL(configBlob);
+                   const a = document.createElement('a');
+                   a.href = url;
+                   a.download = 'omg_tv_config.json';
+                   a.click();
+                   URL.revokeObjectURL(url);
+               }
+
+               function restoreConfig(event) {
+                   const file = event.target.files[0];
+                   if (!file) return;
+
+                   const reader = new FileReader();
+                   reader.onload = function(e) {
+                       try {
+                           const config = JSON.parse(e.target.result);
+                           
+                           // Popola il form con i dati del backup
+                           const form = document.getElementById('configForm');
+                           for (const [key, value] of Object.entries(config)) {
+                               const input = form.elements[key];
+                               if (input) {
+                                   if (input.type === 'checkbox') {
+                                       input.checked = value;
+                                   } else {
+                                       input.value = value;
+                                   }
+                               }
+                           }
+
+                           // Ricarica la pagina con i nuovi parametri
+                           const queryString = getConfigQueryString();
+                           window.location.href = '${protocol}://${host}/?' + queryString;
+                       } catch (error) {
+                           alert('Errore nel caricamento del file di configurazione');
+                       }
+                   };
+                   reader.readAsText(file);
                }
            </script>
        </body>
