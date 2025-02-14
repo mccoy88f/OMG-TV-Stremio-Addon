@@ -36,6 +36,14 @@ app.get('/', async (req, res) => {
                    margin: 0 auto 20px;
                    display: block;
                }
+               .manifest-url {
+                   background: rgba(255,255,255,0.1);
+                   padding: 10px;
+                   border-radius: 4px;
+                   word-break: break-all;
+                   margin: 20px 0;
+                   font-size: 12px;
+               }
                .config-form {
                    text-align: left;
                    background: rgba(255,255,255,0.1);
@@ -60,23 +68,18 @@ app.get('/', async (req, res) => {
                }
                .buttons {
                    margin: 30px 0;
+                   display: flex;
+                   justify-content: center;
+                   gap: 20px;
                }
                button {
                    background: #8A5AAB;
                    color: white;
                    border: none;
                    padding: 12px 24px;
-                   margin: 0 10px;
                    border-radius: 4px;
                    cursor: pointer;
                    font-size: 16px;
-               }
-               .manifest-url {
-                   background: rgba(255,255,255,0.1);
-                   padding: 10px;
-                   border-radius: 4px;
-                   word-break: break-all;
-                   margin: 20px 0;
                }
                .toast {
                    position: fixed;
@@ -105,8 +108,18 @@ app.get('/', async (req, res) => {
            <img class="logo" src="${config.manifest.logo}" alt="logo">
            <h1>${config.manifest.name}</h1>
            
+           <div class="manifest-url">
+               <strong>URL Manifest:</strong><br>
+               ${manifestUrl}
+           </div>
+
+           <div class="buttons">
+               <button onclick="copyManifestUrl()">COPIA URL MANIFEST</button>
+               <button onclick="installAddon()">INSTALLA SU STREMIO</button>
+           </div>
+           
            <div class="config-form">
-               <h2>Configurazione</h2>
+               <h2>Genera Configurazione</h2>
                <form id="configForm" onsubmit="updateConfig(event)">
                    <label>M3U URL:</label>
                    <input type="url" name="m3u" value="${req.query.m3u || ''}" required>
@@ -130,19 +143,10 @@ app.get('/', async (req, res) => {
                        Forza Proxy
                    </label>
                    
-                   <input type="submit" value="Aggiorna Configurazione">
+                   <input type="submit" value="Genera Configurazione">
                </form>
            </div>
-
-           <div class="manifest-url">
-               <strong>URL Manifest:</strong><br>
-               ${manifestUrl}
-           </div>
            
-           <div class="buttons">
-               <button onclick="installAddon()">INSTALLA SU STREMIO</button>
-               <button onclick="copyManifestUrl()">COPIA URL MANIFEST</button>
-           </div>
            <div id="toast" class="toast">URL Copiato!</div>
            
            <script>
@@ -248,16 +252,28 @@ app.get('/:resource/:type/:id/:extra?.json', async (req, res, next) => {
 });
 
 function safeParseExtra(extraParam) {
+    // Prova a decodificare il parametro
     try {
-        // Decodifica prima di parsare
         const decodedExtra = decodeURIComponent(extraParam);
-        return JSON.parse(decodedExtra);
-    } catch (error) {
-        console.error('Errore nel parsing extra:', error);
-        // Gestisci il caso del parametro skip
+        
+        // Se inizia con 'skip', gestiscilo direttamente
+        if (decodedExtra.startsWith('skip=')) {
+            return { skip: parseInt(decodedExtra.split('=')[1], 10) || 0 };
+        }
+        
+        // Prova il parsing JSON
+        try {
+            return JSON.parse(decodedExtra);
+        } catch {
+            // Se il parsing JSON fallisce, restituisci un oggetto vuoto
+            return {};
+        }
+    } catch {
+        // Se la decodifica fallisce, gestisci il caso 'skip'
         if (extraParam.startsWith('skip=')) {
             return { skip: parseInt(extraParam.split('=')[1], 10) || 0 };
         }
+        
         return {};
     }
 }
