@@ -3,7 +3,8 @@ const path = require('path');
 
 class SettingsManager {
     constructor() {
-        this.settingsPath = path.join('/app/data', 'settings.json');
+        // Usa il percorso relativo alla directory corrente
+        this.settingsPath = path.join(process.cwd(), 'data', 'settings.json');
         this.defaultSettings = {
             M3U_URL: "",
             EPG_URL: "",
@@ -13,49 +14,91 @@ class SettingsManager {
             FORCE_PROXY: false,
             ID_SUFFIX: ""
         };
+        console.log('Settings path configurato:', this.settingsPath);
     }
 
     async ensureSettingsDirectory() {
         const dir = path.dirname(this.settingsPath);
         try {
             await fs.mkdir(dir, { recursive: true, mode: 0o777 });
-        } catch {}
+            console.log('Directory settings creata/verificata:', dir);
+        } catch (error) {
+            console.error('Errore nella creazione della directory settings:', error);
+            throw error;
+        }
     }
 
     async loadSettings() {
         try {
             await this.ensureSettingsDirectory();
+            console.log('Caricamento settings da:', this.settingsPath);
+            
             const data = await fs.readFile(this.settingsPath, 'utf8');
             const settings = JSON.parse(data);
             
+            console.log('Settings caricati con successo:', settings);
             return { ...this.defaultSettings, ...settings };
         } catch (error) {
             if (error.code === 'ENOENT') {
+                console.log('File settings non trovato, creazione con valori default');
                 await this.saveSettings(this.defaultSettings);
                 return this.defaultSettings;
             }
+            console.error('Errore nel caricamento settings:', error);
             throw error;
         }
     }
 
     async saveSettings(settings) {
-        await this.ensureSettingsDirectory();
-        await fs.writeFile(this.settingsPath, JSON.stringify(settings, null, 2), { 
-            mode: 0o666,
-            flag: 'w'  // Sovrascrivi sempre
-        });
-        return settings;
+        try {
+            console.log('Salvataggio settings in:', this.settingsPath);
+            await this.ensureSettingsDirectory();
+            
+            // Merge con i default settings
+            const settingsToSave = { ...this.defaultSettings, ...settings };
+            
+            await fs.writeFile(this.settingsPath, JSON.stringify(settingsToSave, null, 2), { 
+                mode: 0o666,
+                flag: 'w'
+            });
+            console.log('Settings salvati con successo:', settingsToSave);
+            
+            // Verifica del salvataggio
+            const savedContent = await fs.readFile(this.settingsPath, 'utf8');
+            const parsedContent = JSON.parse(savedContent);
+            console.log('Verifica settings salvati:', parsedContent);
+            
+            return settingsToSave;
+        } catch (error) {
+            console.error('Errore nel salvataggio settings:', error);
+            console.error('Directory corrente:', process.cwd());
+            console.error('Percorso settings tentato:', this.settingsPath);
+            throw error;
+        }
     }
 
     async updateSettings(newSettings) {
-        const currentSettings = await this.loadSettings();
-        const updatedSettings = { ...currentSettings, ...newSettings };
-        return this.saveSettings(updatedSettings);
+        try {
+            console.log('Aggiornamento settings con:', newSettings);
+            const currentSettings = await this.loadSettings();
+            const updatedSettings = { ...currentSettings, ...newSettings };
+            return await this.saveSettings(updatedSettings);
+        } catch (error) {
+            console.error('Errore nell\'aggiornamento settings:', error);
+            throw error;
+        }
     }
 
     async isFirstRun() {
-        const settings = await this.loadSettings();
-        return !settings.M3U_URL;
+        try {
+            const settings = await this.loadSettings();
+            const isFirst = !settings.M3U_URL;
+            console.log('Controllo primo avvio:', isFirst);
+            return isFirst;
+        } catch (error) {
+            console.error('Errore nel controllo primo avvio:', error);
+            return true;
+        }
     }
 }
 
