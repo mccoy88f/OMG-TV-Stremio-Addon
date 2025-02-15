@@ -20,14 +20,23 @@ class StreamProxyManager {
     async checkProxyHealth(proxyUrl) {
         try {
             const response = await axios.get(proxyUrl, {
-                timeout: 10000,
+                timeout: 10000, // Aumentato a 10 secondi
                 validateStatus: status => status < 400,
                 headers: {
                     'User-Agent': config.defaultUserAgent
                 }
             });
+            console.log('Proxy health check response:', {
+                status: response.status,
+                headers: response.headers
+            });
             return response.status < 400;
-        } catch {
+        } catch (error) {
+            console.error('Proxy health check failed:', {
+                message: error.message,
+                code: error.code,
+                config: error.config
+            });
             return false;
         }
     }
