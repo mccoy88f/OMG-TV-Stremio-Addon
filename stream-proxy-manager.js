@@ -37,14 +37,14 @@ class StreamProxyManager {
         }
     }
 
-    async buildProxyUrl(streamUrl, headers = {}, config = {}) {
-        if (!config.proxy || !config.proxy_pwd) {
+    async buildProxyUrl(streamUrl, headers = {}, userConfig = {}) {
+        if (!userConfig.proxy || !userConfig.proxy_pwd) {
             return null;
         }
 
-        const baseUrl = config.proxy.replace(/\/+$/, '');
+        const baseUrl = userConfig.proxy.replace(/\/+$/, '');
         const params = new URLSearchParams({
-            api_password: config.proxy_pwd,
+            api_password: userConfig.proxy_pwd,
             d: streamUrl,
             'user-agent': headers['User-Agent'] || config.defaultUserAgent
         });
@@ -69,16 +69,16 @@ class StreamProxyManager {
         return proxyUrl;
     }
 
-    async getProxyStreams(channel, config = {}) {
+    async getProxyStreams(channel, userConfig = {}) {
         const streams = [];
         
-        if (!config.proxy || !config.proxy_pwd) {
+        if (!userConfig.proxy || !userConfig.proxy_pwd) {
             console.log('Proxy non configurato per:', channel.name);
             return streams;
         }
 
         try {
-            const proxyUrl = await this.buildProxyUrl(channel.url, channel.headers, config);
+            const proxyUrl = await this.buildProxyUrl(channel.url, channel.headers, userConfig);
             if (!proxyUrl) {
                 console.log(`Formato stream non supportato per: ${channel.name}`);
                 return streams;
@@ -98,7 +98,7 @@ class StreamProxyManager {
             }
 
             let streamType = channel.url.endsWith('.m3u8') ? 'HLS' : 
-                            channel.url.endsWith('.mpd') ? 'DASH' : 'HTTP';
+                         channel.url.endsWith('.mpd') ? 'DASH' : 'HTTP';
 
             const proxyStream = {
                 name: `${channel.name} [P](${streamType})`,
@@ -124,4 +124,4 @@ class StreamProxyManager {
     }
 }
 
-module.exports = () => new StreamProxyManager();
+module.exports = (config) => new StreamProxyManager();
