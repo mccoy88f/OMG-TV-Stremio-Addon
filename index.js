@@ -355,10 +355,17 @@ app.get('/:resource/:type/:id/:extra?.json', async (req, res, next) => {
 
 function safeParseExtra(extraParam) {
     try {
+        if (!extraParam) return {};
+        
+        // Gestione URL-encoded JSON
         const decodedExtra = decodeURIComponent(extraParam);
         
         if (decodedExtra.startsWith('skip=')) {
             return { skip: parseInt(decodedExtra.split('=')[1], 10) || 0 };
+        }
+        
+        if (decodedExtra.startsWith('genre=')) {
+            return { genre: decodedExtra.split('=')[1] };
         }
         
         try {
@@ -366,15 +373,11 @@ function safeParseExtra(extraParam) {
         } catch {
             return {};
         }
-    } catch {
-        if (extraParam.startsWith('skip=')) {
-            return { skip: parseInt(extraParam.split('=')[1], 10) || 0 };
-        }
-        
+    } catch (error) {
+        console.error('Error parsing extra:', error);
         return {};
     }
 }
-
 async function startAddon() {
    try {
        const port = process.env.PORT || 10000;
