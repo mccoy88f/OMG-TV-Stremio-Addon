@@ -22,8 +22,7 @@ async function readExternalFile(url) {
 }
 
 class PlaylistTransformer {
-  constructor(config = {}) {
-      this.config = config;
+  constructor() {
       this.remappingRules = new Map();
       this.channelsMap = new Map();
       this.channelsWithoutStreams = [];
@@ -41,9 +40,9 @@ class PlaylistTransformer {
           .replace(/\s+/g, '');
   }
 
-  async loadRemappingRules() {
+  async loadRemappingRules(config) {
       const defaultPath = path.join(__dirname, 'link.epg.remapping');
-      const remappingPath = this.config?.remapper_path || defaultPath;
+      const remappingPath = config?.remapper_path || defaultPath;
       
       try {
           const content = await fs.promises.readFile(remappingPath, 'utf8');
@@ -129,7 +128,7 @@ class PlaylistTransformer {
       return { headers: finalHeaders, nextIndex: i };
   }
   
-  parseChannelFromLine(line, headers) {
+  parseChannelFromLine(line, headers, config) {
       const metadata = line.substring(8).trim();
       const tvgData = {};
   
@@ -148,7 +147,7 @@ class PlaylistTransformer {
       const name = nameParts[nameParts.length - 1].trim();
 
       if (!tvgData.id) {
-          const suffix = this.config?.id_suffix || '';
+          const suffix = config?.id_suffix || '';
           tvgData.id = this.cleanChannelName(name) + (suffix ? `.${suffix}` : '');
       }
 
@@ -227,7 +226,7 @@ class PlaylistTransformer {
       }
   }
   
-  async parseM3UContent(content) {
+  async parseM3UContent(content, config) {
       const lines = content.split('\n');
       let currentChannel = null;
       const genres = new Set(['Undefined']);
@@ -247,7 +246,7 @@ class PlaylistTransformer {
           if (line.startsWith('#EXTINF:')) {
               const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1, line);
               i = nextIndex - 1;
-              currentChannel = this.parseChannelFromLine(line, headers);
+              currentChannel = this.parseChannelFromLine(line, headers, config);
 
           } else if ((line.startsWith('http') || line.toLowerCase() === 'null') && currentChannel) {
               const remappedId = this.getRemappedId(currentChannel);
@@ -305,9 +304,9 @@ class PlaylistTransformer {
       };
   }
 
-  async loadAndTransform(url) {
+  async loadAndTransform(url, config = {}) {
       try {
-          await this.loadRemappingRules();
+          await this.loadRemappingRules(config);
           
           const response = await axios.get(url);
           const content = response.data;
@@ -324,7 +323,7 @@ class PlaylistTransformer {
           for (const playlistUrl of playlistUrls) {
               console.log('\nProcesso playlist:', playlistUrl);
               const playlistResponse = await axios.get(playlistUrl);
-              const result = await this.parseM3UContent(playlistResponse.data);
+              const result = await this.parseM3UContent(playlistResponse.data, config);
               
               result.genres.forEach(genre => {
                   if (!allGenres.includes(genre)) {
