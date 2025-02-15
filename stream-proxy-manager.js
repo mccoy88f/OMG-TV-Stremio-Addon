@@ -27,7 +27,7 @@ class StreamProxyManager {
                     'User-Agent': config.defaultUserAgent
                 }
             });
-            console.log('Proxy health check response:', {
+//            console.log('Proxy health check response:', {
                 status: response.status,
                 headers: response.headers
             });
@@ -47,8 +47,8 @@ class StreamProxyManager {
             return null;
         }
 
-        console.log('Building proxy URL for:', streamUrl);
-        console.log('Headers:', headers);
+//        console.log('Building proxy URL for:', streamUrl);
+//        console.log('Headers:', headers);
 
         const baseUrl = config.proxy.replace(/\/+$/, '');
         const params = new URLSearchParams({
@@ -74,7 +74,7 @@ class StreamProxyManager {
             proxyUrl = `${baseUrl}/proxy/stream?${params.toString()}`;
         }
 
-        console.log('Generated proxy URL:', proxyUrl);
+//        console.log('Generated proxy URL:', proxyUrl);
         return proxyUrl;
     }
 
@@ -87,9 +87,9 @@ class StreamProxyManager {
         }
 
         try {
-            console.log('Processing proxy stream for channel:', channel.name);
-            console.log('Channel URL:', channel.url);
-            console.log('Channel headers:', channel.headers);
+//            console.log('Processing proxy stream for channel:', channel.name);
+//            console.log('Channel URL:', channel.url);
+//            console.log('Channel headers:', channel.headers);
 
             const proxyUrl = await this.buildProxyUrl(channel.url, channel.headers, config);
             if (!proxyUrl) {
@@ -102,7 +102,7 @@ class StreamProxyManager {
             const cacheValid = lastCheck && (Date.now() - lastCheck) < 5 * 60 * 1000;
 
             if (cacheValid && this.proxyCache.has(cacheKey)) {
-                console.log(`Usando cache per: ${channel.name}`);
+//                console.log(`Usando cache per: ${channel.name}`);
                 return [this.proxyCache.get(cacheKey)];
             }
 
