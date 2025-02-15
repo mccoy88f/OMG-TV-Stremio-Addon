@@ -1,23 +1,15 @@
 const EventEmitter = require('events');
 const PlaylistTransformer = require('./playlist-transformer');
 
-let instance = null;
-
 class CacheManager extends EventEmitter {
     constructor(config) {
         super();
-        this.transformer = new PlaylistTransformer(config);
+        this.transformer = new PlaylistTransformer();
+        this.config = config;
         this.cache = null;
         this.initCache();
     }
-    
-    static getInstance(config) {
-        if (!instance) {
-            instance = new CacheManager(config);
-        }
-        return instance;
-    }
-    
+
     initCache() {
         this.cache = {
             stremioData: null,
@@ -42,7 +34,7 @@ class CacheManager extends EventEmitter {
             console.log('\n=== Inizio Ricostruzione Cache ===');
             console.log('URL M3U:', m3uUrl);
 
-            const data = await this.transformer.loadAndTransform(m3uUrl);
+            const data = await this.transformer.loadAndTransform(m3uUrl, this.config);
             
             this.cache = {
                 stremioData: data,
@@ -126,7 +118,4 @@ class CacheManager extends EventEmitter {
     }
 }
 
-module.exports = {
-    getInstance: (config) => CacheManager.getInstance(config),
-    createNew: (config) => new CacheManager(config)
-};
+module.exports = (config) => new CacheManager(config);
