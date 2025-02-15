@@ -74,13 +74,16 @@ class PlaylistTransformer {
    parseVLCOpts(lines, currentIndex, extinf) {
        const headers = {};
        let i = currentIndex;
-       
+
+       console.log('\nParsing headers for:', extinf);
+
        while (i < lines.length) {
            const line = lines[i].trim();
            
            if (line.startsWith('#EXTHTTP:')) {
                try {
                    const httpHeaders = JSON.parse(line.substring('#EXTHTTP:'.length));
+                   console.log('Found EXTHTTP headers:', httpHeaders);
                    Object.assign(headers, httpHeaders);
                } catch (e) {
                    console.error('Errore parsing EXTHTTP:', e);
@@ -89,6 +92,7 @@ class PlaylistTransformer {
            } 
            else if (line.startsWith('#EXTVLCOPT:')) {
                const opt = line.substring('#EXTVLCOPT:'.length).trim();
+               console.log('Found EXTVLCOPT:', opt);
                if (!headers['User-Agent'] && opt.startsWith('http-user-agent=')) {
                    headers['User-Agent'] = opt.split('=')[1];
                }
@@ -124,7 +128,7 @@ class PlaylistTransformer {
        if (!headers['User-Agent']) {
            headers['User-Agent'] = config.defaultUserAgent;
        }
-       
+       console.log('Final parsed headers:', headers);
        return { headers, nextIndex: i };
    }
 
