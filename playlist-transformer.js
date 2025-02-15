@@ -1,3 +1,4 @@
+// playlist-transformer.js
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
@@ -9,7 +10,7 @@ async function readExternalFile(url) {
       const content = response.data;
 
       if (content.trim().startsWith('#EXTM3U')) {
-          console.log('File gzipped EPG trovato');
+          console.log('File M3U diretto trovato');
           return [url];
       }
 
@@ -73,6 +74,7 @@ class PlaylistTransformer {
 
   parseVLCOpts(lines, currentIndex, extinf) {
       let i = currentIndex;
+      console.log('\nParsing headers for:', extinf);
       
       // 1. Headers da EXTINF
       const extinfHeaders = {};
@@ -266,6 +268,28 @@ class PlaylistTransformer {
 
       if (this.channelsWithoutStreams.length > 0) {
           console.warn(`⚠️ Canali senza flussi riproducibili: ${this.channelsWithoutStreams.length}`);
+          console.log('\n=== Canali senza flussi ===');
+          this.channelsWithoutStreams.forEach(name => {
+              console.log(`${name}`);
+          });
+          console.log('========================\n');
+      }
+
+      const channelsWithOnlyDummy = [];
+      for (const [id, channel] of this.channelsMap.entries()) {
+          if (channel.streamInfo.urls.length === 1 && 
+              channel.streamInfo.urls[0].name === 'Nessuno flusso presente nelle playlist m3u') {
+              channelsWithOnlyDummy.push(channel.name);
+          }
+      }
+
+      if (channelsWithOnlyDummy.length > 0) {
+          console.log('\n=== Canali con solo flusso dummy ===');
+          channelsWithOnlyDummy.forEach(name => {
+              console.log(`${name}`);
+          });
+          console.log(`✓ Totale canali con solo flusso dummy: ${channelsWithOnlyDummy.length}`);
+          console.log('================================\n');
       }
 
       return {
@@ -284,10 +308,14 @@ class PlaylistTransformer {
               ? [url] 
               : content.split('\n').filter(line => line.trim() && line.startsWith('http'));
 
+          console.log('\n=== Inizio Processamento Playlist ===');
+          console.log('Playlist da processare:', playlistUrls.length);
+
           const allGenres = [];
           const allEpgUrls = new Set();
           
           for (const playlistUrl of playlistUrls) {
+              console.log('\nProcesso playlist:', playlistUrl);
               const playlistResponse = await axios.get(playlistUrl);
               const result = await this.parseM3UContent(playlistResponse.data);
               
@@ -312,6 +340,7 @@ class PlaylistTransformer {
               epgUrls: Array.from(allEpgUrls)
           };
 
+          // Rimuovi i flussi dummy se ci sono altri flussi disponibili
           finalResult.channels.forEach(channel => {
               if (channel.streamInfo.urls.length > 1) {
                   channel.streamInfo.urls = channel.streamInfo.urls.filter(
@@ -320,11 +349,13 @@ class PlaylistTransformer {
               }
           });
 
+          console.log('\nRiepilogo Processamento:');
           console.log(`✓ Totale canali processati: ${finalResult.channels.length}`);
           console.log(`✓ Totale generi trovati: ${finalResult.genres.length}`);
           if (allEpgUrls.size > 0) {
               console.log(`✓ URL EPG trovati: ${allEpgUrls.size}`);
           }
+          console.log('=== Processamento Completato ===\n');
 
           this.channelsMap.clear();
           this.channelsWithoutStreams = [];
