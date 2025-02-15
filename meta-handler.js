@@ -1,5 +1,5 @@
 const config = require('./config');
-const CacheManager = require('./cache-manager')(config);
+const CacheManager = require('./cache-manager')({...config});
 const EPGManager = require('./epg-manager');
 
 function enrichWithDetailedEPG(meta, channelId, userConfig) {
@@ -52,7 +52,6 @@ async function metaHandler({ type, id, config: userConfig }) {
             return { meta: null };
         }
 
-        // Se l'URL M3U è cambiato, ricostruisce la cache
         if (CacheManager.cache.m3uUrl !== userConfig.m3u) {
             await CacheManager.rebuildCache(userConfig.m3u);
         }
