@@ -2,9 +2,9 @@ const EventEmitter = require('events');
 const PlaylistTransformer = require('./playlist-transformer');
 
 class CacheManager extends EventEmitter {
-    constructor() {
+    constructor(config) {
         super();
-        this.transformer = new PlaylistTransformer();
+        this.transformer = new PlaylistTransformer(config);
         this.cache = null;
         this.initCache();
     }
@@ -87,11 +87,8 @@ class CacheManager extends EventEmitter {
 
     getChannelsByGenre(genre) {
         if (!genre || !this.cache?.stremioData?.channels) return [];
-    
-//        console.log('Requested genre:', genre);
-    
-        return this.cache.stremioData.channels.filter(channel => {;
         
+        return this.cache.stremioData.channels.filter(channel => {
             if (!Array.isArray(channel.genre)) return false;
             const hasGenre = channel.genre.includes(genre);
             return hasGenre;
@@ -120,4 +117,4 @@ class CacheManager extends EventEmitter {
     }
 }
 
-module.exports = () => new CacheManager();
+module.exports = (config) => new CacheManager(config);
