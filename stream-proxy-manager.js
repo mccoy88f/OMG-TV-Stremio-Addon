@@ -1,4 +1,3 @@
-// stream-proxy-manager.js
 const axios = require('axios');
 const { URL } = require('url');
 
@@ -21,7 +20,7 @@ class StreamProxyManager {
     async checkProxyHealth(proxyUrl) {
         try {
             const response = await axios.get(proxyUrl, {
-                timeout: 5000,
+                timeout: 10000,
                 validateStatus: status => status < 400,
                 headers: {
                     'User-Agent': config.defaultUserAgent
