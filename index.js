@@ -6,7 +6,7 @@ const { catalogHandler, streamHandler } = require('./handlers');
 const metaHandler = require('./meta-handler');
 const EPGManager = require('./epg-manager');
 const config = require('./config');
-const CacheManager = require('./cache-manager')(config);
+const CacheManager = require('./cache-manager')({...config, id_suffix: req.query.id_suffix});
 
 const app = express();
 app.use(cors());
@@ -153,8 +153,11 @@ app.get('/', async (req, res) => {
                        Forza Proxy
                    </label>
                    
+                   <label>ID Suffix:</label>
+                   <input type="text" name="id_suffix" value="${req.query.id_suffix || ''}" placeholder="Esempio: it">
+                       
                    <input type="submit" value="Genera Configurazione">
-               </form>
+                   </form>
 
                <div class="bottom-buttons">
                    <button onclick="backupConfig()">BACKUP CONFIGURAZIONE</button>
