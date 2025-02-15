@@ -6,6 +6,7 @@ const { catalogHandler, streamHandler } = require('./handlers');
 const metaHandler = require('./meta-handler');
 const EPGManager = require('./epg-manager');
 const config = require('./config');
+const CacheManager = require('./cache-manager')(config);
 
 const app = express();
 app.use(cors());
@@ -282,6 +283,11 @@ app.get('/manifest.json', async (req, res) => {
        await EPGManager.initializeEPG(req.query.epg);
    }
 
+   // Ricostruzione cache se necessario
+   if (req.query.m3u && CacheManager.cache.m3uUrl !== req.query.m3u) {
+       await CacheManager.rebuildCache(req.query.m3u);
+   }
+
    builder.defineCatalogHandler(async (args) => catalogHandler({ ...args, config: req.query }));
    builder.defineStreamHandler(async (args) => streamHandler({ ...args, config: req.query }));
    builder.defineMetaHandler(async (args) => metaHandler({ ...args, config: req.query }));
@@ -322,24 +328,19 @@ app.get('/:resource/:type/:id/:extra?.json', async (req, res, next) => {
 });
 
 function safeParseExtra(extraParam) {
-    // Prova a decodificare il parametro
     try {
         const decodedExtra = decodeURIComponent(extraParam);
         
-        // Se inizia con 'skip', gestiscilo direttamente
         if (decodedExtra.startsWith('skip=')) {
             return { skip: parseInt(decodedExtra.split('=')[1], 10) || 0 };
         }
         
-        // Prova il parsing JSON
         try {
             return JSON.parse(decodedExtra);
         } catch {
-            // Se il parsing JSON fallisce, restituisci un oggetto vuoto
             return {};
         }
     } catch {
-        // Se la decodifica fallisce, gestisci il caso 'skip'
         if (extraParam.startsWith('skip=')) {
             return { skip: parseInt(extraParam.split('=')[1], 10) || 0 };
         }
