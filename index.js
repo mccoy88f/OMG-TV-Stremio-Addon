@@ -357,7 +357,6 @@ function safeParseExtra(extraParam) {
     try {
         if (!extraParam) return {};
         
-        // Gestione URL-encoded JSON
         const decodedExtra = decodeURIComponent(extraParam);
         
         if (decodedExtra.startsWith('skip=')) {
@@ -366,6 +365,10 @@ function safeParseExtra(extraParam) {
         
         if (decodedExtra.startsWith('genre=')) {
             return { genre: decodedExtra.split('=')[1] };
+        }
+        
+        if (decodedExtra.startsWith('search=')) {
+            return { search: decodedExtra.split('=')[1] };
         }
         
         try {
@@ -378,6 +381,7 @@ function safeParseExtra(extraParam) {
         return {};
     }
 }
+
 async function startAddon() {
    try {
        const port = process.env.PORT || 10000;
