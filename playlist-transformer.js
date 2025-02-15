@@ -22,7 +22,8 @@ async function readExternalFile(url) {
 }
 
 class PlaylistTransformer {
-  constructor() {
+  constructor(config = {}) {
+      this.config = config;
       this.remappingRules = new Map();
       this.channelsMap = new Map();
       this.channelsWithoutStreams = [];
@@ -41,7 +42,8 @@ class PlaylistTransformer {
   }
 
   async loadRemappingRules() {
-      const remappingPath = path.join(__dirname, 'link.epg.remapping');
+      const defaultPath = path.join(__dirname, 'link.epg.remapping');
+      const remappingPath = this.config?.remapper_path || defaultPath;
       
       try {
           const content = await fs.promises.readFile(remappingPath, 'utf8');
@@ -61,7 +63,7 @@ class PlaylistTransformer {
           });
 
           if (ruleCount > 0) {
-              console.log(`✓ Caricate ${ruleCount} regole di remapping`);
+              console.log(`✓ Caricate ${ruleCount} regole di remapping da ${remappingPath}`);
           }
           
       } catch (error) {
@@ -73,35 +75,28 @@ class PlaylistTransformer {
 
   parseVLCOpts(lines, currentIndex, extinf) {
       let i = currentIndex;
-//      console.log('\nParsing headers for:', extinf);
       
-      // 1. Headers da EXTINF
       const extinfHeaders = {};
       const extinfopts = extinf.match(/http-[^=]+=["']([^"']+)/g);
       if (extinfopts) {
-//          console.log('Headers in EXTINF:', extinfopts);
           extinfopts.forEach(opt => {
               const [key, value] = opt.split('=');
               extinfHeaders[key.replace('http-', '')] = value.replace(/["']/g, '');
           });
       }
 
-      // 2. Headers da EXTVLCOPT
       const vlcHeaders = {};
       while (i < lines.length && lines[i].startsWith('#EXTVLCOPT:')) {
           const opt = lines[i].substring('#EXTVLCOPT:'.length).trim();
-//          console.log('EXTVLCOPT line:', opt);
           const [key, ...value] = opt.split('=');
           vlcHeaders[key.replace('http-', '')] = value.join('=');
           i++;
       }
 
-      // 3. Headers da EXTHTTP
       const httpHeaders = {};
       if (i < lines.length && lines[i].startsWith('#EXTHTTP:')) {
           try {
               const parsed = JSON.parse(lines[i].substring('#EXTHTTP:'.length));
-//              console.log('EXTHTTP headers:', parsed);
               Object.assign(httpHeaders, parsed);
               i++;
           } catch (e) {
@@ -109,7 +104,6 @@ class PlaylistTransformer {
           }
       }
 
-      // Unifica gli headers con priorità e standardizza User-Agent
       const finalHeaders = {
           ...extinfHeaders,
           ...vlcHeaders,
@@ -120,7 +114,6 @@ class PlaylistTransformer {
                                   vlcHeaders['user-agent'] || extinfHeaders['user-agent'] ||
                                   config.defaultUserAgent;
 
-      // Rimuovi duplicati lowercase
       delete finalHeaders['user-agent'];
       delete finalHeaders['referer'];
       if (finalHeaders['Referer']) {
@@ -133,7 +126,6 @@ class PlaylistTransformer {
           delete finalHeaders['Origin'];
       }
 
-//      console.log('Final combined headers:', finalHeaders);
       return { headers: finalHeaders, nextIndex: i };
   }
   
@@ -156,7 +148,7 @@ class PlaylistTransformer {
       const name = nameParts[nameParts.length - 1].trim();
 
       if (!tvgData.id) {
-          const suffix = process.env.ID_SUFFIX || '';
+          const suffix = this.config?.id_suffix || '';
           tvgData.id = this.cleanChannelName(name) + (suffix ? `.${suffix}` : '');
       }
 
