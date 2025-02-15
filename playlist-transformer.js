@@ -73,7 +73,7 @@ class PlaylistTransformer {
 
   parseVLCOpts(lines, currentIndex, extinf) {
       let i = currentIndex;
-      console.log('\nParsing headers for:', extinf);
+//      console.log('\nParsing headers for:', extinf);
       
       // 1. Headers da EXTINF
       const extinfHeaders = {};
