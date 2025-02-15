@@ -1,5 +1,5 @@
 const config = require('./config');
-const CacheManager = require('./cache-manager')(config);
+const CacheManager = require('./cache-manager')({...config});
 const EPGManager = require('./epg-manager');
 const StreamProxyManager = require('./stream-proxy-manager')(config);
 
@@ -27,12 +27,10 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
       const ITEMS_PER_PAGE = 100;
 
       let channels = [];
-//      console.log('Search query:', search);
       if (genre) {
           channels = CacheManager.getChannelsByGenre(genre);
       } else if (search) {
           channels = CacheManager.searchChannels(search);
-//          console.log('Channels found:', channels.length);
       } else {
           channels = cachedData.channels;
       }
@@ -146,7 +144,6 @@ async function streamHandler({ id, config: userConfig }) {
       if (userConfig.force_proxy === 'true') {
           if (userConfig.proxy && userConfig.proxy_pwd) {
               for (const stream of channel.streamInfo.urls) {
-//                  console.log('Stream headers for proxy:', stream.headers);
                   const streamDetails = {
                       name: stream.name || channel.name,
                       url: stream.url,
@@ -171,7 +168,6 @@ async function streamHandler({ id, config: userConfig }) {
                   });
 
                   if (userConfig.proxy && userConfig.proxy_pwd) {
-//                      console.log('Stream headers for proxy (non-forced):', stream.headers);
                       const streamDetails = {
                           name: stream.name || channel.name,
                           url: stream.url,
