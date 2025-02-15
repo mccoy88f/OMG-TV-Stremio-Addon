@@ -61,7 +61,7 @@ class StreamProxyManager {
                 timeout: 5000,
                 validateStatus: status => status < 400,
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                    'User-Agent': defaultUserAgent
                 }
             });
             return response.status < 400;
@@ -79,7 +79,7 @@ class StreamProxyManager {
         const params = new URLSearchParams({
             api_password: config.proxy_pwd,
             d: streamUrl,
-            'user-agent': headers['User-Agent'] || 'Mozilla/5.0',
+            'user-agent': headers['User-Agent'] || defaultUserAgent,
             'referer': headers['Referer'] || '',
             'origin': headers['Origin'] || ''
         });
