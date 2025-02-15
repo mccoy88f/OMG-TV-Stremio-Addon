@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { URL } = require('url');
+const config = require('./config');
 
 class StreamProxyManager {
     constructor() {
