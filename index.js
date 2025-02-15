@@ -309,8 +309,7 @@ app.get('/manifest.json', async (req, res) => {
            await EPGManager.initializeEPG(req.query.epg);
        }
 
-       const configWithSuffix = {...req.query, id_suffix: req.query.id_suffix};
-       builder.defineCatalogHandler(async (args) => catalogHandler({ ...args, config: configWithSuffix }));
+       builder.defineCatalogHandler(async (args) => catalogHandler({ ...args, config: req.query }));
        builder.defineStreamHandler(async (args) => streamHandler({ ...args, config: req.query }));
        builder.defineMetaHandler(async (args) => metaHandler({ ...args, config: req.query }));
 
