@@ -106,14 +106,12 @@ class CacheManager extends EventEmitter {
     
         return this.cache.stremioData.channels.filter(channel => {
             const normalizedName = this.normalizeId(channel.name);
-            const normalizedGenres = channel.genre.map(genre => this.normalizeId(genre));
-        
-            // Verifica se la query è contenuta nel nome o nei generi
-            const nameMatch = normalizedName.includes(normalizedQuery);
-            const genreMatch = normalizedGenres.some(genre => genre.includes(normalizedQuery));
-        
-            return nameMatch || genreMatch;
+            return normalizedName.includes(normalizedQuery);
         });
+    }
+
+    normalizeId(id) {
+        return id?.toLowerCase().replace(/[^\w\s]/g, '').trim() || '';
     }
 
     isStale() {
