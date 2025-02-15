@@ -103,5 +103,5 @@ class StreamProxyManager {
 
         return streams;
     }
-
+}
 module.exports = () => new StreamProxyManager();
