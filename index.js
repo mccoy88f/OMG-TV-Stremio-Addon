@@ -6,7 +6,7 @@ const { catalogHandler, streamHandler } = require('./handlers');
 const metaHandler = require('./meta-handler');
 const EPGManager = require('./epg-manager');
 const config = require('./config');
-const CacheManager = require('./cache-manager')({...config, id_suffix: req.query.id_suffix});
+const CacheManager = require('./cache-manager')({...config});
 
 const app = express();
 app.use(cors());
@@ -152,12 +152,15 @@ app.get('/', async (req, res) => {
                        <input type="checkbox" name="force_proxy" ${req.query.force_proxy === 'true' ? 'checked' : ''}>
                        Forza Proxy
                    </label>
-                   
+
                    <label>ID Suffix:</label>
                    <input type="text" name="id_suffix" value="${req.query.id_suffix || ''}" placeholder="Esempio: it">
-                       
+
+                   <label>Percorso file remapper:</label>
+                   <input type="text" name="remapper_path" value="${req.query.remapper_path || ''}" placeholder="Esempio: /path/to/link.epg.remapping">
+                   
                    <input type="submit" value="Genera Configurazione">
-                   </form>
+               </form>
 
                <div class="bottom-buttons">
                    <button onclick="backupConfig()">BACKUP CONFIGURAZIONE</button>
@@ -210,7 +213,6 @@ app.get('/', async (req, res) => {
                    const queryString = getConfigQueryString();
                    const configUrl = '${protocol}://${host}/?' + queryString;
                    
-                   // Aggiorna solo se ci sono modifiche
                    if (window.location.href !== configUrl) {
                        window.location.href = configUrl;
                    }
@@ -220,7 +222,6 @@ app.get('/', async (req, res) => {
                    const queryString = getConfigQueryString();
                    const params = Object.fromEntries(new URLSearchParams(queryString));
                    
-                   // Converti i valori booleani di checkbox
                    params.epg_enabled = params.epg_enabled === 'true';
                    params.force_proxy = params.force_proxy === 'true';
 
@@ -242,7 +243,6 @@ app.get('/', async (req, res) => {
                        try {
                            const config = JSON.parse(e.target.result);
                            
-                           // Popola il form con i dati del backup
                            const form = document.getElementById('configForm');
                            for (const [key, value] of Object.entries(config)) {
                                const input = form.elements[key];
@@ -255,7 +255,6 @@ app.get('/', async (req, res) => {
                                }
                            }
 
-                           // Ricarica la pagina con i nuovi parametri
                            const queryString = getConfigQueryString();
                            window.location.href = '${protocol}://${host}/?' + queryString;
                        } catch (error) {
@@ -272,14 +271,12 @@ app.get('/', async (req, res) => {
 
 app.get('/manifest.json', async (req, res) => {
    try {
-       // Leggiamo prima la playlist per ottenere i generi
        if (req.query.m3u && CacheManager.cache.m3uUrl !== req.query.m3u) {
            await CacheManager.rebuildCache(req.query.m3u);
        }
        
        const { genres } = CacheManager.getCachedData();
 
-       // Creiamo il manifest con i generi dalla playlist
        const manifestConfig = {
            ...config.manifest,
            catalogs: [{
@@ -308,12 +305,12 @@ app.get('/manifest.json', async (req, res) => {
 
        const builder = new addonBuilder(manifestConfig);
        
-       // Inizializzazione EPG se presente
        if (req.query.epg) {
            await EPGManager.initializeEPG(req.query.epg);
        }
 
-       builder.defineCatalogHandler(async (args) => catalogHandler({ ...args, config: req.query }));
+       const configWithSuffix = {...req.query, id_suffix: req.query.id_suffix};
+       builder.defineCatalogHandler(async (args) => catalogHandler({ ...args, config: configWithSuffix }));
        builder.defineStreamHandler(async (args) => streamHandler({ ...args, config: req.query }));
        builder.defineMetaHandler(async (args) => metaHandler({ ...args, config: req.query }));
 
