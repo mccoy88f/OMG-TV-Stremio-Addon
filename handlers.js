@@ -145,7 +145,7 @@ async function streamHandler({ id, config: userConfig }) {
       if (userConfig.force_proxy === 'true') {
           if (userConfig.proxy && userConfig.proxy_pwd) {
               for (const stream of channel.streamInfo.urls) {
-                  console.log('Stream headers for proxy:', stream.headers);
+//                  console.log('Stream headers for proxy:', stream.headers);
                   const streamDetails = {
                       name: stream.name || channel.name,
                       url: stream.url,
@@ -170,7 +170,7 @@ async function streamHandler({ id, config: userConfig }) {
                   });
 
                   if (userConfig.proxy && userConfig.proxy_pwd) {
-                      console.log('Stream headers for proxy (non-forced):', stream.headers);
+//                      console.log('Stream headers for proxy (non-forced):', stream.headers);
                       const streamDetails = {
                           name: stream.name || channel.name,
                           url: stream.url,
