@@ -16,8 +16,11 @@ class StreamProxyManager {
                 'Origin': headers['Origin'] || ''
             };
 
+            // Per i file m3u8 e mpd usiamo HEAD invece di GET
+            const method = originalUrl.endsWith('.m3u8') || originalUrl.endsWith('.mpd') ? 'head' : 'get';
+
             const response = await axios({
-                method: 'get',
+                method,
                 url: originalUrl,
                 headers: networkHeaders,
                 maxRedirects: 5,
