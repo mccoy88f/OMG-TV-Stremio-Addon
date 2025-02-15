@@ -32,7 +32,7 @@ const baseConfig = {
                     {
                         name: 'genre',
                         isRequired: false,
-                        options: []
+                        options: []  // Verrà popolato dinamicamente dai generi della playlist
                     },
                     {
                         name: 'search',
@@ -46,7 +46,7 @@ const baseConfig = {
             }
         ],
         behaviorHints: {
-            configurationURL: 'http://localhost:10000',
+            configurationURL: null,  // Verrà impostato dinamicamente
             reloadRequired: true
         }
     }
@@ -71,13 +71,28 @@ function loadCustomConfig() {
                     version: customConfig.addonVersion || baseConfig.manifest.version,
                     logo: customConfig.addonLogo || baseConfig.manifest.logo,
                     behaviorHints: {
-                        configurationURL: 'http://localhost:10000',
+                        configurationURL: null,  // Verrà impostato dinamicamente
                         reloadRequired: true
                     },
                     catalogs: [{
                         ...baseConfig.manifest.catalogs[0],
                         id: addonConfigExists ? 'omg_plus_tv' : baseConfig.manifest.catalogs[0].id,
-                        name: addonConfigExists ? 'OMG+ TV' : baseConfig.manifest.catalogs[0].name
+                        name: addonConfigExists ? 'OMG+ TV' : baseConfig.manifest.catalogs[0].name,
+                        extra: [
+                            {
+                                name: 'genre',
+                                isRequired: false,
+                                options: []  // Verrà popolato dinamicamente dai generi della playlist
+                            },
+                            {
+                                name: 'search',
+                                isRequired: false
+                            },
+                            {
+                                name: 'skip',
+                                isRequired: false
+                            }
+                        ]
                     }]
                 }
             };
