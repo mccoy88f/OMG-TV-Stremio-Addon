@@ -33,10 +33,9 @@ class StreamProxyManager {
 //            });
             return response.status < 400;
         } catch (error) {
-            console.error('Proxy health check failed:', {
-                message: error.message,
-                code: error.code,
-                config: error.config
+            console.error('Verifica dello stato di salute del proxy fallita:', {
+                messaggio: error.message,
+                codice: error.code,
             });
             return false;
         }
