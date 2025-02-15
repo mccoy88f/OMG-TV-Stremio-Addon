@@ -45,7 +45,16 @@ class PlaylistTransformer {
       const remappingPath = config?.remapper_path || defaultPath;
       
       try {
-          const content = await fs.promises.readFile(remappingPath, 'utf8');
+          let content;
+          if (remappingPath.startsWith('http')) {
+              // Download da URL remoto
+              const response = await axios.get(remappingPath);
+              content = response.data;
+          } else {
+              // Lettura file locale
+              content = await fs.promises.readFile(remappingPath, 'utf8');
+          }
+
           let ruleCount = 0;
 
           content.split('\n').forEach(line => {
@@ -66,9 +75,7 @@ class PlaylistTransformer {
           }
           
       } catch (error) {
-          if (error.code !== 'ENOENT') {
-              console.error('❌ Errore remapping:', error.message);
-          }
+          console.error('❌ Errore remapping:', error.message);
       }
   }
 
