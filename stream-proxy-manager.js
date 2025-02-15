@@ -66,11 +66,11 @@ class StreamProxyManager {
     }
 
     async buildProxyUrl(streamUrl, headers = {}, config = {}) {
-        if (!config.proxy_url || !config.proxy_pwd) {
+        if (!config.proxy || !config.proxy_pwd) {
             return null;
         }
 
-        const baseUrl = config.proxy_url.replace(/\/+$/, '');
+        const baseUrl = config.proxy.replace(/\/+$/, '');
         const params = new URLSearchParams({
             api_password: config.proxy_pwd,
             d: streamUrl,
@@ -93,7 +93,7 @@ class StreamProxyManager {
     async getProxyStreams(channel, config = {}) {
         const streams = [];
 
-        if (!config.proxy_url || !config.proxy_pwd) {
+        if (!config.proxy || !config.proxy_pwd) {
             return streams;
         }
 
