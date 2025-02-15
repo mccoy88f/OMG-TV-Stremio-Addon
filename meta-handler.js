@@ -52,8 +52,9 @@ async function metaHandler({ type, id, config: userConfig }) {
             return { meta: null };
         }
 
-        if (CacheManager.isStale()) {
-            await CacheManager.updateCache();
+        // Se l'URL M3U è cambiato, ricostruisce la cache
+        if (CacheManager.cache.m3uUrl !== userConfig.m3u) {
+            await CacheManager.rebuildCache(userConfig.m3u);
         }
 
         const channelId = id.split('|')[1];
