@@ -28,9 +28,9 @@ class StreamProxyManager {
                 }
             });
 //            console.log('Proxy health check response:', {
-                status: response.status,
-                headers: response.headers
-            });
+//                status: response.status,
+//                headers: response.headers
+//            });
             return response.status < 400;
         } catch (error) {
             console.error('Proxy health check failed:', {
