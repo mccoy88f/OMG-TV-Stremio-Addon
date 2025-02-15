@@ -35,7 +35,7 @@ class StreamProxyManager {
         } catch (error) {
             console.error('Verifica dello stato di salute del proxy fallita:', {
                 messaggio: error.message,
-                codice: error.code,
+                codice: error.code
             });
             return false;
         }
