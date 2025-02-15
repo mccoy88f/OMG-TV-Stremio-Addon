@@ -90,14 +90,10 @@ class CacheManager extends EventEmitter {
     
         console.log('Requested genre:', genre);
     
-        return this.cache.stremioData.channels.filter(channel => {
-            console.log('Channel:', channel.name);
-            console.log('Channel genres:', JSON.stringify(channel.genre));
-            console.log('Is Array?:', Array.isArray(channel.genre));
+        return this.cache.stremioData.channels.filter(channel => {;
         
             if (!Array.isArray(channel.genre)) return false;
             const hasGenre = channel.genre.includes(genre);
-            console.log('Has genre?:', hasGenre);
             return hasGenre;
         });
     }
