@@ -404,11 +404,13 @@ function safeParseExtra(extraParam) {
         }
         
         try {
-            return JSON.parse
-        } catch (error) {
-            console.error('Error parsing extra:', error);
+            return JSON.parse(decodedExtra);
+        } catch {
             return {};
         }
+    } catch (error) {
+        console.error('Error parsing extra:', error);
+        return {};
     }
 }
 
