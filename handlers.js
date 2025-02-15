@@ -8,6 +8,7 @@ function normalizeId(id) {
 }
 
 async function catalogHandler({ type, id, extra, config: userConfig }) {
+  const cacheManager = CacheManager.getInstance({...config, id_suffix: userConfig.id_suffix, remapper_path: userConfig.remapper_path});
   try {
       if (!userConfig.m3u) {
           console.log('[Handlers] URL M3U mancante nella configurazione');
