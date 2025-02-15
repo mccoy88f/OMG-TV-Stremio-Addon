@@ -9,42 +9,6 @@ class StreamProxyManager {
         this.lastCheck = new Map();
     }
 
-    async resolveStreamUrl(originalUrl, headers = {}) {
-        try {
-            const networkHeaders = {
-                ...headers,
-                'User-Agent': headers['User-Agent'] || config.defaultUserAgent,
-                'Referer': headers['Referer'] || '',
-                'Origin': headers['Origin'] || ''
-            };
-
-            // Per i file m3u8 e mpd usiamo HEAD invece di GET
-            const method = originalUrl.endsWith('.m3u8') || originalUrl.endsWith('.mpd') ? 'head' : 'get';
-
-            const response = await axios({
-                method,
-                url: originalUrl,
-                headers: networkHeaders,
-                maxRedirects: 5,
-                validateStatus: status => status < 400,
-                timeout: 10000
-            });
-
-            return {
-                finalUrl: response.request.res.responseUrl || originalUrl,
-                headers: networkHeaders,
-                status: response.status
-            };
-        } catch (error) {
-            console.error(`Errore risoluzione URL ${originalUrl}:`, error.message);
-            return { 
-                finalUrl: originalUrl, 
-                headers,
-                status: error.response?.status || 500
-            };
-        }
-    }
-
     async validateProxyUrl(url) {
         if (!url) return false;
         try {
@@ -97,23 +61,10 @@ class StreamProxyManager {
 
     async getProxyStreams(channel, config = {}) {
         const streams = [];
-
-        if (!config.proxy || !config.proxy_pwd) {
-            return streams;
-        }
-
+        if (!config.proxy || !config.proxy_pwd) return streams;
+    
         try {
-            const { finalUrl, headers, status } = await this.resolveStreamUrl(
-                channel.url, 
-                channel.headers
-            );
-
-            if (status === 404 || !finalUrl) {
-                console.log(`Canale non disponibile: ${channel.name}`);
-                return streams;
-            }
-
-            const proxyUrl = await this.buildProxyUrl(finalUrl, headers, config);
+            const proxyUrl = await this.buildProxyUrl(channel.url, channel.headers, config);
             if (!proxyUrl) {
                 console.log(`Formato stream non supportato per: ${channel.name}`);
                 return streams;
@@ -128,14 +79,9 @@ class StreamProxyManager {
                 return [this.proxyCache.get(cacheKey)];
             }
 
-            if (!await this.checkProxyHealth(proxyUrl)) {
-                console.log('Proxy non attivo per:', channel.name);
-                return [];
-            }
-
             let streamType = 'HTTP';
-            if (finalUrl.endsWith('.m3u8')) streamType = 'HLS';
-            else if (finalUrl.endsWith('.mpd')) streamType = 'DASH';
+            if (channel.url.endsWith('.m3u8')) streamType = 'HLS';
+            else if (channel.url.endsWith('.mpd')) streamType = 'DASH';
 
             const proxyStream = {
                 name: `${channel.name} [P](${streamType})`,
@@ -149,17 +95,13 @@ class StreamProxyManager {
 
             this.proxyCache.set(cacheKey, proxyStream);
             this.lastCheck.set(cacheKey, Date.now());
-
             streams.push(proxyStream);
 
         } catch (error) {
             console.error('Errore proxy per il canale:', channel.name, error.message);
-            console.error('URL richiesto:', channel.url);
-            console.error('Headers:', channel.headers);
         }
 
         return streams;
     }
-}
 
 module.exports = () => new StreamProxyManager();
