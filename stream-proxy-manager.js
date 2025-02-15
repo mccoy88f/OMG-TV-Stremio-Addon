@@ -21,16 +21,12 @@ class StreamProxyManager {
     async checkProxyHealth(proxyUrl) {
         try {
             const response = await axios.get(proxyUrl, {
-                timeout: 10000, // Aumentato a 10 secondi
+                timeout: 10000,
                 validateStatus: status => status < 400,
                 headers: {
                     'User-Agent': config.defaultUserAgent
                 }
             });
-//            console.log('Proxy health check response:', {
-//                status: response.status,
-//                headers: response.headers
-//            });
             return response.status < 400;
         } catch (error) {
             console.error('Verifica dello stato di salute del proxy fallita:', {
@@ -45,9 +41,6 @@ class StreamProxyManager {
         if (!config.proxy || !config.proxy_pwd) {
             return null;
         }
-
-//        console.log('Building proxy URL for:', streamUrl);
-//        console.log('Headers:', headers);
 
         const baseUrl = config.proxy.replace(/\/+$/, '');
         const params = new URLSearchParams({
@@ -73,7 +66,6 @@ class StreamProxyManager {
             proxyUrl = `${baseUrl}/proxy/stream?${params.toString()}`;
         }
 
-//        console.log('Generated proxy URL:', proxyUrl);
         return proxyUrl;
     }
 
@@ -86,10 +78,6 @@ class StreamProxyManager {
         }
 
         try {
-//            console.log('Processing proxy stream for channel:', channel.name);
-//            console.log('Channel URL:', channel.url);
-//            console.log('Channel headers:', channel.headers);
-
             const proxyUrl = await this.buildProxyUrl(channel.url, channel.headers, config);
             if (!proxyUrl) {
                 console.log(`Formato stream non supportato per: ${channel.name}`);
@@ -101,7 +89,6 @@ class StreamProxyManager {
             const cacheValid = lastCheck && (Date.now() - lastCheck) < 5 * 60 * 1000;
 
             if (cacheValid && this.proxyCache.has(cacheKey)) {
-//                console.log(`Usando cache per: ${channel.name}`);
                 return [this.proxyCache.get(cacheKey)];
             }
 
