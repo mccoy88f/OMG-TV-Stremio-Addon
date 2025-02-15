@@ -1,4 +1,3 @@
-// handlers.js
 const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
@@ -28,10 +27,12 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
       const ITEMS_PER_PAGE = 100;
 
       let channels = [];
+      console.log('Search query:', search);
       if (genre) {
           channels = CacheManager.getChannelsByGenre(genre);
       } else if (search) {
           channels = CacheManager.searchChannels(search);
+          console.log('Channels found:', channels.length);
       } else {
           channels = cachedData.channels;
       }
