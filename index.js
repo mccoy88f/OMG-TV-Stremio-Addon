@@ -6,7 +6,7 @@ const { catalogHandler, streamHandler } = require('./handlers');
 const metaHandler = require('./meta-handler');
 const EPGManager = require('./epg-manager');
 const config = require('./config');
-const CacheManager = require('./cache-manager')({...config, id_suffix: req.query.id_suffix});
+const CacheManager = require('./cache-manager')(config);
 
 const app = express();
 app.use(cors());
