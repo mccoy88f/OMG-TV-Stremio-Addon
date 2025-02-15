@@ -88,9 +88,17 @@ class CacheManager extends EventEmitter {
     getChannelsByGenre(genre) {
         if (!genre || !this.cache?.stremioData?.channels) return [];
     
+        console.log('Requested genre:', genre);
+    
         return this.cache.stremioData.channels.filter(channel => {
+            console.log('Channel:', channel.name);
+            console.log('Channel genres:', JSON.stringify(channel.genre));
+            console.log('Is Array?:', Array.isArray(channel.genre));
+        
             if (!Array.isArray(channel.genre)) return false;
-            return channel.genre.some(g => g === genre); // Confronto esatto
+            const hasGenre = channel.genre.includes(genre);
+            console.log('Has genre?:', hasGenre);
+            return hasGenre;
         });
     }
 
