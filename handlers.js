@@ -131,22 +131,35 @@ function enrichWithEPG(meta, channelId, userConfig) {
 
 async function streamHandler({ id, config: userConfig }) {
    try {
+       console.log('Stream config:', {
+           forceProxy: userConfig.force_proxy,
+           proxyUrl: userConfig.proxy_url,
+           proxyPwd: userConfig.proxy_pwd ? '***' : undefined
+       });
+
        if (!userConfig.m3u) {
            console.log('[Handlers] URL M3U mancante nella configurazione');
            return { streams: [] };
        }
 
        const channelId = id.split('|')[1];
-       const channel = CacheManager.getChannel(channelId);
+       console.log('Requested channel ID:', channelId);
 
+       const channel = CacheManager.getChannel(channelId);
        if (!channel) {
            console.log('[Handlers] Nessun canale trovato per ID:', channelId);
            return { streams: [] };
        }
 
+       console.log('Channel found:', {
+           name: channel.name,
+           urlsCount: channel.streamInfo?.urls?.length
+       });
+
        let streams = [];
 
        if (userConfig.force_proxy === 'true') {
+           console.log('Proxy forzato attivo');
            if (userConfig.proxy_url && userConfig.proxy_pwd) {
                if (channel.streamInfo && channel.streamInfo.urls) {
                    for (const stream of channel.streamInfo.urls) {
@@ -155,10 +168,14 @@ async function streamHandler({ id, config: userConfig }) {
                            url: stream.url,
                            headers: channel.streamInfo.headers
                        };
+                       console.log('Richiesta proxy stream per:', streamDetails.name);
                        const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
+                       console.log('Proxy streams ottenuti:', proxyStreams.length);
                        streams.push(...proxyStreams);
                    }
                }
+           } else {
+               console.log('Configurazione proxy incompleta');
            }
        } else {
            if (channel.streamInfo.urls && channel.streamInfo.urls.length > 0) {
