@@ -13,7 +13,7 @@ class StreamProxyManager {
         try {
             const networkHeaders = {
                 ...headers,
-                'User-Agent': headers['User-Agent'] || defaultUserAgent,
+                'User-Agent': headers['User-Agent'] || config.defaultUserAgent,
                 'Referer': headers['Referer'] || '',
                 'Origin': headers['Origin'] || ''
             };
@@ -61,7 +61,7 @@ class StreamProxyManager {
                 timeout: 5000,
                 validateStatus: status => status < 400,
                 headers: {
-                    'User-Agent': defaultUserAgent
+                    'User-Agent': config.defaultUserAgent
                 }
             });
             return response.status < 400;
@@ -79,9 +79,9 @@ class StreamProxyManager {
         const params = new URLSearchParams({
             api_password: config.proxy_pwd,
             d: streamUrl,
-            'user-agent': headers['User-Agent'] || defaultUserAgent,
-            'referer': headers['Referer'] || '',
-            'origin': headers['Origin'] || ''
+            'user-agent': headers['User-Agent'] || config.defaultUserAgent,
+            'referer': headers['Referer'],
+            'origin': headers['Origin']
         });
 
         if (streamUrl.endsWith('.m3u8')) {
