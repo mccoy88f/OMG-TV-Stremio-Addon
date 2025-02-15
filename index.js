@@ -268,32 +268,58 @@ app.get('/', async (req, res) => {
 });
 
 app.get('/manifest.json', async (req, res) => {
-   const manifestConfig = {
-       ...config.manifest,
-       behaviorHints: {
-           configurationURL: `http://${req.get('host')}?${new URLSearchParams(req.query)}`,
-           reloadRequired: true
+   try {
+       // Leggiamo prima la playlist per ottenere i generi
+       if (req.query.m3u && CacheManager.cache.m3uUrl !== req.query.m3u) {
+           await CacheManager.rebuildCache(req.query.m3u);
        }
-   };
+       
+       const { genres } = CacheManager.getCachedData();
 
-   const builder = new addonBuilder(manifestConfig);
-   
-   // Inizializzazione EPG se presente
-   if (req.query.epg) {
-       await EPGManager.initializeEPG(req.query.epg);
+       // Creiamo il manifest con i generi dalla playlist
+       const manifestConfig = {
+           ...config.manifest,
+           catalogs: [{
+               ...config.manifest.catalogs[0],
+               extra: [
+                   {
+                       name: 'genre',
+                       isRequired: false,
+                       options: genres
+                   },
+                   {
+                       name: 'search',
+                       isRequired: false
+                   },
+                   {
+                       name: 'skip',
+                       isRequired: false
+                   }
+               ]
+           }],
+           behaviorHints: {
+               configurationURL: `http://${req.get('host')}?${new URLSearchParams(req.query)}`,
+               reloadRequired: true
+           }
+       };
+
+       const builder = new addonBuilder(manifestConfig);
+       
+       // Inizializzazione EPG se presente
+       if (req.query.epg) {
+           await EPGManager.initializeEPG(req.query.epg);
+       }
+
+       builder.defineCatalogHandler(async (args) => catalogHandler({ ...args, config: req.query }));
+       builder.defineStreamHandler(async (args) => streamHandler({ ...args, config: req.query }));
+       builder.defineMetaHandler(async (args) => metaHandler({ ...args, config: req.query }));
+
+       res.setHeader('Content-Type', 'application/json');
+       res.send(builder.getInterface().manifest);
+   } catch (error) {
+       console.error('Error creating manifest:', error);
+       res.status(500).json({ error: 'Internal server error' });
    }
-
-   // Ricostruzione cache se necessario
-   if (req.query.m3u && CacheManager.cache.m3uUrl !== req.query.m3u) {
-       await CacheManager.rebuildCache(req.query.m3u);
-   }
-
-   builder.defineCatalogHandler(async (args) => catalogHandler({ ...args, config: req.query }));
-   builder.defineStreamHandler(async (args) => streamHandler({ ...args, config: req.query }));
-   builder.defineMetaHandler(async (args) => metaHandler({ ...args, config: req.query }));
-
-   res.setHeader('Content-Type', 'application/json');
-   res.send(builder.getInterface().manifest);
 });
 
 app.get('/:resource/:type/:id/:extra?.json', async (req, res, next) => {
