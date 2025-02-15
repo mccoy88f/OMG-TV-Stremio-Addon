@@ -29,9 +29,10 @@ app.get('/', async (req, res) => {
                    margin: 0;
                    padding: 0;
                    height: 100vh;
-                   overflow: hidden;
+                   overflow-y: auto; /* Consente lo scroll verticale */
                    font-family: Arial, sans-serif;
                    color: #fff;
+                   background: purple; /* Sfondo di backup */
                }
                #background-video {
                    position: fixed;
@@ -44,6 +45,7 @@ app.get('/', async (req, res) => {
                    z-index: -1000;
                    background: black;
                    object-fit: cover;
+                   filter: blur(5px) brightness(0.5); /* Aggiunge blur e riduce luminosità */
                }
                .content {
                    position: relative;
@@ -56,8 +58,10 @@ app.get('/', async (req, res) => {
                    min-height: 100vh;
                    display: flex;
                    flex-direction: column;
-                   justify-content: center;
+                   justify-content: flex-start; /* Allinea all'inizio invece che al centro */
+                   overflow-y: visible; /* Consente lo scroll all'interno del contenuto */
                }
+
                .logo {
                    width: 150px;
                    margin: 0 auto 20px;
