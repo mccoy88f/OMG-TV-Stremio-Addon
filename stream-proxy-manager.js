@@ -124,4 +124,4 @@ class StreamProxyManager {
     }
 }
 
-module.exports = (config) => new StreamProxyManager();
+module.exports = () => new StreamProxyManager();
