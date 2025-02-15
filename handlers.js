@@ -24,13 +24,20 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
            await EPGManager.initializeEPG(userConfig.epg);
        }
 
-       const cachedData = CacheManager.getCachedData();
        const { search, genre, skip = 0 } = extra || {};
+       console.log('Extra params:', extra);
+       console.log('Genre:', genre);
+       console.log('Search:', search);
+       console.log('Skip:', skip);
+
+       const cachedData = CacheManager.getCachedData();
        const ITEMS_PER_PAGE = 100;
 
        let channels = [];
        if (genre) {
+           console.log('Filtering by genre:', genre);
            channels = CacheManager.getChannelsByGenre(genre);
+           console.log('Filtered channels:', channels.length);
        } else if (search) {
            channels = CacheManager.searchChannels(search);
        } else {
