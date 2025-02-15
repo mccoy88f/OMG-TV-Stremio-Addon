@@ -22,57 +22,34 @@ class CacheManager extends EventEmitter {
         return id?.toLowerCase() || '';
     }
 
-    async updateCache(force = false, m3uUrl = null) {
-        if (!this.cache) this.initCache();
-
+    async rebuildCache(m3uUrl) {
         if (this.cache.updateInProgress) {
-            console.log('⚠️  Aggiornamento cache già in corso, skip...');
-            return;
-        }
-
-        // Aggiorna l'URL M3U se fornito
-        if (m3uUrl) {
-            // Force update if M3U URL has changed
-            force = force || (this.cache.m3uUrl !== m3uUrl);
-            this.cache.m3uUrl = m3uUrl;
-        }
-
-        if (!this.cache.m3uUrl) {
-            console.log('⚠️ Nessun URL M3U disponibile, skip aggiornamento');
+            console.log('⚠️  Ricostruzione cache già in corso, skip...');
             return;
         }
 
         try {
             this.cache.updateInProgress = true;
-            console.log('\n=== Inizio Aggiornamento Cache ===');
-            console.log(`Forza aggiornamento: ${force ? 'Sì' : 'No'}`);
-            console.log('Caricamento playlist da:', this.cache.m3uUrl);
+            console.log('\n=== Inizio Ricostruzione Cache ===');
+            console.log('URL M3U:', m3uUrl);
 
-            const needsUpdate = force || !this.cache.lastUpdated || !this.cache.stremioData ||
-                (Date.now() - this.cache.lastUpdated) > 12 * 60 * 60 * 1000;
-
-            if (!needsUpdate) {
-                console.log('ℹ️  Cache ancora valida, skip aggiornamento');
-                this.cache.updateInProgress = false;
-                return;
-            }
-
-            const data = await this.transformer.loadAndTransform(this.cache.m3uUrl);
+            const data = await this.transformer.loadAndTransform(m3uUrl);
             
-            this.cache.stremioData = data;
-            this.cache.lastUpdated = Date.now();
-            this.cache.updateInProgress = false;
+            this.cache = {
+                stremioData: data,
+                lastUpdated: Date.now(),
+                updateInProgress: false,
+                m3uUrl: m3uUrl
+            };
 
-            console.log('\nRiepilogo Cache:');
             console.log(`✓ Canali in cache: ${data.channels.length}`);
             console.log(`✓ Generi trovati: ${data.genres.length}`);
-            console.log(`✓ Ultimo aggiornamento: ${new Date().toLocaleString()}`);
-            console.log('\n=== Cache Aggiornata con Successo ===\n');
+            console.log('\n=== Cache Ricostruita ===\n');
 
             this.emit('cacheUpdated', this.cache);
 
         } catch (error) {
-            console.error('\n❌ ERRORE nell\'aggiornamento della cache:', error);
+            console.error('\n❌ ERRORE nella ricostruzione della cache:', error);
             this.cache.updateInProgress = false;
             this.emit('cacheError', error);
             throw error;
