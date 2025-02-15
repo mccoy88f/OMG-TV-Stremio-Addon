@@ -26,15 +26,39 @@ app.get('/', async (req, res) => {
            <title>${config.manifest.name}</title>
            <style>
                body {
-                   background: #000;
-                   color: #fff;
+                   margin: 0;
+                   padding: 0;
+                   height: 100vh;
+                   overflow: hidden;
                    font-family: Arial, sans-serif;
-                   text-align: center;
-                   padding: 50px;
+                   color: #fff;
+               }
+               #background-video {
+                   position: fixed;
+                   right: 0;
+                   bottom: 0;
+                   min-width: 100%;
+                   min-height: 100%;
+                   width: auto;
+                   height: auto;
+                   z-index: -1000;
+                   background: black;
+                   object-fit: cover;
+               }
+               .content {
+                   position: relative;
+                   z-index: 1;
                    max-width: 800px;
                    margin: 0 auto;
+                   text-align: center;
+                   padding: 50px 20px;
+                   background: rgba(0,0,0,0.6);
+                   min-height: 100vh;
+                   display: flex;
+                   flex-direction: column;
+                   justify-content: center;
                }
-               img.logo {
+               .logo {
                    width: 150px;
                    margin: 0 auto 20px;
                    display: block;
@@ -57,6 +81,7 @@ app.get('/', async (req, res) => {
                .config-form label {
                    display: block;
                    margin: 10px 0 5px;
+                   color: #fff;
                }
                .config-form input[type="text"],
                .config-form input[type="url"],
@@ -115,160 +140,168 @@ app.get('/', async (req, res) => {
            </style>
        </head>
        <body>
-           <img class="logo" src="${config.manifest.logo}" alt="logo">
-           <h1>${config.manifest.name}</h1>
-           
-           <div class="manifest-url">
-               <strong>URL Manifest:</strong><br>
-               ${manifestUrl}
-           </div>
+           <video autoplay loop muted id="background-video">
+               <source src="https://static.vecteezy.com/system/resources/previews/001/803/236/mp4/no-signal-bad-tv-free-video.mp4" type="video/mp4">
+               Il tuo browser non supporta il tag video.
+           </video>
 
-           <div class="buttons">
-               <button onclick="copyManifestUrl()">COPIA URL MANIFEST</button>
-               <button onclick="installAddon()">INSTALLA SU STREMIO</button>
-           </div>
-           
-           <div class="config-form">
-               <h2>Genera Configurazione</h2>
-               <form id="configForm" onsubmit="updateConfig(event)">
-                   <label>M3U URL:</label>
-                   <input type="url" name="m3u" value="${req.query.m3u || ''}" required>
-                   
-                   <label>EPG URL:</label>
-                   <input type="url" name="epg" value="${req.query.epg || ''}">
-                   
-                   <label>
-                       <input type="checkbox" name="epg_enabled" ${req.query.epg_enabled === 'true' ? 'checked' : ''}>
-                       Abilita EPG
-                   </label>
-                   
-                   <label>Proxy URL:</label>
-                   <input type="url" name="proxy" value="${req.query.proxy || ''}">
-                   
-                   <label>Proxy Password:</label>
-                   <input type="password" name="proxy_pwd" value="${req.query.proxy_pwd || ''}">
-                   
-                   <label>
-                       <input type="checkbox" name="force_proxy" ${req.query.force_proxy === 'true' ? 'checked' : ''}>
-                       Forza Proxy
-                   </label>
-
-                   <label>ID Suffix:</label>
-                   <input type="text" name="id_suffix" value="${req.query.id_suffix || ''}" placeholder="Esempio: it">
-
-                   <label>Percorso file remapper:</label>
-                   <input type="text" name="remapper_path" value="${req.query.remapper_path || ''}" placeholder="Esempio: /path/to/link.epg.remapping">
-                   
-                   <input type="submit" value="Genera Configurazione">
-               </form>
-
-               <div class="bottom-buttons">
-                   <button onclick="backupConfig()">BACKUP CONFIGURAZIONE</button>
-                   <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreConfig(event)">
-                   <button onclick="document.getElementById('restoreFile').click()">RIPRISTINA CONFIGURAZIONE</button>
+           <div class="content">
+               <img class="logo" src="${config.manifest.logo}" alt="logo">
+               <h1>${config.manifest.name}</h1>
+               
+               <div class="manifest-url">
+                   <strong>URL Manifest:</strong><br>
+                   ${manifestUrl}
                </div>
-           </div>
-           
-           <div id="toast" class="toast">URL Copiato!</div>
-           
-           <script>
-               function getConfigQueryString() {
-                   const form = document.getElementById('configForm');
-                   const formData = new FormData(form);
-                   const params = new URLSearchParams();
-                   
-                   formData.forEach((value, key) => {
-                       if (value || key === 'epg_enabled' || key === 'force_proxy') {
-                           if (key === 'epg_enabled' || key === 'force_proxy') {
-                               params.append(key, form.elements[key].checked);
-                           } else {
-                               params.append(key, value);
-                           }
-                       }
-                   });
-                   
-                   return params.toString();
-               }
 
-               function installAddon() {
-                   const queryString = getConfigQueryString();
-                   window.location.href = 'stremio://${host}/manifest.json?' + queryString;
-               }
+               <div class="buttons">
+                   <button onclick="copyManifestUrl()">COPIA URL MANIFEST</button>
+                   <button onclick="installAddon()">INSTALLA SU STREMIO</button>
+               </div>
+               
+               <div class="config-form">
+                   <h2>Genera Configurazione</h2>
+                   <form id="configForm" onsubmit="updateConfig(event)">
+                       <label>M3U URL:</label>
+                       <input type="url" name="m3u" value="${req.query.m3u || ''}" required>
+                       
+                       <label>EPG URL:</label>
+                       <input type="url" name="epg" value="${req.query.epg || ''}">
+                       
+                       <label>
+                           <input type="checkbox" name="epg_enabled" ${req.query.epg_enabled === 'true' ? 'checked' : ''}>
+                           Abilita EPG
+                       </label>
+                       
+                       <label>Proxy URL:</label>
+                       <input type="url" name="proxy" value="${req.query.proxy || ''}">
+                       
+                       <label>Proxy Password:</label>
+                       <input type="password" name="proxy_pwd" value="${req.query.proxy_pwd || ''}">
+                       
+                       <label>
+                           <input type="checkbox" name="force_proxy" ${req.query.force_proxy === 'true' ? 'checked' : ''}>
+                           Forza Proxy
+                       </label>
 
-               function copyManifestUrl() {
-                   const queryString = getConfigQueryString();
-                   const manifestUrl = '${protocol}://${host}/manifest.json?' + queryString;
-                   
-                   navigator.clipboard.writeText(manifestUrl).then(() => {
-                       const toast = document.getElementById('toast');
-                       toast.style.display = 'block';
-                       setTimeout(() => {
-                           toast.style.display = 'none';
-                       }, 2000);
-                   });
-               }
+                       <label>ID Suffix:</label>
+                       <input type="text" name="id_suffix" value="${req.query.id_suffix || ''}" placeholder="Esempio: it">
 
-               function updateConfig(e) {
-                   e.preventDefault();
-                   const queryString = getConfigQueryString();
-                   const configUrl = '${protocol}://${host}/?' + queryString;
-                   
-                   if (window.location.href !== configUrl) {
-                       window.location.href = configUrl;
-                   }
-               }
+                       <label>Percorso file remapper:</label>
+                       <input type="text" name="remapper_path" value="${req.query.remapper_path || ''}" placeholder="Esempio: https://raw.githubusercontent.com/...">
+                       
+                       <input type="submit" value="Genera Configurazione">
+                   </form>
 
-               function backupConfig() {
-                   const queryString = getConfigQueryString();
-                   const params = Object.fromEntries(new URLSearchParams(queryString));
-                   
-                   params.epg_enabled = params.epg_enabled === 'true';
-                   params.force_proxy = params.force_proxy === 'true';
-
-                   const configBlob = new Blob([JSON.stringify(params, null, 2)], {type: 'application/json'});
-                   const url = URL.createObjectURL(configBlob);
-                   const a = document.createElement('a');
-                   a.href = url;
-                   a.download = 'omg_tv_config.json';
-                   a.click();
-                   URL.revokeObjectURL(url);
-               }
-
-               function restoreConfig(event) {
-                   const file = event.target.files[0];
-                   if (!file) return;
-
-                   const reader = new FileReader();
-                   reader.onload = function(e) {
-                       try {
-                           const config = JSON.parse(e.target.result);
-                           
-                           const form = document.getElementById('configForm');
-                           for (const [key, value] of Object.entries(config)) {
-                               const input = form.elements[key];
-                               if (input) {
-                                   if (input.type === 'checkbox') {
-                                       input.checked = value;
-                                   } else {
-                                       input.value = value;
-                                   }
+                   <div class="bottom-buttons">
+                       <button onclick="backupConfig()">BACKUP CONFIGURAZIONE</button>
+                       <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreConfig(event)">
+                       <button onclick="document.getElementById('restoreFile').click()">RIPRISTINA CONFIGURAZIONE</button>
+                   </div>
+               </div>
+               
+               <div id="toast" class="toast">URL Copiato!</div>
+               
+               <script>
+                   function getConfigQueryString() {
+                       const form = document.getElementById('configForm');
+                       const formData = new FormData(form);
+                       const params = new URLSearchParams();
+                       
+                       formData.forEach((value, key) => {
+                           if (value || key === 'epg_enabled' || key === 'force_proxy') {
+                               if (key === 'epg_enabled' || key === 'force_proxy') {
+                                   params.append(key, form.elements[key].checked);
+                               } else {
+                                   params.append(key, value);
                                }
                            }
+                       });
+                       
+                       return params.toString();
+                   }
 
-                           const queryString = getConfigQueryString();
-                           window.location.href = '${protocol}://${host}/?' + queryString;
-                       } catch (error) {
-                           alert('Errore nel caricamento del file di configurazione');
+                   function installAddon() {
+                       const queryString = getConfigQueryString();
+                       window.location.href = 'stremio://${host}/manifest.json?' + queryString;
+                   }
+
+                   function copyManifestUrl() {
+                       const queryString = getConfigQueryString();
+                       const manifestUrl = '${protocol}://${host}/manifest.json?' + queryString;
+                       
+                       navigator.clipboard.writeText(manifestUrl).then(() => {
+                           const toast = document.getElementById('toast');
+                           toast.style.display = 'block';
+                           setTimeout(() => {
+                               toast.style.display = 'none';
+                           }, 2000);
+                       });
+                   }
+
+                   function updateConfig(e) {
+                       e.preventDefault();
+                       const queryString = getConfigQueryString();
+                       const configUrl = '${protocol}://${host}/?' + queryString;
+                       
+                       if (window.location.href !== configUrl) {
+                           window.location.href = configUrl;
                        }
-                   };
-                   reader.readAsText(file);
-               }
-           </script>
+                   }
+
+                   function backupConfig() {
+                       const queryString = getConfigQueryString();
+                       const params = Object.fromEntries(new URLSearchParams(queryString));
+                       
+                       params.epg_enabled = params.epg_enabled === 'true';
+                       params.force_proxy = params.force_proxy === 'true';
+
+                       const configBlob = new Blob([JSON.stringify(params, null, 2)], {type: 'application/json'});
+                       const url = URL.createObjectURL(configBlob);
+                       const a = document.createElement('a');
+                       a.href = url;
+                       a.download = 'omg_tv_config.json';
+                       a.click();
+                       URL.revokeObjectURL(url);
+                   }
+
+                   function restoreConfig(event) {
+                       const file = event.target.files[0];
+                       if (!file) return;
+
+                       const reader = new FileReader();
+                       reader.onload = function(e) {
+                           try {
+                               const config = JSON.parse(e.target.result);
+                               
+                               const form = document.getElementById('configForm');
+                               for (const [key, value] of Object.entries(config)) {
+                                   const input = form.elements[key];
+                                   if (input) {
+                                       if (input.type === 'checkbox') {
+                                           input.checked = value;
+                                       } else {
+                                           input.value = value;
+                                       }
+                                   }
+                               }
+
+                               const queryString = getConfigQueryString();
+                               window.location.href = '${protocol}://${host}/?' + queryString;
+                           } catch (error) {
+                               alert('Errore nel caricamento del file di configurazione');
+                           }
+                       };
+                       reader.readAsText(file);
+                   }
+               </script>
+           </div>
        </body>
        </html>
    `);
 });
 
+// Resto del codice rimane invariato (manifest.json, altri handler, ecc.)
 app.get('/manifest.json', async (req, res) => {
    try {
        if (req.query.m3u && CacheManager.cache.m3uUrl !== req.query.m3u) {
@@ -371,13 +404,11 @@ function safeParseExtra(extraParam) {
         }
         
         try {
-            return JSON.parse(decodedExtra);
-        } catch {
+            return JSON.parse
+        } catch (error) {
+            console.error('Error parsing extra:', error);
             return {};
         }
-    } catch (error) {
-        console.error('Error parsing extra:', error);
-        return {};
     }
 }
 
