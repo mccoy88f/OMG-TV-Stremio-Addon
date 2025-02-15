@@ -88,7 +88,7 @@ class CacheManager extends EventEmitter {
     getChannelsByGenre(genre) {
         if (!genre || !this.cache?.stremioData?.channels) return [];
     
-        console.log('Requested genre:', genre);
+//        console.log('Requested genre:', genre);
     
         return this.cache.stremioData.channels.filter(channel => {;
         
