@@ -79,7 +79,7 @@ class PlaylistTransformer {
       const extinfHeaders = {};
       const extinfopts = extinf.match(/http-[^=]+=["']([^"']+)/g);
       if (extinfopts) {
-          console.log('Headers in EXTINF:', extinfopts);
+//          console.log('Headers in EXTINF:', extinfopts);
           extinfopts.forEach(opt => {
               const [key, value] = opt.split('=');
               extinfHeaders[key.replace('http-', '')] = value.replace(/["']/g, '');
@@ -90,7 +90,7 @@ class PlaylistTransformer {
       const vlcHeaders = {};
       while (i < lines.length && lines[i].startsWith('#EXTVLCOPT:')) {
           const opt = lines[i].substring('#EXTVLCOPT:'.length).trim();
-          console.log('EXTVLCOPT line:', opt);
+//          console.log('EXTVLCOPT line:', opt);
           const [key, ...value] = opt.split('=');
           vlcHeaders[key.replace('http-', '')] = value.join('=');
           i++;
@@ -101,7 +101,7 @@ class PlaylistTransformer {
       if (i < lines.length && lines[i].startsWith('#EXTHTTP:')) {
           try {
               const parsed = JSON.parse(lines[i].substring('#EXTHTTP:'.length));
-              console.log('EXTHTTP headers:', parsed);
+//              console.log('EXTHTTP headers:', parsed);
               Object.assign(httpHeaders, parsed);
               i++;
           } catch (e) {
@@ -133,7 +133,7 @@ class PlaylistTransformer {
           delete finalHeaders['Origin'];
       }
 
-      console.log('Final combined headers:', finalHeaders);
+//      console.log('Final combined headers:', finalHeaders);
       return { headers: finalHeaders, nextIndex: i };
   }
   
