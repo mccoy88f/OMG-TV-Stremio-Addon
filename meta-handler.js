@@ -1,5 +1,5 @@
 const config = require('./config');
-const CacheManager = require('./cache-manager')({...config});
+const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
 
 function enrichWithDetailedEPG(meta, channelId, userConfig) {
