@@ -14,10 +14,12 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
            return { metas: [], genres: [] };
        }
 
-       // Forza l'aggiornamento della cache con l'URL M3U
-       await CacheManager.updateCache(false, userConfig.m3u);
+       // Se l'URL M3U è cambiato, ricostruisce la cache
+       if (CacheManager.cache.m3uUrl !== userConfig.m3u) {
+           await CacheManager.rebuildCache(userConfig.m3u);
+       }
 
-       // Inizializzazione EPG
+       // Inizializzazione EPG se presente
        if (userConfig.epg) {
            await EPGManager.initializeEPG(userConfig.epg);
        }
@@ -92,7 +94,6 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
 
 function enrichWithEPG(meta, channelId, userConfig) {
    if (!userConfig.epg_enabled || !channelId) {
-        // Aggiungi descrizione base se EPG non è abilitata
         meta.description = `Canale live: ${meta.name}`;
         meta.releaseInfo = 'LIVE';
         return meta;
@@ -132,14 +133,6 @@ async function streamHandler({ id, config: userConfig }) {
        if (!userConfig.m3u) {
            console.log('[Handlers] URL M3U mancante nella configurazione');
            return { streams: [] };
-       }
-
-       // Aggiorna sempre la cache con l'URL M3U corrente
-       await CacheManager.updateCache(false, userConfig.m3u);
-
-       // Inizializzazione EPG
-       if (userConfig.epg) {
-           await EPGManager.initializeEPG(userConfig.epg);
        }
 
        const channelId = id.split('|')[1];
