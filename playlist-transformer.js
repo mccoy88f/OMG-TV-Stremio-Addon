@@ -1,4 +1,3 @@
-// playlist-transformer.js
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
@@ -110,13 +109,29 @@ class PlaylistTransformer {
           }
       }
 
-      // Combina gli headers con priorità: EXTHTTP > EXTVLCOPT > EXTINF
+      // Unifica gli headers con priorità e standardizza User-Agent
       const finalHeaders = {
           ...extinfHeaders,
           ...vlcHeaders,
-          ...httpHeaders,
-          'User-Agent': httpHeaders['User-Agent'] || vlcHeaders['user-agent'] || extinfHeaders['user-agent'] || config.defaultUserAgent
+          ...httpHeaders
       };
+
+      finalHeaders['User-Agent'] = httpHeaders['User-Agent'] || httpHeaders['user-agent'] ||
+                                  vlcHeaders['user-agent'] || extinfHeaders['user-agent'] ||
+                                  config.defaultUserAgent;
+
+      // Rimuovi duplicati lowercase
+      delete finalHeaders['user-agent'];
+      delete finalHeaders['referer'];
+      if (finalHeaders['Referer']) {
+          finalHeaders['referer'] = finalHeaders['Referer'];
+          delete finalHeaders['Referer'];
+      }
+      delete finalHeaders['origin'];
+      if (finalHeaders['Origin']) {
+          finalHeaders['origin'] = finalHeaders['Origin'];
+          delete finalHeaders['Origin'];
+      }
 
       console.log('Final combined headers:', finalHeaders);
       return { headers: finalHeaders, nextIndex: i };
@@ -340,7 +355,6 @@ class PlaylistTransformer {
               epgUrls: Array.from(allEpgUrls)
           };
 
-          // Rimuovi i flussi dummy se ci sono altri flussi disponibili
           finalResult.channels.forEach(channel => {
               if (channel.streamInfo.urls.length > 1) {
                   channel.streamInfo.urls = channel.streamInfo.urls.filter(
