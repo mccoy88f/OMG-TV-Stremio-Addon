@@ -87,10 +87,10 @@ class CacheManager extends EventEmitter {
 
     getChannelsByGenre(genre) {
         if (!genre || !this.cache?.stremioData?.channels) return [];
-        
+    
         const normalizedGenre = this.normalizeId(genre);
         return this.cache.stremioData.channels.filter(
-            channel => channel.genre?.some(g => this.normalizeId(g) === normalizedGenre)
+            channel => channel.genre?.includes(genre)  // Confronto esatto invece di normalizzato
         ) || [];
     }
 
