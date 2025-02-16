@@ -148,6 +148,13 @@ async function streamHandler({ id, config: userConfig }) {
             return { streams: [] };
         }
 
+        console.log('Canale trovato:', {
+            id: channel.id,
+            name: channel.name,
+            tvgInfo: channel.streamInfo?.tvg,
+            urls: channel.streamInfo?.urls
+        });
+
         let streams = [];
 
         if (userConfig.force_proxy === 'true') {
@@ -165,7 +172,7 @@ async function streamHandler({ id, config: userConfig }) {
         } else {
             if (channel.streamInfo.urls) {
                 for (const stream of channel.streamInfo.urls) {
-                    streams.push({
+                    const streamMeta = {
                         name: stream.name || channel.name,
                         title: stream.name || channel.name,
                         url: stream.url,
@@ -174,7 +181,9 @@ async function streamHandler({ id, config: userConfig }) {
                             notWebReady: false,
                             bingeGroup: "tv"
                         }
-                    });
+                    };
+                    console.log('Stream meta:', streamMeta);
+                    streams.push(streamMeta);
 
                     if (userConfig.proxy && userConfig.proxy_pwd) {
                         const streamDetails = {
@@ -220,6 +229,7 @@ async function streamHandler({ id, config: userConfig }) {
             stream.meta = meta;
         });
 
+        console.log('Meta info:', meta);
         console.log('Streams generati:', streams.length);
         return { streams };
     } catch (error) {
