@@ -41,41 +41,46 @@ class PlaylistTransformer {
   }
 
   async loadRemappingRules(config) {
+      console.log('Config ricevuta:', config);
+      console.log('Remapper path:', config?.remapper_path);
       const defaultPath = path.join(__dirname, 'link.epg.remapping');
       const remappingPath = config?.remapper_path || defaultPath;
-      
+    
       try {
           let content;
           if (remappingPath.startsWith('http')) {
-              // Download da URL remoto
-              const response = await axios.get(remappingPath);
-              content = response.data;
+              try {
+                  console.log('Tentativo download remapping da:', remappingPath);
+                  const response = await axios.get(remappingPath);
+                  content = response.data;
+                  console.log('✓ Download remapping remoto completato');
+              } catch (downloadError) {
+                  console.error('❌ Download remoto fallito:', downloadError.message);
+                  if (downloadError.response) {
+                      console.error('Status:', downloadError.response.status);
+                      console.error('Headers:', downloadError.response.headers);
+                  }
+                  console.log('Uso fallback locale:', defaultPath);
+                  content = await fs.promises.readFile(defaultPath, 'utf8');
+              }
           } else {
-              // Lettura file locale
               content = await fs.promises.readFile(remappingPath, 'utf8');
           }
 
           let ruleCount = 0;
-
           content.split('\n').forEach(line => {
               line = line.trim();
               if (!line || line.startsWith('#')) return;
-
               const [m3uId, epgId] = line.split('=').map(s => s.trim());
               if (m3uId && epgId) {
-                  const normalizedM3uId = this.normalizeId(m3uId);
-                  const normalizedEpgId = this.normalizeId(epgId);
-                  this.remappingRules.set(normalizedM3uId, normalizedEpgId);
+                  this.remappingRules.set(this.normalizeId(m3uId), this.normalizeId(epgId));
                   ruleCount++;
               }
           });
 
-          if (ruleCount > 0) {
-              console.log(`✓ Caricate ${ruleCount} regole di remapping da ${remappingPath}`);
-          }
-          
+          console.log(`✓ Caricate ${ruleCount} regole da ${remappingPath}`);
       } catch (error) {
-          console.error('❌ Errore remapping:', error.message);
+          console.error('❌ Errore finale remapping:', error.message);
       }
   }
 
