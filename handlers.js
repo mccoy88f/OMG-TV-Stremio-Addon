@@ -15,7 +15,6 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
       }
 
       if (CacheManager.cache.m3uUrl !== userConfig.m3u) {
-          console.log('Config prima di rebuildCache:', userConfig);
           await CacheManager.rebuildCache(userConfig.m3u, userConfig);
       }
 
@@ -26,7 +25,6 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
       const { search, genre, skip = 0 } = extra || {};
       const cachedData = CacheManager.getCachedData();
       const ITEMS_PER_PAGE = 100;
-      console.log('Config in catalogHandler:', userConfig);
 
       let channels = [];
       if (genre) {
