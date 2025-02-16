@@ -335,7 +335,7 @@ app.get('/manifest.json', async (req, res) => {
                ]
            }],
            behaviorHints: {
-               configurationURL: `http://${req.get('host')}?${new URLSearchParams(req.query)}`,
+               configurationURL: `${protocol}://${host}?${new URLSearchParams(req.query)}`,
                reloadRequired: true
            }
        };
