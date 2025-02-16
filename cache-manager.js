@@ -23,7 +23,7 @@ class CacheManager extends EventEmitter {
         return id?.toLowerCase() || '';
     }
 
-    async rebuildCache(m3uUrl) {
+    async rebuildCache(m3uUrl, config) {
         if (this.cache.updateInProgress) {
             console.log('⚠️  Ricostruzione cache già in corso, skip...');
             return;
@@ -33,10 +33,9 @@ class CacheManager extends EventEmitter {
             this.cache.updateInProgress = true;
             console.log('\n=== Inizio Ricostruzione Cache ===');
             console.log('URL M3U:', m3uUrl);
-            console.log('Config prima di loadAndTransform:', config);
 
-            const data = await this.transformer.loadAndTransform(m3uUrl, this.config);
-            
+            const data = await this.transformer.loadAndTransform(m3uUrl, config);
+        
             this.cache = {
                 stremioData: data,
                 lastUpdated: Date.now(),
