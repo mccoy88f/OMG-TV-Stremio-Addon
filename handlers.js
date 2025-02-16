@@ -127,107 +127,105 @@ function enrichWithEPG(meta, channelId, userConfig) {
 }
 
 async function streamHandler({ id, config: userConfig }) {
-  try {
-      if (!userConfig.m3u) {
-          return { streams: [] };
-      }
+    try {
+        console.log('Stream request:', { id, userConfig });
+        
+        if (!userConfig.m3u) {
+            console.log('M3U URL mancante');
+            return { streams: [] };
+        }
 
-      const channelId = id.split('|')[1];
-      const channel = CacheManager.getChannel(channelId);
+        if (CacheManager.cache.m3uUrl !== userConfig.m3u) {
+            console.log('Cache non aggiornata, ricostruzione...');
+            await CacheManager.rebuildCache(userConfig.m3u, userConfig);
+        }
 
-      if (!channel) {
-          return { streams: [] };
-      }
+        const channelId = id.split('|')[1];
+        const channel = CacheManager.getChannel(channelId);
 
-      let streams = [];
+        if (!channel) {
+            console.log('Canale non trovato:', channelId);
+            return { streams: [] };
+        }
 
-      if (userConfig.force_proxy === 'true') {
-          if (userConfig.proxy && userConfig.proxy_pwd) {
-              for (const stream of channel.streamInfo.urls) {
-                  const streamDetails = {
-                      name: stream.name || channel.name,
-                      url: stream.url,
-                      headers: stream.headers
-                  };
-                  const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
-                  streams.push(...proxyStreams);
-              }
-          }
-      } else {
-          if (channel.streamInfo.urls) {
-              for (const stream of channel.streamInfo.urls) {
-                  streams.push({
-                      name: stream.name || channel.name,
-                      title: stream.name || channel.name,
-                      url: stream.url,
-                      headers: stream.headers,
-                      behaviorHints: {
-                          notWebReady: false,
-                          bingeGroup: "tv"
-                      }
-                  });
+        let streams = [];
 
-                  if (userConfig.proxy && userConfig.proxy_pwd) {
-                      const streamDetails = {
-                          name: stream.name || channel.name,
-                          url: stream.url,
-                          headers: stream.headers
-                      };
-                      const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
-                      streams.push(...proxyStreams);
-                  }
-              }
-          }
-      }
+        if (userConfig.force_proxy === 'true') {
+            if (userConfig.proxy && userConfig.proxy_pwd) {
+                for (const stream of channel.streamInfo.urls) {
+                    const streamDetails = {
+                        name: stream.name || channel.name,
+                        url: stream.url,
+                        headers: stream.headers
+                    };
+                    const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
+                    streams.push(...proxyStreams);
+                }
+            }
+        } else {
+            if (channel.streamInfo.urls) {
+                for (const stream of channel.streamInfo.urls) {
+                    streams.push({
+                        name: stream.name || channel.name,
+                        title: stream.name || channel.name,
+                        url: stream.url,
+                        headers: stream.headers,
+                        behaviorHints: {
+                            notWebReady: false,
+                            bingeGroup: "tv"
+                        }
+                    });
 
-      const meta = {
-          id: channel.id,
-          type: 'tv',
-          name: channel.name,
-          poster: channel.poster,
-          background: channel.background,
-          logo: channel.logo,
-          description: channel.description || `ID Canale: ${channel.streamInfo?.tvg?.id}`,
-          genre: channel.genre,
-          posterShape: channel.posterShape || 'square',
-          releaseInfo: 'LIVE',
-          behaviorHints: {
-              isLive: true,
-              ...channel.behaviorHints
-          },
-          streamInfo: channel.streamInfo
-      };
+                    if (userConfig.proxy && userConfig.proxy_pwd) {
+                        const streamDetails = {
+                            name: stream.name || channel.name,
+                            url: stream.url,
+                            headers: stream.headers
+                        };
+                        const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
+                        streams.push(...proxyStreams);
+                    }
+                }
+            }
+        }
 
-      if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
-          const epgIcon = EPGManager.getChannelIcon(channel.streamInfo.tvg.id);
-          if (epgIcon) {
-              meta.poster = meta.poster || epgIcon;
-              meta.background = meta.background || epgIcon;
-              meta.logo = meta.logo || epgIcon;
-          }
-      }
+        const meta = {
+            id: channel.id,
+            type: 'tv',
+            name: channel.name,
+            poster: channel.poster,
+            background: channel.background,
+            logo: channel.logo,
+            description: channel.description || `ID Canale: ${channel.streamInfo?.tvg?.id}`,
+            genre: channel.genre,
+            posterShape: channel.posterShape || 'square',
+            releaseInfo: 'LIVE',
+            behaviorHints: {
+                isLive: true,
+                ...channel.behaviorHints
+            },
+            streamInfo: channel.streamInfo
+        };
 
-      const enrichedMeta = enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
-      streams.forEach(stream => {
-          stream.meta = enrichedMeta;
-      });
+        if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
+            const epgIcon = EPGManager.getChannelIcon(channel.streamInfo.tvg.id);
+            if (epgIcon) {
+                meta.poster = meta.poster || epgIcon;
+                meta.background = meta.background || epgIcon;
+                meta.logo = meta.logo || epgIcon;
+            }
+        }
 
-      return { streams };
-  } catch (error) {
-      console.error('[Handlers] Errore nel caricamento dello stream:', error);
-      return {
-          streams: [{
-              name: 'Errore',
-              title: 'Errore nel caricamento dello stream',
-              url: '',
-              behaviorHints: {
-                  notWebReady: true,
-                  bingeGroup: "tv",
-                  errorMessage: `Errore: ${error.message}`
-              }
-          }]
-      };
-  }
+        streams.forEach(stream => {
+            stream.meta = meta;
+        });
+
+        console.log('Streams generati:', streams.length);
+        return { streams };
+    } catch (error) {
+        console.error('Errore stream handler:', error);
+        return { streams: [] };
+    }
 }
 
 module.exports = {
