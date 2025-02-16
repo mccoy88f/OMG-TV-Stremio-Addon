@@ -16,7 +16,7 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
 
       if (CacheManager.cache.m3uUrl !== userConfig.m3u) {
           console.log('Config prima di rebuildCache:', userConfig);
-          await CacheManager.rebuildCache(userConfig.m3u);
+          await CacheManager.rebuildCache(userConfig.m3u, userConfig);
       }
 
       if (userConfig.epg) {
