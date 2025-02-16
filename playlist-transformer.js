@@ -41,7 +41,6 @@ class PlaylistTransformer {
   }
 
   async loadRemappingRules(config) {
-      console.log('Config ricevuta:', config);
       console.log('Remapper path:', config?.remapper_path);
       const defaultPath = path.join(__dirname, 'link.epg.remapping');
       const remappingPath = config?.remapper_path || defaultPath;
@@ -50,7 +49,6 @@ class PlaylistTransformer {
           let content;
           if (remappingPath.startsWith('http')) {
               try {
-                  console.log('Tentativo download remapping da:', remappingPath);
                   const response = await axios.get(remappingPath);
                   content = response.data;
                   console.log('✓ Download remapping remoto completato');
@@ -177,7 +175,7 @@ class PlaylistTransformer {
       const remappedId = this.remappingRules.get(normalizedId);
   
       if (remappedId) {
-          console.log(`✓ Remapping: ${originalId} -> ${remappedId}`);
+//          console.log(`✓ Remapping: ${originalId} -> ${remappedId}`);
           return this.normalizeId(remappedId);
       }
   
