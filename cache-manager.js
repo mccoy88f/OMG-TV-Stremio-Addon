@@ -33,6 +33,7 @@ class CacheManager extends EventEmitter {
             this.cache.updateInProgress = true;
             console.log('\n=== Inizio Ricostruzione Cache ===');
             console.log('URL M3U:', m3uUrl);
+            console.log('Config prima di loadAndTransform:', config);
 
             const data = await this.transformer.loadAndTransform(m3uUrl, this.config);
             
