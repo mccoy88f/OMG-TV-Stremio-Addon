@@ -95,10 +95,21 @@ async function metaHandler({ type, id, config: userConfig }) {
         
         const allChannels = CacheManager.getCachedData().channels;
         
-        const channel = allChannels.find(ch => 
-            ch.id === id || 
-            normalizeId(ch.streamInfo?.tvg?.id) === normalizeId(channelId)
-        );
+        const channel = allChannels.find(ch => {
+            console.log('Debugging channel search:', {
+                currentChannelId: ch.id,
+                searchId: id,
+                tvgId: ch.streamInfo?.tvg?.id,
+                normalizedTvgId: normalizeId(ch.streamInfo?.tvg?.id),
+                channelId: channelId,
+                normalizedChannelId: normalizeId(channelId),
+                idMatch: ch.id === id,
+                tvgIdMatch: normalizeId(ch.streamInfo?.tvg?.id) === normalizeId(channelId)
+            });
+    
+            return ch.id === id || 
+                    normalizeId(ch.streamInfo?.tvg?.id) === normalizeId(channelId);
+        });
 
         if (!channel) {
             console.log('❌ Canale non trovato');
