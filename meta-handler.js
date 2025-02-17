@@ -97,7 +97,7 @@ async function metaHandler({ type, id, config: userConfig }) {
         
         const channel = allChannels.find(ch => 
             ch.id === id || 
-            normalizeId(ch.streamInfo?.tvg?.id) === normalizeId(channelId) ||
+            normalizeId(ch.streamInfo?.tvg?.id) === normalizeId(channelId)
         );
 
         if (!channel) {
