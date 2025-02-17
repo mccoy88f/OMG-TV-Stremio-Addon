@@ -2,11 +2,15 @@ const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
 
-function enrichWithDetailedEPG(meta, channelId) {
-    if (!config.enableEPG) return meta;
+function normalizeId(id) {
+    return id?.toLowerCase().replace(/[^\w\s]/g, '').trim() || '';
+}
 
-    const currentProgram = EPGManager.getCurrentProgram(channelId);
-    const upcomingPrograms = EPGManager.getUpcomingPrograms(channelId);
+function enrichWithDetailedEPG(meta, channelId, userConfig) {
+    if (!userConfig.epg_enabled) return meta;
+
+    const currentProgram = EPGManager.getCurrentProgram(normalizeId(channelId));
+    const upcomingPrograms = EPGManager.getUpcomingPrograms(normalizeId(channelId));
 
     if (currentProgram) {
         let description = [];
@@ -40,17 +44,20 @@ function enrichWithDetailedEPG(meta, channelId) {
         }
 
         meta.description = description.join('\n');
-        
         meta.releaseInfo = `${currentProgram.title} (${currentProgram.start})`;
     }
 
     return meta;
 }
 
-async function metaHandler({ type, id }) {
+async function metaHandler({ type, id, config: userConfig }) {
     try {
-        if (CacheManager.isStale()) {
-            await CacheManager.updateCache();
+        if (!userConfig.m3u) {
+            return { meta: null };
+        }
+
+        if (CacheManager.cache.m3uUrl !== userConfig.m3u) {
+            await CacheManager.rebuildCache(userConfig.m3u);
         }
 
         const channelId = id.split('|')[1];
@@ -58,8 +65,8 @@ async function metaHandler({ type, id }) {
         
         const channel = allChannels.find(ch => 
             ch.id === id || 
-            ch.streamInfo?.tvg?.id === channelId ||
-            ch.name === channelId
+            normalizeId(ch.streamInfo?.tvg?.id) === normalizeId(channelId) ||
+            normalizeId(ch.name) === normalizeId(channelId)
         );
 
         if (!channel) {
@@ -88,9 +95,8 @@ async function metaHandler({ type, id }) {
             }
         };
 
-        // Aggiungi icona EPG se mancano le immagini
         if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
-            const epgIcon = EPGManager.getChannelIcon(channel.streamInfo.tvg.id);
+            const epgIcon = EPGManager.getChannelIcon(normalizeId(channel.streamInfo.tvg.id));
             if (epgIcon) {
                 meta.poster = meta.poster || epgIcon;
                 meta.background = meta.background || epgIcon;
@@ -112,7 +118,7 @@ async function metaHandler({ type, id }) {
 
         meta.description = baseDescription.join('\n');
 
-        const enrichedMeta = enrichWithDetailedEPG(meta, channel.streamInfo?.tvg?.id);
+        const enrichedMeta = enrichWithDetailedEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
 
         return { meta: enrichedMeta };
     } catch (error) {
