@@ -208,6 +208,70 @@ function safeParseExtra(extraParam) {
     }
 }
 
+// Per il catalog con config codificato
+app.get('/:config/catalog/:type/:id/:extra?.json', async (req, res) => {
+    try {
+        const configString = Buffer.from(req.params.config, 'base64').toString();
+        const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
+        const extra = req.params.extra 
+            ? safeParseExtra(req.params.extra) 
+            : {};
+        
+        const result = await catalogHandler({ 
+            type: req.params.type, 
+            id: req.params.id, 
+            extra, 
+            config: decodedConfig 
+        });
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.send(result);
+    } catch (error) {
+        console.error('Error handling catalog request:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Per lo stream con config codificato
+app.get('/:config/stream/:type/:id.json', async (req, res) => {
+    try {
+        const configString = Buffer.from(req.params.config, 'base64').toString();
+        const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
+        
+        const result = await streamHandler({ 
+            type: req.params.type, 
+            id: req.params.id, 
+            config: decodedConfig 
+        });
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.send(result);
+    } catch (error) {
+        console.error('Error handling stream request:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Per il meta con config codificato
+app.get('/:config/meta/:type/:id.json', async (req, res) => {
+    try {
+        const configString = Buffer.from(req.params.config, 'base64').toString();
+        const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
+        
+        const result = await metaHandler({ 
+            type: req.params.type, 
+            id: req.params.id, 
+            config: decodedConfig 
+        });
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.send(result);
+    } catch (error) {
+        console.error('Error handling meta request:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 async function startAddon() {
    try {
        const port = process.env.PORT || 10000;
