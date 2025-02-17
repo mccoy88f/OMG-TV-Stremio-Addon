@@ -20,7 +20,7 @@ class CacheManager extends EventEmitter {
     }
 
     normalizeId(id) {
-        return id?.toLowerCase().replace(/[^\w]/g, '').trim() || '';
+        return id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
     }
 
     async rebuildCache(m3uUrl, config) {
@@ -109,7 +109,7 @@ class CacheManager extends EventEmitter {
     }
 
     normalizeId(id) {
-        return id?.toLowerCase().replace(/[^\w]/g, '').trim() || '';
+        return id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
     }
 
     isStale() {
