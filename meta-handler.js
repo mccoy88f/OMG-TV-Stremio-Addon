@@ -2,35 +2,11 @@ const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
 
-function normalizeId(id) {
-    return id?.toLowerCase().replace(/[^\w\s]/g, '').trim() || '';
-}
+function enrichWithDetailedEPG(meta, channelId) {
+    if (!config.enableEPG) return meta;
 
-function enrichWithDetailedEPG(meta, channelId, userConfig) {
-    console.log('\n=== Inizio Enrichment EPG ===');
-    console.log('Channel ID ricevuto:', channelId);
-    
-    if (!userConfig.epg_enabled) {
-        console.log('❌ EPG non abilitato');
-        console.log('=== Fine Enrichment EPG ===\n');
-        return meta;
-    }
-
-    const normalizedId = normalizeId(channelId);
-    console.log('ID normalizzato:', normalizedId);
-
-    const currentProgram = EPGManager.getCurrentProgram(normalizedId);
-    console.log('Programma corrente trovato:', currentProgram ? 'Si' : 'No');
-    if (currentProgram) {
-        console.log('Dettagli programma corrente:', {
-            titolo: currentProgram.title,
-            inizio: currentProgram.start,
-            fine: currentProgram.stop
-        });
-    }
-    
-    const upcomingPrograms = EPGManager.getUpcomingPrograms(normalizedId);
-    console.log('Programmi futuri trovati:', upcomingPrograms?.length || 0);
+    const currentProgram = EPGManager.getCurrentProgram(channelId);
+    const upcomingPrograms = EPGManager.getUpcomingPrograms(channelId);
 
     if (currentProgram) {
         let description = [];
@@ -64,55 +40,31 @@ function enrichWithDetailedEPG(meta, channelId, userConfig) {
         }
 
         meta.description = description.join('\n');
+        
         meta.releaseInfo = `${currentProgram.title} (${currentProgram.start})`;
-        console.log('✓ Metadata arricchiti con dati EPG');
-    } else {
-        console.log('❌ Nessun programma corrente trovato');
     }
 
-    console.log('=== Fine Enrichment EPG ===\n');
     return meta;
 }
 
-async function metaHandler({ type, id, config: userConfig }) {
+async function metaHandler({ type, id }) {
     try {
-        console.log('\n=== Inizio Meta Handler ===');
-        console.log('ID richiesto:', id);
-        
-        if (!userConfig.m3u) {
-            console.log('❌ URL M3U mancante');
-            console.log('=== Fine Meta Handler ===\n');
-            return { meta: null };
-        }
-
-        if (CacheManager.cache.m3uUrl !== userConfig.m3u) {
-            console.log('Cache M3U non aggiornata, ricostruzione...');
-            await CacheManager.rebuildCache(userConfig.m3u);
+        if (CacheManager.isStale()) {
+            await CacheManager.updateCache();
         }
 
         const channelId = id.split('|')[1];
-        console.log('Channel ID estratto:', channelId);
-        
         const allChannels = CacheManager.getCachedData().channels;
         
         const channel = allChannels.find(ch => 
             ch.id === id || 
-            normalizeId(ch.streamInfo?.tvg?.id) === normalizeId(channelId) ||
-            normalizeId(ch.name) === normalizeId(channelId)
+            ch.streamInfo?.tvg?.id === channelId ||
+            ch.name === channelId
         );
 
         if (!channel) {
-            console.log('❌ Canale non trovato');
-            console.log('=== Fine Meta Handler ===\n');
             return { meta: null };
         }
-
-        console.log('✓ Canale trovato:', {
-            id: channel.id,
-            name: channel.name,
-            tvgId: channel.streamInfo?.tvg?.id,
-            tvgName: channel.streamInfo?.tvg?.name
-        });
 
         const meta = {
             id: channel.id,
@@ -136,16 +88,13 @@ async function metaHandler({ type, id, config: userConfig }) {
             }
         };
 
+        // Aggiungi icona EPG se mancano le immagini
         if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
-            console.log('Ricerca icona EPG per:', channel.streamInfo.tvg.id);
-            const epgIcon = EPGManager.getChannelIcon(normalizeId(channel.streamInfo.tvg.id));
+            const epgIcon = EPGManager.getChannelIcon(channel.streamInfo.tvg.id);
             if (epgIcon) {
-                console.log('✓ Icona EPG trovata');
                 meta.poster = meta.poster || epgIcon;
                 meta.background = meta.background || epgIcon;
                 meta.logo = meta.logo || epgIcon;
-            } else {
-                console.log('❌ Nessuna icona EPG trovata');
             }
         }
 
@@ -163,15 +112,11 @@ async function metaHandler({ type, id, config: userConfig }) {
 
         meta.description = baseDescription.join('\n');
 
-        console.log('Richiedo enrichment EPG per:', channel.streamInfo?.tvg?.id);
-        const enrichedMeta = enrichWithDetailedEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
+        const enrichedMeta = enrichWithDetailedEPG(meta, channel.streamInfo?.tvg?.id);
 
-        console.log('✓ Meta handler completato');
-        console.log('=== Fine Meta Handler ===\n');
         return { meta: enrichedMeta };
     } catch (error) {
         console.error('[MetaHandler] Errore:', error.message);
-        console.log('=== Fine Meta Handler con Errore ===\n');
         return { meta: null };
     }
 }
