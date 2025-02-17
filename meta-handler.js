@@ -2,11 +2,15 @@ const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
 
+function normalizeId(id) {
+    return id?.toLowerCase().replace(/[^\w\s]/g, '').trim() || '';
+}
+
 function enrichWithDetailedEPG(meta, channelId, userConfig) {
     if (!userConfig.epg_enabled) return meta;
 
-    const currentProgram = EPGManager.getCurrentProgram(channelId);
-    const upcomingPrograms = EPGManager.getUpcomingPrograms(channelId);
+    const currentProgram = EPGManager.getCurrentProgram(normalizeId(channelId));
+    const upcomingPrograms = EPGManager.getUpcomingPrograms(normalizeId(channelId));
 
     if (currentProgram) {
         let description = [];
@@ -61,8 +65,8 @@ async function metaHandler({ type, id, config: userConfig }) {
         
         const channel = allChannels.find(ch => 
             ch.id === id || 
-            ch.streamInfo?.tvg?.id === channelId ||
-            ch.name === channelId
+            normalizeId(ch.streamInfo?.tvg?.id) === normalizeId(channelId) ||
+            normalizeId(ch.name) === normalizeId(channelId)
         );
 
         if (!channel) {
@@ -92,7 +96,7 @@ async function metaHandler({ type, id, config: userConfig }) {
         };
 
         if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
-            const epgIcon = EPGManager.getChannelIcon(channel.streamInfo.tvg.id);
+            const epgIcon = EPGManager.getChannelIcon(normalizeId(channel.streamInfo.tvg.id));
             if (epgIcon) {
                 meta.poster = meta.poster || epgIcon;
                 meta.background = meta.background || epgIcon;
