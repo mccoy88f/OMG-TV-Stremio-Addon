@@ -109,7 +109,7 @@ class CacheManager extends EventEmitter {
     }
 
     normalizeId(id) {
-        return id?.toLowerCase().replace(/[^\w\s]/g, '').trim() || '';
+        return id?.toLowerCase().replace(/[^\w]/g, '').trim() || '';
     }
 
     isStale() {
