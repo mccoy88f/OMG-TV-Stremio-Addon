@@ -3,7 +3,7 @@ const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
 
 function normalizeId(id) {
-    return id?.toLowerCase().replace(/[^\w\s]/g, '').trim() || '';
+    return id?.toLowerCase().replace(/[^\w]/g, '').trim() || '';
 }
 
 function enrichWithDetailedEPG(meta, channelId, userConfig) {
