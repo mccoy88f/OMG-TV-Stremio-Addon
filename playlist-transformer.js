@@ -29,7 +29,7 @@ class PlaylistTransformer {
   }
 
   normalizeId(id) {
-      return id?.toLowerCase().replace(/[^\w]/g, '').trim() || '';
+      return id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
   }
 
   cleanChannelName(name) {
