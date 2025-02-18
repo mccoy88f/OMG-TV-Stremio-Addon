@@ -60,7 +60,8 @@ class CacheManager extends EventEmitter {
                 stremioData: data,
                 lastUpdated: Date.now(),
                 updateInProgress: false,
-                m3uUrl: m3uUrl
+                m3uUrl: m3uUrl,
+                epgUrls: data.epgUrls
             };
 
             console.log(`✓ Canali in cache: ${data.channels.length}`);
