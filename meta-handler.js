@@ -87,30 +87,15 @@ async function metaHandler({ type, id, config: userConfig }) {
 
         if (CacheManager.cache.m3uUrl !== userConfig.m3u) {
             console.log('Cache M3U non aggiornata, ricostruzione...');
-            await CacheManager.rebuildCache(userConfig.m3u);
+            await CacheManager.rebuildCache(userConfig.m3u, userConfig);
         }
 
         const channelId = id.split('|')[1];
         console.log('Channel ID estratto:', channelId);
         
-        const allChannels = CacheManager.getCachedData().channels;
+        // Usa direttamente getChannel dalla cache, che ora gestisce correttamente i suffissi
+        const channel = CacheManager.getChannel(channelId);
         
-        const channel = allChannels.find(ch => {
-            console.log('Debugging channel search:', {
-                currentChannelId: ch.id,
-                searchId: id,
-                tvgId: ch.streamInfo?.tvg?.id,
-                normalizedTvgId: normalizeId(ch.streamInfo?.tvg?.id),
-                channelId: channelId,
-                normalizedChannelId: normalizeId(channelId),
-                idMatch: ch.id === id,
-                tvgIdMatch: normalizeId(ch.streamInfo?.tvg?.id) === normalizeId(channelId)
-            });
-    
-            return ch.id === id || 
-                    normalizeId(ch.streamInfo?.tvg?.id) === normalizeId(channelId);
-        });
-
         if (!channel) {
             console.log('❌ Canale non trovato');
             console.log('=== Fine Meta Handler ===\n');
