@@ -93,16 +93,7 @@ class CacheManager extends EventEmitter {
             const normalizedChannelId = this.normalizeId(ch.id.replace('tv|', ''));
             const normalizedTvgId = this.normalizeId(ch.streamInfo?.tvg?.id);
             
-            console.log('Debugging channel search:', {
-                currentChannelId: ch.id,
-                searchId: `tv|${channelId}`,
-                tvgId: ch.streamInfo?.tvg?.id,
-                normalizedTvgId: normalizedTvgId,
-                channelId: channelId,
-                normalizedChannelId: normalizedSearchId,
-                idMatch: normalizedChannelId === normalizedSearchId,
-                tvgIdMatch: normalizedTvgId === normalizedSearchId
-            });
+
             
             return normalizedChannelId === normalizedSearchId || 
                    normalizedTvgId === normalizedSearchId;
