@@ -171,15 +171,15 @@ class PlaylistTransformer {
 
   getRemappedId(channel) {
       const originalId = channel.tvg.id;
-      const normalizedId = this.normalizeId(originalId);
+      const suffix = config?.id_suffix || ''; // Ottieni il suffisso dalla configurazione
+      const normalizedId = this.normalizeId(originalId) + (suffix ? `.${suffix}` : ''); // Aggiungi il suffisso all'ID normalizzato
       const remappedId = this.remappingRules.get(normalizedId);
-  
+
       if (remappedId) {
-//          console.log(`✓ Remapping: ${originalId} -> ${remappedId}`);
           return this.normalizeId(remappedId);
       }
-  
-      return this.normalizeId(originalId);
+
+      return normalizedId; // Restituisci l'ID normalizzato con il suffisso
   }
 
   createChannelObject(channel, channelId) {
