@@ -9,12 +9,14 @@ function normalizeId(id) {
 
 // Funzione di utilità per pulire il nome prima della codifica
 function cleanNameForImage(name) {
-    // Rimuovi caratteri speciali e limita a 15 caratteri
-    return name
-        .replace(/[^\w\s]/g, '') // Rimuove tutto tranne lettere, numeri e spazi
+    const cleaned = name
+        .replace(/[^a-zA-Z0-9\s-]/g, '') // Rimuove tutto tranne lettere, numeri, spazi e trattini
         .replace(/\s+/g, ' ')     // Sostituisce spazi multipli con uno singolo
-        .trim()
-        .substring(0, 15);
+        .trim();
+    
+    return cleaned.length > 15 
+        ? cleaned.substring(0, 12) + '...' 
+        : cleaned.substring(0, 15);
 }
 
 async function catalogHandler({ type, id, extra, config: userConfig }) {
