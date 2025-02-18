@@ -151,6 +151,35 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                .advanced-settings-content.show {
                    display: block;
                }
+               #confirmModal {
+                   display: none;
+                   position: fixed;
+                   top: 0;
+                   left: 0;
+                   width: 100%;
+                   height: 100%;
+                   background: rgba(0,0,0,0.8);
+                   z-index: 1000;
+                   justify-content: center;
+                   align-items: center;
+               }
+               #confirmModal > div {
+                   background: #333;
+                   padding: 30px;
+                   border-radius: 10px;
+                   text-align: center;
+                   color: white;
+               }
+               #confirmModal button {
+                   margin: 0 10px;
+               }
+               a {
+                   color: #8A5AAB;
+                   text-decoration: none;
+               }
+               a:hover {
+                   text-decoration: underline;
+               }
            </style>
        </head>
        <body>
@@ -223,31 +252,39 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                        <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreConfig(event)">
                        <button onclick="document.getElementById('restoreFile').click()">RIPRISTINA CONFIGURAZIONE</button>
                    </div>
+
+                   <div style="margin-top: 30px; text-align: center; font-size: 14px; color: #ccc;">
+                       <p>Addon creato con passione da McCoy88f - <a href="https://github.com/mccoy88f/OMG-TV-Stremio-Addon" target="_blank">GitHub Repository</a></p>
+                       
+                       <h3 style="margin-top: 20px;">Sostieni questo progetto!</h3>
+                       
+                       <div style="margin-top: 15px;">
+                           <a href="https://www.buymeacoffee.com/mccoy88f" target="_blank">
+                               <img src="https://img.buymeacoffee.com/button-api/?text=Offrimi una birra&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" alt="Buy Me a Coffee" style="max-width: 300px; margin: 0 auto;"/>
+                           </a>
+                       </div>
+                       
+                       <p style="margin-top: 15px;">
+                           <a href="https://paypal.me/mccoy88f?country.x=IT&locale.x=it_IT" target="_blank">Puoi anche offrirmi una birra con PayPal 🍻</a>
+                       </p>
+                       
+                       <div style="margin-top: 30px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 4px;">
+                           <strong>ATTENZIONE:</strong>
+                           <ul style="text-align: left; padding-left: 20px; margin-top: 10px;">
+                               <li>Non sono responsabile per l'uso illecito dell'addon</li>
+                               <li>Verifica e rispetta la normativa vigente nel tuo paese!</li>
+                           </ul>
+                       </div>
+                   </div>
                </div>
                
-               <div id="confirmModal" style="
-                   display: none;
-                   position: fixed;
-                   top: 0;
-                   left: 0;
-                   width: 100%;
-                   height: 100%;
-                   background: rgba(0,0,0,0.8);
-                   z-index: 1000;
-                   justify-content: center;
-                   align-items: center;
-               ">
-                   <div style="
-                       background: #333;
-                       padding: 30px;
-                       border-radius: 10px;
-                       text-align: center;
-                       color: white;
-                   ">
+               <div id="confirmModal">
+                   <div>
                        <h2>Conferma Installazione</h2>
-                       <p>Per procedere con l'installazione, devi prima generare la configurazione.</p>
+                       <p>Hai già generato la configurazione?</p>
                        <div style="margin-top: 20px;">
-                           <button onclick="cancelInstallation()">Indietro</button>
+                           <button onclick="cancelInstallation()" style="background: #666;">Indietro</button>
+                           <button onclick="proceedInstallation()" style="background: #8A5AAB;">Procedi</button>
                        </div>
                    </div>
                </div>
@@ -288,6 +325,13 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                        document.getElementById('confirmModal').style.display = 'none';
                    }
 
+                   function proceedInstallation() {
+                       const configQueryString = getConfigQueryString();
+                       const configBase64 = btoa(configQueryString);
+                       window.location.href = \`stremio://${host}/\${configBase64}/manifest.json\`;
+                       document.getElementById('confirmModal').style.display = 'none';
+                   }
+
                    function installAddon() {
                        showConfirmModal();
                    }
@@ -314,51 +358,51 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                    }
 
                    function backupConfig() {
-                       const queryString = getConfigQueryString();
-                       const params = Object.fromEntries(new URLSearchParams(queryString));
-                       
-                       params.epg_enabled = params.epg_enabled === 'true';
-                       params.force_proxy = params.force_proxy === 'true';
+                           const queryString = getConfigQueryString();
+                           const params = Object.fromEntries(new URLSearchParams(queryString));
+                           
+                           params.epg_enabled = params.epg_enabled === 'true';
+                           params.force_proxy = params.force_proxy === 'true';
 
-                       const configBlob = new Blob([JSON.stringify(params, null, 2)], {type: 'application/json'});
-                       const url = URL.createObjectURL(configBlob);
-                       const a = document.createElement('a');
-                       a.href = url;
-                       a.download = 'omg_tv_config.json';
-                       a.click();
-                       URL.revokeObjectURL(url);
-                   }
+                           const configBlob = new Blob([JSON.stringify(params, null, 2)], {type: 'application/json'});
+                           const url = URL.createObjectURL(configBlob);
+                           const a = document.createElement('a');
+                           a.href = url;
+                           a.download = 'omg_tv_config.json';
+                           a.click();
+                           URL.revokeObjectURL(url);
+                       }
 
-                   function restoreConfig(event) {
-                       const file = event.target.files[0];
-                       if (!file) return;
+                       function restoreConfig(event) {
+                           const file = event.target.files[0];
+                           if (!file) return;
 
-                       const reader = new FileReader();
-                       reader.onload = function(e) {
-                           try {
-                               const config = JSON.parse(e.target.result);
-                               
-                               const form = document.getElementById('configForm');
-                               for (const [key, value] of Object.entries(config)) {
-                                   const input = form.elements[key];
-                                   if (input) {
-                                       if (input.type === 'checkbox') {
-                                           input.checked = value;
-                                       } else {
-                                           input.value = value;
+                           const reader = new FileReader();
+                           reader.onload = function(e) {
+                               try {
+                                   const config = JSON.parse(e.target.result);
+                                   
+                                   const form = document.getElementById('configForm');
+                                   for (const [key, value] of Object.entries(config)) {
+                                       const input = form.elements[key];
+                                       if (input) {
+                                           if (input.type === 'checkbox') {
+                                               input.checked = value;
+                                           } else {
+                                               input.value = value;
+                                           }
                                        }
                                    }
-                               }
 
-                               const configQueryString = getConfigQueryString();
-                               const configBase64 = btoa(configQueryString);
-                               window.location.href = \`${protocol}://${host}/\${configBase64}/configure\`;
-                           } catch (error) {
-                               alert('Errore nel caricamento del file di configurazione');
-                           }
-                       };
-                       reader.readAsText(file);
-                   }
+                                   const configQueryString = getConfigQueryString();
+                                   const configBase64 = btoa(configQueryString);
+                                   window.location.href = \`${protocol}://${host}/\${configBase64}/configure\`;
+                               } catch (error) {
+                                   alert('Errore nel caricamento del file di configurazione');
+                               }
+                           };
+                           reader.readAsText(file);
+                       }
                </script>
            </div>
        </body>
