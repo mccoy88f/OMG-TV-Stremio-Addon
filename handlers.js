@@ -7,6 +7,16 @@ function normalizeId(id) {
   return id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
 }
 
+// Funzione di utilità per pulire il nome prima della codifica
+function cleanNameForImage(name) {
+    // Rimuovi caratteri speciali e limita a 15 caratteri
+    return name
+        .replace(/[^\w\s]/g, '') // Rimuove tutto tranne lettere, numeri e spazi
+        .replace(/\s+/g, ' ')     // Sostituisce spazi multipli con uno singolo
+        .trim()
+        .substring(0, 15);
+}
+
 async function catalogHandler({ type, id, extra, config: userConfig }) {
   try {
       if (!userConfig.m3u) {
@@ -56,10 +66,8 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
       const paginatedChannels = channels.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
       const metas = paginatedChannels.map(channel => {
-          // Crea un nome troncato per il testo dell'immagine
-          const displayName = channel.name.length > 15 ? 
-                            channel.name.substring(0, 15) + '...' : 
-                            channel.name;
+          // Crea un nome pulito per il testo dell'immagine
+          const displayName = cleanNameForImage(channel.name);
           
           // Codifica il nome per l'URL
           const encodedName = encodeURIComponent(displayName);
@@ -230,10 +238,8 @@ async function streamHandler({ id, config: userConfig }) {
             }
         }
 
-        // Crea un nome troncato per il testo dell'immagine
-        const displayName = channel.name.length > 15 ? 
-                           channel.name.substring(0, 15) + '...' : 
-                           channel.name;
+        // Crea un nome pulito per il testo dell'immagine
+        const displayName = cleanNameForImage(channel.name);
         const encodedName = encodeURIComponent(displayName);
         const fallbackLogo = `https://dummyimage.com/500x500/590b8a/ffffff.jpg&text=${encodedName}`;
 
