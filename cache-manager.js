@@ -19,8 +19,23 @@ class CacheManager extends EventEmitter {
         };
     }
 
-    normalizeId(id) {
-        return id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
+    normalizeId(id, removeSuffix = false) {
+        let normalized = id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
+        
+        if (removeSuffix && this.config?.id_suffix) {
+            const suffix = `.${this.config.id_suffix}`;
+            if (normalized.endsWith(suffix)) {
+                normalized = normalized.substring(0, normalized.length - suffix.length);
+            }
+        }
+        
+        return normalized;
+    }
+
+    addSuffix(id) {
+        if (!id || !this.config?.id_suffix) return id;
+        const suffix = `.${this.config.id_suffix}`;
+        return id.endsWith(suffix) ? id : `${id}${suffix}`;
     }
 
     async rebuildCache(m3uUrl, config) {
@@ -34,7 +49,12 @@ class CacheManager extends EventEmitter {
             console.log('\n=== Inizio Ricostruzione Cache ===');
             console.log('URL M3U:', m3uUrl);
 
-            const data = await this.transformer.loadAndTransform(m3uUrl, config);
+            // Aggiorniamo this.config con i valori forniti
+            if (config) {
+                this.config = {...this.config, ...config};
+            }
+
+            const data = await this.transformer.loadAndTransform(m3uUrl, this.config);
         
             this.cache = {
                 stremioData: data,
@@ -70,10 +90,10 @@ class CacheManager extends EventEmitter {
         const normalizedSearchId = this.normalizeId(channelId);
         
         const channel = this.cache.stremioData.channels.find(ch => {
-            const normalizedChannelId = this.normalizeId(ch.id);
+            const normalizedChannelIdBase = this.normalizeId(ch.id.replace('tv|', ''));
             const normalizedTvgId = this.normalizeId(ch.streamInfo?.tvg?.id);
             
-            return normalizedChannelId === `tv|${normalizedSearchId}` || 
+            return normalizedChannelIdBase === normalizedSearchId || 
                    normalizedTvgId === normalizedSearchId;
         });
 
@@ -106,10 +126,6 @@ class CacheManager extends EventEmitter {
             const normalizedName = this.normalizeId(channel.name);
             return normalizedName.includes(normalizedQuery);
         });
-    }
-
-    normalizeId(id) {
-        return id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
     }
 
     isStale() {
