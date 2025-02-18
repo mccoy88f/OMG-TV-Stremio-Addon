@@ -56,13 +56,24 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
       const paginatedChannels = channels.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
       const metas = paginatedChannels.map(channel => {
+          // Crea un nome troncato per il testo dell'immagine
+          const displayName = channel.name.length > 15 ? 
+                            channel.name.substring(0, 15) + '...' : 
+                            channel.name;
+          
+          // Codifica il nome per l'URL
+          const encodedName = encodeURIComponent(displayName);
+          
+          // Genera l'URL dell'immagine di fallback
+          const fallbackLogo = `https://dummyimage.com/500x500/590b8a/ffffff.jpg&text=${encodedName}`;
+          
           const meta = {
               id: channel.id,
               type: 'tv',
               name: channel.name,
-              poster: channel.poster,
-              background: channel.background,
-              logo: channel.logo,
+              poster: channel.poster || fallbackLogo,
+              background: channel.background || fallbackLogo,
+              logo: channel.logo || fallbackLogo,
               description: channel.description || `Canale: ${channel.name} - ID: ${channel.streamInfo?.tvg?.id}`,
               genre: channel.genre,
               posterShape: channel.posterShape || 'square',
@@ -219,13 +230,20 @@ async function streamHandler({ id, config: userConfig }) {
             }
         }
 
+        // Crea un nome troncato per il testo dell'immagine
+        const displayName = channel.name.length > 15 ? 
+                           channel.name.substring(0, 15) + '...' : 
+                           channel.name;
+        const encodedName = encodeURIComponent(displayName);
+        const fallbackLogo = `https://dummyimage.com/500x500/590b8a/ffffff.jpg&text=${encodedName}`;
+
         const meta = {
             id: channel.id,
             type: 'tv',
             name: channel.name,
-            poster: channel.poster,
-            background: channel.background,
-            logo: channel.logo,
+            poster: channel.poster || fallbackLogo,
+            background: channel.background || fallbackLogo,
+            logo: channel.logo || fallbackLogo,
             description: channel.description || `ID Canale: ${channel.streamInfo?.tvg?.id}`,
             genre: channel.genre,
             posterShape: channel.posterShape || 'square',
