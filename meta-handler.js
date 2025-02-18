@@ -7,30 +7,18 @@ function normalizeId(id) {
 }
 
 function enrichWithDetailedEPG(meta, channelId, userConfig) {
-    console.log('\n=== Inizio Enrichment EPG ===');
-    console.log('Channel ID ricevuto:', channelId);
     
     if (!userConfig.epg_enabled) {
         console.log('❌ EPG non abilitato');
-        console.log('=== Fine Enrichment EPG ===\n');
         return meta;
     }
 
     const normalizedId = normalizeId(channelId);
-    console.log('ID normalizzato:', normalizedId);
 
     const currentProgram = EPGManager.getCurrentProgram(normalizedId);
-    console.log('Programma corrente trovato:', currentProgram ? 'Si' : 'No');
-    if (currentProgram) {
-        console.log('Dettagli programma corrente:', {
-            titolo: currentProgram.title,
-            inizio: currentProgram.start,
-            fine: currentProgram.stop
-        });
-    }
+
     
     const upcomingPrograms = EPGManager.getUpcomingPrograms(normalizedId);
-    console.log('Programmi futuri trovati:', upcomingPrograms?.length || 0);
 
     if (currentProgram) {
         let description = [];
@@ -65,19 +53,15 @@ function enrichWithDetailedEPG(meta, channelId, userConfig) {
 
         meta.description = description.join('\n');
         meta.releaseInfo = `${currentProgram.title} (${currentProgram.start})`;
-        console.log('✓ Metadata arricchiti con dati EPG');
     } else {
-        console.log('❌ Nessun programma corrente trovato');
     }
 
-    console.log('=== Fine Enrichment EPG ===\n');
     return meta;
 }
 
 async function metaHandler({ type, id, config: userConfig }) {
     try {
         console.log('\n=== Inizio Meta Handler ===');
-        console.log('ID richiesto:', id);
         
         if (!userConfig.m3u) {
             console.log('❌ URL M3U mancante');
@@ -91,23 +75,16 @@ async function metaHandler({ type, id, config: userConfig }) {
         }
 
         const channelId = id.split('|')[1];
-        console.log('Channel ID estratto:', channelId);
         
         // Usa direttamente getChannel dalla cache, che ora gestisce correttamente i suffissi
         const channel = CacheManager.getChannel(channelId);
         
         if (!channel) {
-            console.log('❌ Canale non trovato');
             console.log('=== Fine Meta Handler ===\n');
             return { meta: null };
         }
 
-        console.log('✓ Canale trovato:', {
-            id: channel.id,
-            name: channel.name,
-            tvgId: channel.streamInfo?.tvg?.id,
-            tvgName: channel.streamInfo?.tvg?.name
-        });
+
 
         const meta = {
             id: channel.id,
@@ -132,15 +109,12 @@ async function metaHandler({ type, id, config: userConfig }) {
         };
 
         if ((!meta.poster || !meta.background || !meta.logo) && channel.streamInfo?.tvg?.id) {
-            console.log('Ricerca icona EPG per:', channel.streamInfo.tvg.id);
             const epgIcon = EPGManager.getChannelIcon(normalizeId(channel.streamInfo.tvg.id));
             if (epgIcon) {
-                console.log('✓ Icona EPG trovata');
                 meta.poster = meta.poster || epgIcon;
                 meta.background = meta.background || epgIcon;
                 meta.logo = meta.logo || epgIcon;
             } else {
-                console.log('❌ Nessuna icona EPG trovata');
             }
         }
 
@@ -158,7 +132,6 @@ async function metaHandler({ type, id, config: userConfig }) {
 
         meta.description = baseDescription.join('\n');
 
-        console.log('Richiedo enrichment EPG per:', channel.streamInfo?.tvg?.id);
         const enrichedMeta = enrichWithDetailedEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
 
         console.log('✓ Meta handler completato');
