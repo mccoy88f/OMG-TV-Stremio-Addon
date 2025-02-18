@@ -185,6 +185,18 @@ function safeParseExtra(extraParam) {
         
         const decodedExtra = decodeURIComponent(extraParam);
         
+        // Supporto per skip con genere
+        if (decodedExtra.includes('genre=') && decodedExtra.includes('&skip=')) {
+            const parts = decodedExtra.split('&');
+            const genre = parts.find(p => p.startsWith('genre=')).split('=')[1];
+            const skip = parts.find(p => p.startsWith('skip=')).split('=')[1];
+            
+            return { 
+                genre, 
+                skip: parseInt(skip, 10) || 0 
+            };
+        }
+        
         if (decodedExtra.startsWith('skip=')) {
             return { skip: parseInt(decodedExtra.split('=')[1], 10) || 0 };
         }
