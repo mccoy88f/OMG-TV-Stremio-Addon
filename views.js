@@ -1,4 +1,12 @@
+const fs = require('fs');
+const path = require('path');
+
 const renderConfigPage = (protocol, host, query, manifest) => {
+   // Verifica se il file addon-config.json esiste
+   const configPath = path.join(__dirname, 'addon-config.json');
+   const m3uDefaultUrl = 'http://inthemix.altervista.org/tv.m3u';
+   const m3uIsDisabled = !fs.existsSync(configPath);
+
    return `
        <!DOCTYPE html>
        <html>
@@ -122,6 +130,27 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                    width: 100%;
                    margin-top: 20px;
                }
+               .advanced-settings {
+                   background: rgba(255,255,255,0.05);
+                   border: 1px solid #666;
+                   border-radius: 4px;
+                   padding: 10px;
+                   margin-top: 10px;
+               }
+               .advanced-settings-header {
+                   cursor: pointer;
+                   display: flex;
+                   justify-content: space-between;
+                   align-items: center;
+                   color: #fff;
+               }
+               .advanced-settings-content {
+                   display: none;
+                   padding-top: 10px;
+               }
+               .advanced-settings-content.show {
+                   display: block;
+               }
            </style>
        </head>
        <body>
@@ -148,7 +177,10 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                    <h2>Genera Configurazione</h2>
                    <form id="configForm" onsubmit="updateConfig(event)">
                        <label>M3U URL:</label>
-                       <input type="url" name="m3u" value="${query.m3u || ''}" required>
+                       <input type="url" name="m3u" 
+                              value="${m3uIsDisabled ? m3uDefaultUrl : (query.m3u || '')}" 
+                              ${m3uIsDisabled ? 'readonly' : ''} 
+                              required>
                        
                        <label>EPG URL:</label>
                        <input type="url" name="epg" value="${query.epg || ''}">
@@ -157,23 +189,31 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                            <input type="checkbox" name="epg_enabled" ${query.epg_enabled === 'true' ? 'checked' : ''}>
                            Abilita EPG
                        </label>
-                       
-                       <label>Proxy URL:</label>
-                       <input type="url" name="proxy" value="${query.proxy || ''}">
-                       
-                       <label>Proxy Password:</label>
-                       <input type="password" name="proxy_pwd" value="${query.proxy_pwd || ''}">
-                       
-                       <label>
-                           <input type="checkbox" name="force_proxy" ${query.force_proxy === 'true' ? 'checked' : ''}>
-                           Forza Proxy
-                       </label>
 
-                       <label>ID Suffix:</label>
-                       <input type="text" name="id_suffix" value="${query.id_suffix || ''}" placeholder="Esempio: it">
+                       <div class="advanced-settings">
+                           <div class="advanced-settings-header" onclick="toggleAdvancedSettings()">
+                               <strong>Impostazioni Avanzate</strong>
+                               <span id="advanced-settings-toggle">▼</span>
+                           </div>
+                           <div class="advanced-settings-content" id="advanced-settings-content">
+                               <label>Proxy URL:</label>
+                               <input type="url" name="proxy" value="${query.proxy || ''}">
+                               
+                               <label>Proxy Password:</label>
+                               <input type="password" name="proxy_pwd" value="${query.proxy_pwd || ''}">
+                               
+                               <label>
+                                   <input type="checkbox" name="force_proxy" ${query.force_proxy === 'true' ? 'checked' : ''}>
+                                   Forza Proxy
+                               </label>
 
-                       <label>Percorso file remapper:</label>
-                       <input type="text" name="remapper_path" value="${query.remapper_path || ''}" placeholder="Esempio: https://raw.githubusercontent.com/...">
+                               <label>ID Suffix:</label>
+                               <input type="text" name="id_suffix" value="${query.id_suffix || ''}" placeholder="Esempio: it">
+
+                               <label>Percorso file remapper:</label>
+                               <input type="text" name="remapper_path" value="${query.remapper_path || ''}" placeholder="Esempio: https://raw.githubusercontent.com/...">
+                           </div>
+                       </div>
                        
                        <input type="submit" value="Genera Configurazione">
                    </form>
@@ -185,9 +225,43 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                    </div>
                </div>
                
+               <div id="confirmModal" style="
+                   display: none;
+                   position: fixed;
+                   top: 0;
+                   left: 0;
+                   width: 100%;
+                   height: 100%;
+                   background: rgba(0,0,0,0.8);
+                   z-index: 1000;
+                   justify-content: center;
+                   align-items: center;
+               ">
+                   <div style="
+                       background: #333;
+                       padding: 30px;
+                       border-radius: 10px;
+                       text-align: center;
+                       color: white;
+                   ">
+                       <h2>Conferma Installazione</h2>
+                       <p>Per procedere con l'installazione, devi prima generare la configurazione.</p>
+                       <div style="margin-top: 20px;">
+                           <button onclick="cancelInstallation()">Indietro</button>
+                       </div>
+                   </div>
+               </div>
+               
                <div id="toast" class="toast">URL Copiato!</div>
                
                <script>
+                   function toggleAdvancedSettings() {
+                       const content = document.getElementById('advanced-settings-content');
+                       const toggle = document.getElementById('advanced-settings-toggle');
+                       content.classList.toggle('show');
+                       toggle.textContent = content.classList.contains('show') ? '▲' : '▼';
+                   }
+
                    function getConfigQueryString() {
                        const form = document.getElementById('configForm');
                        const formData = new FormData(form);
@@ -206,10 +280,23 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                        return params.toString();
                    }
 
+                   function showConfirmModal() {
+                       document.getElementById('confirmModal').style.display = 'flex';
+                   }
+
+                   function cancelInstallation() {
+                       document.getElementById('confirmModal').style.display = 'none';
+                   }
+
                    function installAddon() {
+                       showConfirmModal();
+                   }
+
+                   function updateConfig(e) {
+                       e.preventDefault();
                        const configQueryString = getConfigQueryString();
                        const configBase64 = btoa(configQueryString);
-                       window.location.href = \`stremio://${host}/\${configBase64}/manifest.json\`;
+                       window.location.href = \`${protocol}://${host}/\${configBase64}/configure\`;
                    }
 
                    function copyManifestUrl() {
@@ -224,13 +311,6 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                                toast.style.display = 'none';
                            }, 2000);
                        });
-                   }
-
-                   function updateConfig(e) {
-                       e.preventDefault();
-                       const configQueryString = getConfigQueryString();
-                       const configBase64 = btoa(configQueryString);
-                       window.location.href = \`${protocol}://${host}/\${configBase64}/configure\`;
                    }
 
                    function backupConfig() {
