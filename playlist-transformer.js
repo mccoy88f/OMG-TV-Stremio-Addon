@@ -185,9 +185,11 @@ class PlaylistTransformer {
   createChannelObject(channel, channelId) {
       const name = channel.tvg?.name || channel.name;
       const cleanName = name.replace(/\s*\(.*?\)\s*/g, '').trim();
+      const suffix = config?.id_suffix || ''; // Ottieni il suffisso dalla configurazione
+      const finalChannelId = channelId + (suffix ? `.${suffix}` : ''); // Aggiungi il suffisso all'ID del canale
 
       return {
-          id: `tv|${channelId}`,
+          id: `tv|${finalChannelId}`, // Usa l'ID con il suffisso
           type: 'tv',
           name: cleanName,
           genre: channel.group,
@@ -195,17 +197,17 @@ class PlaylistTransformer {
           poster: channel.tvg?.logo,
           background: channel.tvg?.logo,
           logo: channel.tvg?.logo,
-          description: `Canale: ${cleanName} - ID: ${channelId}`,
+          description: `Canale: ${cleanName} - ID: ${finalChannelId}`,
           runtime: 'LIVE',
           behaviorHints: {
-              defaultVideoId: `tv|${channelId}`,
+              defaultVideoId: `tv|${finalChannelId}`,
               isLive: true
           },
           streamInfo: {
               urls: [],
               tvg: {
                   ...channel.tvg,
-                  id: channelId,
+                  id: finalChannelId,
                   name: cleanName
               }
           }
