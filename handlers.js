@@ -158,7 +158,6 @@ function enrichWithEPG(meta, channelId, userConfig) {
 
 async function streamHandler({ id, config: userConfig }) {
     try {
-        console.log('Stream request:', { id, userConfig });
         
         if (!userConfig.m3u) {
             console.log('M3U URL mancante');
@@ -178,12 +177,6 @@ async function streamHandler({ id, config: userConfig }) {
             return { streams: [] };
         }
 
-        console.log('Canale trovato:', {
-            id: channel.id,
-            name: channel.name,
-            tvgInfo: channel.streamInfo?.tvg,
-            urls: channel.streamInfo?.urls
-        });
 
         let streams = [];
 
@@ -222,7 +215,6 @@ async function streamHandler({ id, config: userConfig }) {
                             bingeGroup: "tv"
                         }
                     };
-                    console.log('Stream meta:', streamMeta);
                     streams.push(streamMeta);
 
                     if (userConfig.proxy && userConfig.proxy_pwd) {
@@ -274,8 +266,6 @@ async function streamHandler({ id, config: userConfig }) {
             stream.meta = meta;
         });
 
-        console.log('Meta info:', meta);
-        console.log('Streams generati:', streams.length);
         return { streams };
     } catch (error) {
         console.error('Errore stream handler:', error);
