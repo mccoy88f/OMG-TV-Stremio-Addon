@@ -4,6 +4,3 @@ services:
     runtime: docker  
     plan: free 
     region: frankfurt
-    envVars:
-      - key: ENABLE_EPG
-        sync: false
