@@ -75,8 +75,17 @@ app.get('/manifest.json', async (req, res) => {
         };
         const builder = new addonBuilder(manifestConfig);
         
-        if (req.query.epg) {
-            await EPGManager.initializeEPG(req.query.epg);
+        if (userConfig.epg_enabled) {
+          // Se non è stato fornito manualmente un EPG URL, usa quello della playlist
+            const epgToUse = userConfig.epg || 
+                (CacheManager.getCachedData().epgUrls && 
+                 CacheManager.getCachedData().epgUrls.length > 0 
+                    ? CacheManager.getCachedData().epgUrls.join(',') 
+                    : null);
+          
+            if (epgToUse) {
+                await EPGManager.initializeEPG(epgToUse);
+            }
         }
         builder.defineCatalogHandler(async (args) => catalogHandler({ ...args, config: req.query }));
         builder.defineStreamHandler(async (args) => streamHandler({ ...args, config: req.query }));
