@@ -90,10 +90,21 @@ class CacheManager extends EventEmitter {
         const normalizedSearchId = this.normalizeId(channelId);
         
         const channel = this.cache.stremioData.channels.find(ch => {
-            const normalizedChannelIdBase = this.normalizeId(ch.id.replace('tv|', ''));
+            const normalizedChannelId = this.normalizeId(ch.id.replace('tv|', ''));
             const normalizedTvgId = this.normalizeId(ch.streamInfo?.tvg?.id);
             
-            return normalizedChannelIdBase === normalizedSearchId || 
+            console.log('Debugging channel search:', {
+                currentChannelId: ch.id,
+                searchId: `tv|${channelId}`,
+                tvgId: ch.streamInfo?.tvg?.id,
+                normalizedTvgId: normalizedTvgId,
+                channelId: channelId,
+                normalizedChannelId: normalizedSearchId,
+                idMatch: normalizedChannelId === normalizedSearchId,
+                tvgIdMatch: normalizedTvgId === normalizedSearchId
+            });
+            
+            return normalizedChannelId === normalizedSearchId || 
                    normalizedTvgId === normalizedSearchId;
         });
 
@@ -126,6 +137,11 @@ class CacheManager extends EventEmitter {
             const normalizedName = this.normalizeId(channel.name);
             return normalizedName.includes(normalizedQuery);
         });
+    }
+
+    // Manteniamo questo metodo duplicato per compatibilità
+    normalizeId(id) {
+        return id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
     }
 
     isStale() {
