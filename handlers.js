@@ -22,10 +22,17 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
           await EPGManager.initializeEPG(userConfig.epg);
       }
 
-      const { search, genre, skip = 0 } = extra || {};
-      console.log(`\n=== Inizio Catalog Handler ===`);
-      console.log(`Richiesta catalogo: type=${type}, id=${id}, skip=${skip}`);
-      console.log(`Extra:`, extra);
+      // Gestione corretta di parametri concatenati nel genre
+      let { search, genre, skip = 0 } = extra || {};
+      
+      // Estrae skip dal genere se necessario
+      if (genre && genre.includes('&skip')) {
+          const parts = genre.split('&skip');
+          genre = parts[0];
+          if (parts[1] && parts[1].startsWith('=')) {
+              skip = parseInt(parts[1].substring(1)) || 0;
+          }
+      }
       
       const cachedData = CacheManager.getCachedData();
       const ITEMS_PER_PAGE = 100;
@@ -33,13 +40,10 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
       let channels = [];
       if (genre) {
           channels = CacheManager.getChannelsByGenre(genre);
-          console.log(`Filtro per genere "${genre}": trovati ${channels.length} canali`);
       } else if (search) {
           channels = CacheManager.searchChannels(search);
-          console.log(`Ricerca "${search}": trovati ${channels.length} canali`);
       } else {
           channels = cachedData.channels;
-          console.log(`Totale canali disponibili: ${channels.length}`);
       }
 
       channels.sort((a, b) => {
@@ -49,21 +53,7 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
       });
 
       const startIdx = parseInt(skip) || 0;
-      console.log(`Paginazione: skip=${startIdx}, limit=${ITEMS_PER_PAGE}, totale=${channels.length}`);
-      
       const paginatedChannels = channels.slice(startIdx, startIdx + ITEMS_PER_PAGE);
-      console.log(`Canali in questa pagina: ${paginatedChannels.length}`);
-      
-      if (paginatedChannels.length > 0) {
-          console.log(`Primo canale in questa pagina: ${paginatedChannels[0].name}`);
-          console.log(`Ultimo canale in questa pagina: ${paginatedChannels[paginatedChannels.length-1].name}`);
-      }
-      
-      if (startIdx + ITEMS_PER_PAGE < channels.length) {
-          console.log(`Ci sono altre pagine disponibili. Prossimo skip=${startIdx + ITEMS_PER_PAGE}`);
-      } else {
-          console.log(`Questa è l'ultima pagina.`);
-      }
 
       const metas = paginatedChannels.map(channel => {
           const meta = {
@@ -99,9 +89,6 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
 
           return enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
       });
-      
-      console.log(`Metadata generati: ${metas.length}`);
-      console.log(`=== Fine Catalog Handler ===\n`);
 
       return {
           metas,
