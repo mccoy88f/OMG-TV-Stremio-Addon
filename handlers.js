@@ -4,7 +4,7 @@ const EPGManager = require('./epg-manager');
 const StreamProxyManager = require('./stream-proxy-manager')(config);
 
 function normalizeId(id) {
-  return id?.toLowerCase().trim().replace(/\s+/g, '') || '';
+  return id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
 }
 
 async function catalogHandler({ type, id, extra, config: userConfig }) {
@@ -163,8 +163,12 @@ async function streamHandler({ id, config: userConfig }) {
                     const streamDetails = {
                         name: stream.name || channel.name,
                         url: stream.url,
-                        headers: stream.headers
+                        headers: stream.headers || { 'User-Agent': config.defaultUserAgent }
                     };
+                    // Assicuriamoci che User-Agent sia presente
+                    if (!streamDetails.headers['User-Agent']) {
+                        streamDetails.headers['User-Agent'] = config.defaultUserAgent;
+                    }
                     const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
                     streams.push(...proxyStreams);
                 }
@@ -172,11 +176,17 @@ async function streamHandler({ id, config: userConfig }) {
         } else {
             if (channel.streamInfo.urls) {
                 for (const stream of channel.streamInfo.urls) {
+                    // Assicuriamoci che lo header User-Agent sia sempre presente
+                    const headers = stream.headers || {};
+                    if (!headers['User-Agent']) {
+                        headers['User-Agent'] = config.defaultUserAgent;
+                    }
+                    
                     const streamMeta = {
                         name: stream.name || channel.name,
                         title: stream.name || channel.name,
                         url: stream.url,
-                        headers: stream.headers,
+                        headers: headers,
                         behaviorHints: {
                             notWebReady: false,
                             bingeGroup: "tv"
@@ -189,7 +199,7 @@ async function streamHandler({ id, config: userConfig }) {
                         const streamDetails = {
                             name: stream.name || channel.name,
                             url: stream.url,
-                            headers: stream.headers
+                            headers: headers
                         };
                         const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
                         streams.push(...proxyStreams);
