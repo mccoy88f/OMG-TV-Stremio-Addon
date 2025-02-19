@@ -275,8 +275,8 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                        <div style="margin-top: 30px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 4px;">
                            <strong>ATTENZIONE!</strong>
                            <ul style="text-align: center; margin-top: 10px;">
-                               <li>Non sono responsabile per l'uso illecito dell'addon.</li>
-                               <li>Verifica e rispetta la normativa vigente nel tuo paese!</li>
+                               <p>Non sono responsabile per l'uso illecito dell'addon.</p>
+                               <p>Verifica e rispetta la normativa vigente nel tuo paese!</p>
                            </ul>
                        </div>
                    </div>
