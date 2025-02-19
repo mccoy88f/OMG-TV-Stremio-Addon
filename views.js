@@ -4,7 +4,7 @@ const path = require('path');
 const renderConfigPage = (protocol, host, query, manifest) => {
    // Verifica se il file addon-config.json esiste
    const configPath = path.join(__dirname, 'addon-config.json');
-   const m3uDefaultUrl = 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/beta-main/link.playlist';
+   const m3uDefaultUrl = 'https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/link.playlist';
    const m3uIsDisabled = !fs.existsSync(configPath);
 
    return `
