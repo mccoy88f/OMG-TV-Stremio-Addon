@@ -243,8 +243,8 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                                <input type="text" name="remapper_path" value="${query.remapper_path || ''}" placeholder="Esempio: https://raw.githubusercontent.com/...">
 
                                <label>Intervallo Aggiornamento Playlist:</label>
-                               <input type="text" name="update_interval" value="${query.update_interval || '12:00'}" placeholder="HH:MM (predefinito 12:00)" pattern="^([01]\d|2[0-3]):([0-5]\d)$">
-                               <small style="color: #999;">Formato HH:MM, predefinito 12:00</small>
+                               <input type="text" name="update_interval" value="${query.update_interval || '12:00'}" placeholder="HH:MM (predefinito 12:00)">
+                               <small style="color: #999;">Formato HH:MM (es. 1:00 o 01:00), predefinito 12:00</small>
                            </div>
                        </div>
                        
