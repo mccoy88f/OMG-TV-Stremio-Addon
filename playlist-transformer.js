@@ -90,13 +90,11 @@ class PlaylistTransformer {
           const channelName = extinf.match(/tvg-name="([^"]+)"/) 
               ? extinf.match(/tvg-name="([^"]+)"/)[1]
               : 'Canale sconosciuto';
-          console.log('Analisi opzioni per canale:', channelName);
       }
       
       const extinfHeaders = {};
       const extinfopts = extinf.match(/http-[^=]+=["']([^"']+)/g);
       if (extinfopts) {
-          console.log('Opzioni trovate in EXTINF:', extinfopts);
           extinfopts.forEach(opt => {
               const [key, value] = opt.split('=');
               extinfHeaders[key.replace('http-', '')] = value.replace(/["']/g, '');
@@ -106,7 +104,6 @@ class PlaylistTransformer {
       const vlcHeaders = {};
       while (i < lines.length && lines[i].startsWith('#EXTVLCOPT:')) {
           const opt = lines[i].substring('#EXTVLCOPT:'.length).trim();
-          console.log('Elaborazione EXTVLCOPT:', opt);
           const [key, ...value] = opt.split('=');
           const headerKey = key.replace('http-', '');
           vlcHeaders[headerKey] = value.join('=');
@@ -149,7 +146,6 @@ class PlaylistTransformer {
       }
 
       // Debug degli header finali
-      console.log('Header finali estratti:', finalHeaders);
 
       return { headers: finalHeaders, nextIndex: i };
   }
@@ -278,10 +274,7 @@ class PlaylistTransformer {
 
               // Verifica la presenza di User-Agent, Referrer e Origin
               const channelName = currentChannel.tvg?.name || currentChannel.name;
-              console.log(`\nHeaders per ${channelName}:`);
-              console.log('  User-Agent:', headers['User-Agent'] || 'non specificato');
-              console.log('  Referrer:', headers['referrer'] || 'non specificato');
-              console.log('  Origin:', headers['origin'] || 'non specificato');
+
 
           } else if ((line.startsWith('http') || line.toLowerCase() === 'null') && currentChannel) {
               const remappedId = this.getRemappedId(currentChannel);
