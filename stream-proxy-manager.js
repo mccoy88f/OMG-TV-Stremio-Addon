@@ -69,6 +69,7 @@ class StreamProxyManager {
         }
         console.log('Headers passati al proxy:', headers);
         console.log('Parametri URL proxy:', params.toString());
+        console.log('Url inviato:', proxyUrl);
         return proxyUrl;
     }
 
