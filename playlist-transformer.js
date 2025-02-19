@@ -85,9 +85,18 @@ class PlaylistTransformer {
   parseVLCOpts(lines, currentIndex, extinf) {
       let i = currentIndex;
       
+      // Debug per vedere il contenuto delle linee
+      if (extinf.includes('tvg-name')) {
+          const channelName = extinf.match(/tvg-name="([^"]+)"/) 
+              ? extinf.match(/tvg-name="([^"]+)"/)[1]
+              : 'Canale sconosciuto';
+          console.log('Analisi opzioni per canale:', channelName);
+      }
+      
       const extinfHeaders = {};
       const extinfopts = extinf.match(/http-[^=]+=["']([^"']+)/g);
       if (extinfopts) {
+          console.log('Opzioni trovate in EXTINF:', extinfopts);
           extinfopts.forEach(opt => {
               const [key, value] = opt.split('=');
               extinfHeaders[key.replace('http-', '')] = value.replace(/["']/g, '');
@@ -97,8 +106,10 @@ class PlaylistTransformer {
       const vlcHeaders = {};
       while (i < lines.length && lines[i].startsWith('#EXTVLCOPT:')) {
           const opt = lines[i].substring('#EXTVLCOPT:'.length).trim();
+          console.log('Elaborazione EXTVLCOPT:', opt);
           const [key, ...value] = opt.split('=');
-          vlcHeaders[key.replace('http-', '')] = value.join('=');
+          const headerKey = key.replace('http-', '');
+          vlcHeaders[headerKey] = value.join('=');
           i++;
       }
 
@@ -119,21 +130,26 @@ class PlaylistTransformer {
           ...httpHeaders
       };
 
+      // Unifica user-agent con varie priorità
       finalHeaders['User-Agent'] = httpHeaders['User-Agent'] || httpHeaders['user-agent'] ||
                                   vlcHeaders['user-agent'] || extinfHeaders['user-agent'] ||
                                   config.defaultUserAgent;
 
-      delete finalHeaders['user-agent'];
+      // Normalizza referrer/referer - preferisci 'referrer' come nome finale
+      if (vlcHeaders['referrer']) {
+          finalHeaders['referrer'] = vlcHeaders['referrer'];
+      } else if (vlcHeaders['referer']) {
+          finalHeaders['referrer'] = vlcHeaders['referer'];
+      }
       delete finalHeaders['referer'];
-      if (finalHeaders['Referer']) {
-          finalHeaders['referer'] = finalHeaders['Referer'];
-          delete finalHeaders['Referer'];
+
+      // Normalizza origin
+      if (vlcHeaders['origin']) {
+          finalHeaders['origin'] = vlcHeaders['origin'];
       }
-      delete finalHeaders['origin'];
-      if (finalHeaders['Origin']) {
-          finalHeaders['origin'] = finalHeaders['Origin'];
-          delete finalHeaders['Origin'];
-      }
+
+      // Debug degli header finali
+      console.log('Header finali estratti:', finalHeaders);
 
       return { headers: finalHeaders, nextIndex: i };
   }
@@ -259,6 +275,13 @@ class PlaylistTransformer {
               const { headers, nextIndex } = this.parseVLCOpts(lines, i + 1, line);
               i = nextIndex - 1;
               currentChannel = this.parseChannelFromLine(line, headers, config);
+
+              // Verifica la presenza di User-Agent, Referrer e Origin
+              const channelName = currentChannel.tvg?.name || currentChannel.name;
+              console.log(`\nHeaders per ${channelName}:`);
+              console.log('  User-Agent:', headers['User-Agent'] || 'non specificato');
+              console.log('  Referrer:', headers['referrer'] || 'non specificato');
+              console.log('  Origin:', headers['origin'] || 'non specificato');
 
           } else if ((line.startsWith('http') || line.toLowerCase() === 'null') && currentChannel) {
               const remappedId = this.getRemappedId(currentChannel);
