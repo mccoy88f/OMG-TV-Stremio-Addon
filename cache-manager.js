@@ -139,22 +139,27 @@ class CacheManager extends EventEmitter {
     isStale(config = {}) {
         if (!this.cache || !this.cache.lastUpdated || !this.cache.stremioData) return true;
 
-        // Imposta l'ora di aggiornamento predefinita a 12 ore
+        // Imposta l'intervallo di aggiornamento predefinito a 12 ore
         let updateIntervalMs = 12 * 60 * 60 * 1000;
 
-        // Se è stato fornito un orario personalizzato, calcola l'intervallo
-        if (config.update_time) {
-            const [hours, minutes] = config.update_time.split(':').map(Number);
-            const now = new Date();
-            const updateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+        // Se è stato fornito un intervallo personalizzato
+        if (config.update_interval) {
+            // Supporta formati con e senza zero iniziale
+            const timeMatch = config.update_interval.match(/^(\d{1,2}):(\d{2})$/);
             
-            // Se l'ora di aggiornamento è già passata oggi, imposta per domani
-            if (updateTime <= now) {
-                updateTime.setDate(updateTime.getDate() + 1);
+            if (timeMatch) {
+                const hours = parseInt(timeMatch[1], 10);
+                const minutes = parseInt(timeMatch[2], 10);
+                
+                // Validazione ore e minuti
+                if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
+                    updateIntervalMs = (hours * 60 * 60 + minutes * 60) * 1000;
+                } else {
+                    console.warn('Formato ora non valido, uso valore predefinito');
+                }
+            } else {
+                console.warn('Formato ora non valido, uso valore predefinito');
             }
-
-            // Calcola la differenza in millisecondi
-            updateIntervalMs = updateTime.getTime() - now.getTime();
         }
 
         return (Date.now() - this.cache.lastUpdated) >= updateIntervalMs;
