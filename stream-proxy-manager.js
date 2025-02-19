@@ -49,12 +49,10 @@ class StreamProxyManager {
             'user-agent': headers['User-Agent'] || config.defaultUserAgent
         });
 
-    // Verifica sia versione maiuscola che minuscola
-        if (headers['referer'] || headers['Referer']) {
-            params.append('referer', headers['referer'] || headers['Referer']);
+        if (headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer']) {
+            params.append('referer', headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer']);
         }
 
-    // Verifica sia versione maiuscola che minuscola
         if (headers['origin'] || headers['Origin']) {
             params.append('origin', headers['origin'] || headers['Origin']);
         }
