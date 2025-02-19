@@ -42,8 +42,6 @@ class StreamProxyManager {
             return null;
         }
 
-        // Debug per vedere tutti gli header
-        console.log('Headers passati al proxy:', headers);
 
         const baseUrl = userConfig.proxy.replace(/\/+$/, '');
         const params = new URLSearchParams({
@@ -71,7 +69,6 @@ class StreamProxyManager {
         }
 
         // Debug dei parametri
-        console.log('Parametri URL proxy:', params.toString());
 
         let proxyUrl;
         if (streamUrl.endsWith('.m3u8')) {
@@ -82,7 +79,6 @@ class StreamProxyManager {
             proxyUrl = `${baseUrl}/proxy/stream?${params.toString()}`;
         }
 
-        console.log('Url inviato:', proxyUrl);
         return proxyUrl;
     }
 
