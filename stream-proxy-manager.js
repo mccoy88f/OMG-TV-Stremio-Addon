@@ -42,20 +42,36 @@ class StreamProxyManager {
             return null;
         }
 
+        // Debug per vedere tutti gli header
+        console.log('Headers passati al proxy:', headers);
+
         const baseUrl = userConfig.proxy.replace(/\/+$/, '');
         const params = new URLSearchParams({
             api_password: userConfig.proxy_pwd,
             d: streamUrl,
-            'user-agent': headers['User-Agent'] || config.defaultUserAgent
         });
 
-        if (headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer']) {
-            params.append('referer', headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer']);
+        // Aggiunge User-Agent con prefisso h_
+        if (headers['User-Agent'] || headers['user-agent']) {
+            params.append('h_user-agent', headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent);
+        } else {
+            params.append('h_user-agent', config.defaultUserAgent);
         }
 
-        if (headers['origin'] || headers['Origin']) {
-            params.append('origin', headers['origin'] || headers['Origin']);
+        // Verifica tutte le varianti di referer/referrer e aggiunge con prefisso h_
+        if (headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer']) {
+            params.append('h_referer', 
+                headers['referer'] || headers['Referer'] || 
+                headers['referrer'] || headers['Referrer']);
         }
+
+        // Verifica tutte le varianti di origin e aggiunge con prefisso h_
+        if (headers['origin'] || headers['Origin']) {
+            params.append('h_origin', headers['origin'] || headers['Origin']);
+        }
+
+        // Debug dei parametri
+        console.log('Parametri URL proxy:', params.toString());
 
         let proxyUrl;
         if (streamUrl.endsWith('.m3u8')) {
@@ -65,8 +81,7 @@ class StreamProxyManager {
         } else if (streamUrl.startsWith('https://')) {
             proxyUrl = `${baseUrl}/proxy/stream?${params.toString()}`;
         }
-        console.log('Headers passati al proxy:', headers);
-        console.log('Parametri URL proxy:', params.toString());
+
         console.log('Url inviato:', proxyUrl);
         return proxyUrl;
     }
