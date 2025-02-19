@@ -136,9 +136,28 @@ class CacheManager extends EventEmitter {
         return id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
     }
 
-    isStale() {
+    isStale(config = {}) {
         if (!this.cache || !this.cache.lastUpdated || !this.cache.stremioData) return true;
-        return (Date.now() - this.cache.lastUpdated) >= 12 * 60 * 60 * 1000;
+
+        // Imposta l'ora di aggiornamento predefinita a 12 ore
+        let updateIntervalMs = 12 * 60 * 60 * 1000;
+
+        // Se è stato fornito un orario personalizzato, calcola l'intervallo
+        if (config.update_time) {
+            const [hours, minutes] = config.update_time.split(':').map(Number);
+            const now = new Date();
+            const updateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+            
+            // Se l'ora di aggiornamento è già passata oggi, imposta per domani
+            if (updateTime <= now) {
+                updateTime.setDate(updateTime.getDate() + 1);
+            }
+
+            // Calcola la differenza in millisecondi
+            updateIntervalMs = updateTime.getTime() - now.getTime();
+        }
+
+        return (Date.now() - this.cache.lastUpdated) >= updateIntervalMs;
     }
 }
 
