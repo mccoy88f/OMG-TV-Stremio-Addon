@@ -67,7 +67,8 @@ class StreamProxyManager {
         } else if (streamUrl.startsWith('https://')) {
             proxyUrl = `${baseUrl}/proxy/stream?${params.toString()}`;
         }
-
+        console.log('Headers passati al proxy:', headers);
+        console.log('Parametri URL proxy:', params.toString());
         return proxyUrl;
     }
 
