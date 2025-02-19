@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: OMG    
+    name: OMG-TV    
     runtime: docker  
     plan: free 
     region: frankfurt
