@@ -30,8 +30,20 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
           await CacheManager.rebuildCache(userConfig.m3u, userConfig);
       }
 
-      if (userConfig.epg) {
-          await EPGManager.initializeEPG(userConfig.epg);
+      // Inizializza EPG se abilitato, usando URL dalla playlist se necessario
+      if (userConfig.epg_enabled === 'true') {
+          const epgToUse = userConfig.epg ||
+              (CacheManager.cache.epgUrls && 
+               CacheManager.cache.epgUrls.length > 0
+                  ? CacheManager.cache.epgUrls.join(',')
+                  : null);
+                  
+          if (epgToUse) {
+              console.log('[Handlers] Inizializzazione EPG con URL:', epgToUse);
+              await EPGManager.initializeEPG(epgToUse);
+          } else {
+              console.log('[Handlers] EPG abilitato ma nessun URL disponibile');
+          }
       }
 
       // Gestione corretta di parametri concatenati nel genre
