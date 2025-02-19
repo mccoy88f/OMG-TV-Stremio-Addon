@@ -75,9 +75,9 @@ app.get('/manifest.json', async (req, res) => {
         };
         const builder = new addonBuilder(manifestConfig);
         
-        if (userConfig.epg_enabled) {
-          // Se non è stato fornito manualmente un EPG URL, usa quello della playlist
-            const epgToUse = userConfig.epg || 
+        if (req.query.epg_enabled === 'true') {
+            // Se non è stato fornito manualmente un EPG URL, usa quello della playlist
+            const epgToUse = req.query.epg || 
                 (CacheManager.getCachedData().epgUrls && 
                  CacheManager.getCachedData().epgUrls.length > 0 
                     ? CacheManager.getCachedData().epgUrls.join(',') 
@@ -140,8 +140,17 @@ app.get('/:config/manifest.json', async (req, res) => {
 
         const builder = new addonBuilder(manifestConfig);
         
-        if (decodedConfig.epg) {
-            await EPGManager.initializeEPG(decodedConfig.epg);
+        if (decodedConfig.epg_enabled === 'true') {
+            // Se non è stato fornito manualmente un EPG URL, usa quello della playlist
+            const epgToUse = decodedConfig.epg || 
+                (CacheManager.getCachedData().epgUrls && 
+                 CacheManager.getCachedData().epgUrls.length > 0 
+                    ? CacheManager.getCachedData().epgUrls.join(',') 
+                    : null);
+                    
+            if (epgToUse) {
+                await EPGManager.initializeEPG(epgToUse);
+            }
         }
         
         builder.defineCatalogHandler(async (args) => catalogHandler({ ...args, config: decodedConfig }));
