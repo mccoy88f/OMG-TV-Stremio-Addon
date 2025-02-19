@@ -215,7 +215,7 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                        <input type="url" name="epg" value="${query.epg || ''}">
                        
                        <label>
-                           <input type="checkbox" name="epg_enabled" ${query.epg_enabled === 'true' ? 'checked' : ''}>
+                           <input type="checkbox" name="epg_enabled" checked ${query.epg_enabled === 'true' ? 'checked' : ''}>
                            Abilita EPG
                        </label>
 
