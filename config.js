@@ -17,7 +17,7 @@ const baseConfig = {
     },
     manifest: {
         id: 'org.mccoy88f.omgtv',
-        version: '6.8.0',
+        version: '6.0.0',
         name: 'OMG TV',
         description: 'Un add-on per Stremio con playlist di canali M3U predefinita, senza personalizzazione m3u con frontend.',
         logo: 'https://github.com/mccoy88f/OMG-TV-Stremio-Addon/blob/main/tv.png?raw=true',
