@@ -61,11 +61,9 @@ function enrichWithDetailedEPG(meta, channelId, userConfig) {
 
 async function metaHandler({ type, id, config: userConfig }) {
     try {
-        console.log('\n=== Inizio Meta Handler ===');
         
         if (!userConfig.m3u) {
             console.log('❌ URL M3U mancante');
-            console.log('=== Fine Meta Handler ===\n');
             return { meta: null };
         }
 
