@@ -69,25 +69,28 @@ class EPGManager {
     }
 
     async initializeEPG(url) {
-        // Se l'URL è cambiato o la guida è vuota, aggiorna
-        if (!this.lastEpgUrl || this.lastEpgUrl !== url || !this.programGuide.size) {
-            console.log('\n=== Inizializzazione EPG ===');
-            console.log('URL EPG:', url);
-            this.lastEpgUrl = url;
-            await this.startEPGUpdate(url);
-            
-            // Se non esiste già un cron job, crealo
-            if (!this.cronJob) {
-                console.log('Schedulazione aggiornamento EPG giornaliero alle 3:00');
-                this.cronJob = cron.schedule('0 3 * * *', () => {
-                    console.log('Esecuzione aggiornamento EPG programmato');
-                    this.startEPGUpdate(this.lastEpgUrl);
-                });
-            }
-            console.log('=== Inizializzazione EPG completata ===\n');
-        } else {
-            console.log('EPG già inizializzato con URL:', this.lastEpgUrl);
+    async initializeEPG(url) {
+    // Se l'URL è lo stesso e la guida non è vuota, skip
+        if (this.lastEpgUrl === url && this.programGuide.size > 0) {
+            console.log('EPG già inizializzato e valido, skip...');
+            return;
         }
+
+    // Se l'URL è cambiato o la guida è vuota, aggiorna
+        console.log('\n=== Inizializzazione EPG ===');
+        console.log('URL EPG:', url);
+        this.lastEpgUrl = url;
+        await this.startEPGUpdate(url);
+        
+    // Se non esiste già un cron job, crealo
+        if (!this.cronJob) {
+            console.log('Schedulazione aggiornamento EPG giornaliero alle 3:00');
+            this.cronJob = cron.schedule('0 3 * * *', () => {
+                console.log('Esecuzione aggiornamento EPG programmato');
+                this.startEPGUpdate(this.lastEpgUrl);
+            });
+        }
+        console.log('=== Inizializzazione EPG completata ===\n');
     }
 
     async downloadAndProcessEPG(epgUrl) {
