@@ -20,7 +20,6 @@ function cleanNameForImage(name) {
 
 async function catalogHandler({ type, id, extra, config: userConfig }) {
     try {
-        // Log iniziale della richiesta
         console.log('\n=== Nuova richiesta catalogo ===');
         console.log('Type:', type);
         console.log('ID:', id);
@@ -54,12 +53,6 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
 
         let { search, genre, skip = 0 } = extra || {};
         
-        // Log dei parametri dopo l'estrazione
-        console.log('\nParametri estratti:');
-        console.log('Search:', search);
-        console.log('Genre:', genre);
-        console.log('Skip:', skip);
-        
         if (genre && genre.includes('&skip')) {
             const parts = genre.split('&skip');
             genre = parts[0];
@@ -70,26 +63,34 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
             console.log('Skip dopo parsing:', skip);
         }
 
+        // Se riceviamo un nuovo filtro (search o genre), lo salviamo
+        if (search) {
+            CacheManager.setLastFilter('search', search);
+        } else if (genre) {
+            CacheManager.setLastFilter('genre', genre);
+        } else if (!skip) {
+            // Se non c'è skip, significa che è una nuova richiesta senza filtri
+            CacheManager.clearLastFilter();
+        }
+
         skip = parseInt(skip) || 0;
         const ITEMS_PER_PAGE = 100;
         
+        // Otteniamo i canali già filtrati
+        let filteredChannels = CacheManager.getFilteredChannels();
         const cachedData = CacheManager.getCachedData();
-        let filteredChannels = [];
-        
-        if (genre) {
-            filteredChannels = CacheManager.getChannelsByGenre(genre);
-            console.log('\nFiltro per genere:', genre);
-            console.log('Canali trovati:', filteredChannels.length);
-        } else if (search) {
-            filteredChannels = CacheManager.searchChannels(search);
-            console.log('\nFiltro per ricerca:', search);
-            console.log('Canali trovati:', filteredChannels.length);
-        } else {
-            filteredChannels = cachedData.channels;
-            console.log('\nNessun filtro applicato');
-            console.log('Totale canali:', filteredChannels.length);
-        }
 
+        // Log dello stato del filtro
+        const currentFilter = CacheManager.getLastFilter();
+        if (currentFilter) {
+            console.log('\nFiltro attivo:', currentFilter.type);
+            console.log('Valore filtro:', currentFilter.value);
+        } else {
+            console.log('\nNessun filtro attivo');
+        }
+        console.log('Canali trovati:', filteredChannels.length);
+
+        // Ordina i canali
         filteredChannels.sort((a, b) => {
             const numA = parseInt(a.streamInfo?.tvg?.chno) || Number.MAX_SAFE_INTEGER;
             const numB = parseInt(b.streamInfo?.tvg?.chno) || Number.MAX_SAFE_INTEGER;
@@ -157,8 +158,6 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
         return { metas: [], genres: [] };
     }
 }
-
-
 
 function enrichWithEPG(meta, channelId, userConfig) {
     if (!userConfig.epg_enabled || !channelId) {
