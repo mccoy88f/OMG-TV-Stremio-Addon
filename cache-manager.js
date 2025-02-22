@@ -57,7 +57,7 @@ class CacheManager extends EventEmitter {
         this.pollingInterval = setInterval(async () => {
         // Controlla se abbiamo una cache valida
             if (!this.cache?.stremioData) {
-                console.log('Cache non ancora inizializzata, skip aggiornamento...');
+//                console.log('Cache non ancora inizializzata o ancora valida, skip aggiornamento...');
                 return;
             }
 
@@ -215,7 +215,6 @@ class CacheManager extends EventEmitter {
 
     // Nuovi metodi per la gestione dei filtri
     setLastFilter(filterType, value) {
-        console.log('Imposto nuovo filtro:', filterType, value);
         this.lastFilter = { type: filterType, value };
     }
 
@@ -233,7 +232,6 @@ class CacheManager extends EventEmitter {
         let channels = this.cache.stremioData.channels;
         
         if (this.lastFilter) {
-            console.log('Applico filtro:', this.lastFilter.type, this.lastFilter.value);
             if (this.lastFilter.type === 'genre') {
                 channels = this.getChannelsByGenre(this.lastFilter.value);
             } else if (this.lastFilter.type === 'search') {
