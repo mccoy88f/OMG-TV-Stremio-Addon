@@ -8,7 +8,7 @@ class CacheManager extends EventEmitter {
         this.config = config;
         this.cache = null;
         this.pollingInterval = null;
-        this.lastFilter = null; // Aggiungiamo questa proprietà
+        this.lastFilter = null;
         this.initCache();
         this.startPolling();
     }
@@ -18,46 +18,60 @@ class CacheManager extends EventEmitter {
             stremioData: null,
             lastUpdated: null,
             updateInProgress: false,
-            m3uUrl: null
+            m3uUrl: null,
+            epgUrls: []
         };
-        this.lastFilter = null; // Reset anche qui
+        this.lastFilter = null;
     }
 
-    updateConfig(newConfig) {
-        const oldInterval = this.config?.update_interval;
-        const oldEpgEnabled = this.config?.epg_enabled;
-        const oldEpgUrl = this.config?.epg;
+    async updateConfig(newConfig) {
+        // Verifica separatamente i cambiamenti di M3U e EPG
+        const hasM3UChanges = this.config?.m3u !== newConfig.m3u;
+        const hasEPGChanges = 
+            this.config?.epg_enabled !== newConfig.epg_enabled ||
+            this.config?.epg !== newConfig.epg;
         
+        // Verifica altri cambiamenti di configurazione
+        const hasOtherChanges = 
+            this.config?.update_interval !== newConfig.update_interval ||
+            this.config?.id_suffix !== newConfig.id_suffix ||
+            this.config?.remapper_path !== newConfig.remapper_path;
+
+        // Aggiorna la configurazione
         this.config = { ...this.config, ...newConfig };
-        
-        if (oldInterval !== newConfig.update_interval) {
-            console.log('Intervallo aggiornamento modificato, riavvio polling...');
-            console.log('Nuovo intervallo:', newConfig.update_interval);
-            this.startPolling();
+
+        if (hasM3UChanges) {
+            console.log('Playlist M3U modificata, ricarico solo i dati della playlist...');
+            // Resetta solo i dati della playlist
+            this.cache.stremioData = null;
+            this.cache.m3uUrl = null;
+            
+            if (this.config.m3u) {
+                await this.rebuildCache(this.config.m3u, this.config);
+            }
         }
 
-        if (oldEpgEnabled !== newConfig.epg_enabled || oldEpgUrl !== newConfig.epg) {
-            console.log('Configurazione EPG modificata...');
-            console.log('EPG abilitato:', newConfig.epg_enabled);
-            console.log('Nuovo URL EPG:', newConfig.epg || 'usa EPG dalla playlist');
-            
-            if (this.cache.m3uUrl) {
-                this.rebuildCache(this.cache.m3uUrl, this.config);
-            }
+        if (hasEPGChanges) {
+            console.log('Configurazione EPG modificata, aggiorno solo EPG...');
+            // Non tocchiamo i dati della playlist, lasciamo gestire l'EPG all'EPGManager
+        }
+
+        if (hasOtherChanges) {
+            console.log('Altre configurazioni modificate, riavvio polling...');
+            this.startPolling();
         }
     }
 
     startPolling() {
-    // Pulisci eventuali polling precedenti
+        // Pulisci eventuali polling precedenti
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
         }
 
-    // Controlla ogni tot secondi se è necessario aggiornare
+        // Controlla ogni tot secondi se è necessario aggiornare
         this.pollingInterval = setInterval(async () => {
-        // Controlla se abbiamo una cache valida
+            // Controlla se abbiamo una cache valida
             if (!this.cache?.stremioData) {
-//                console.log('Cache non ancora inizializzata o ancora valida, skip aggiornamento...');
                 return;
             }
 
@@ -213,7 +227,6 @@ class CacheManager extends EventEmitter {
         return needsUpdate;
     }
 
-    // Nuovi metodi per la gestione dei filtri
     setLastFilter(filterType, value) {
         this.lastFilter = { type: filterType, value };
     }
