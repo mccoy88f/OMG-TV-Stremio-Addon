@@ -306,12 +306,12 @@ async function startAddon() {
    try {
        const port = process.env.PORT || 10000;
        app.listen(port, () => {
-           console.log('=============================\n');
-           console.log('OMG ADDON - Avviato con successo`);
-           console.log('Visita la pagina web per generare la configurazione del manifest e installarla su stremio`);
-           console.log('Link alla pagina di configurazione:', `http://localhost:${port}`);
-           console.log('=============================\n');
-       });
+          console.log('=============================\n');
+          console.log('OMG ADDON Avviato con successo');
+          console.log('Visita la pagina web per generare la configurazione del manifest e installarla su stremio');
+          console.log('Link alla pagina di configurazione:', `http://localhost:${port}`);
+          console.log('=============================\n');
+        });
    } catch (error) {
        console.error('Failed to start addon:', error);
        process.exit(1);
