@@ -48,9 +48,18 @@ class CacheManager extends EventEmitter {
     }
 
     startPolling() {
+    // Pulisci eventuali polling precedenti
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
         }
+
+    // Controlla ogni tot secondi se è necessario aggiornare
+        this.pollingInterval = setInterval(async () => {
+        // Aggiungi questo controllo
+            if (!this.cache.m3uUrl) {
+                console.log('Nessun URL M3U configurato o caricato, skip aggiornamento...');
+                return;
+            }
 
         this.pollingInterval = setInterval(async () => {
 
