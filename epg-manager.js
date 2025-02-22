@@ -69,7 +69,6 @@ class EPGManager {
     }
 
     async initializeEPG(url) {
-    async initializeEPG(url) {
     // Se l'URL è lo stesso e la guida non è vuota, skip
         if (this.lastEpgUrl === url && this.programGuide.size > 0) {
             console.log('EPG già inizializzato e valido, skip...');
