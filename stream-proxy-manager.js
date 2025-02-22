@@ -6,6 +6,7 @@ class StreamProxyManager {
     constructor() {
         this.proxyCache = new Map();
         this.lastCheck = new Map();
+        this.CACHE_DURATION = 5 * 60 * 1000; // 5 minuti
     }
 
     async validateProxyUrl(url) {
@@ -19,15 +20,28 @@ class StreamProxyManager {
     }
 
     async checkProxyHealth(proxyUrl) {
+        const cacheKey = proxyUrl;
+        const now = Date.now();
+        const lastCheckTime = this.lastCheck.get(cacheKey);
+
+        // Se abbiamo un check recente, usiamo quello
+        if (lastCheckTime && (now - lastCheckTime) < this.CACHE_DURATION) {
+            return this.proxyCache.get(cacheKey);
+        }
+
         try {
             const response = await axios.get(proxyUrl, {
-                timeout: 10000,
+                timeout: 3000, // Ridotto da 10s a 3s
                 validateStatus: status => status < 400,
                 headers: {
                     'User-Agent': config.defaultUserAgent
                 }
             });
-            return response.status < 400;
+            
+            const isHealthy = response.status < 400;
+            this.proxyCache.set(cacheKey, isHealthy);
+            this.lastCheck.set(cacheKey, now);
+            return isHealthy;
         } catch (error) {
             console.error('Verifica dello stato di salute del proxy fallita:', {
                 messaggio: error.message,
@@ -41,7 +55,6 @@ class StreamProxyManager {
         if (!userConfig.proxy || !userConfig.proxy_pwd) {
             return null;
         }
-
 
         const baseUrl = userConfig.proxy.replace(/\/+$/, '');
         const params = new URLSearchParams({
@@ -68,8 +81,6 @@ class StreamProxyManager {
             params.append('h_origin', headers['origin'] || headers['Origin']);
         }
 
-        // Debug dei parametri
-
         let proxyUrl;
         if (streamUrl.endsWith('.m3u8')) {
             proxyUrl = `${baseUrl}/proxy/hls/manifest.m3u8?${params.toString()}`;
@@ -83,57 +94,79 @@ class StreamProxyManager {
     }
 
     async getProxyStreams(channel, userConfig = {}) {
-        const streams = [];
-        
         if (!userConfig.proxy || !userConfig.proxy_pwd) {
             console.log('Proxy non configurato per:', channel.name);
-            return streams;
+            return [];
         }
 
         try {
-            const proxyUrl = await this.buildProxyUrl(channel.url, channel.headers, userConfig);
-            if (!proxyUrl) {
-                console.log(`Formato stream non supportato per: ${channel.name}`);
-                return streams;
-            }
+            // Creiamo array di promesse per elaborazione parallela
+            const streamPromises = channel.streamInfo.urls.map(async stream => {
+                const streamDetails = {
+                    name: stream.name || channel.name,
+                    url: stream.url,
+                    headers: stream.headers || { 'User-Agent': config.defaultUserAgent }
+                };
 
-            const cacheKey = `${channel.name}_${proxyUrl}`;
-            const lastCheck = this.lastCheck.get(cacheKey);
-            const cacheValid = lastCheck && (Date.now() - lastCheck) < 5 * 60 * 1000;
+                try {
+                    const proxyUrl = await this.buildProxyUrl(
+                        streamDetails.url, 
+                        streamDetails.headers, 
+                        userConfig
+                    );
 
-            if (cacheValid && this.proxyCache.has(cacheKey)) {
-                return [this.proxyCache.get(cacheKey)];
-            }
+                    if (!proxyUrl) {
+                        return null;
+                    }
 
-            if (!await this.checkProxyHealth(proxyUrl)) {
-                console.log('Proxy non attivo per:', channel.name);
-                return [];
-            }
+                    // Controllo salute del proxy solo se non c'è in cache
+                    if (!this.proxyCache.has(proxyUrl)) {
+                        const isHealthy = await this.checkProxyHealth(proxyUrl);
+                        if (!isHealthy) {
+                            return null;
+                        }
+                    }
 
-            let streamType = channel.url.endsWith('.m3u8') ? 'HLS' : 
-                         channel.url.endsWith('.mpd') ? 'DASH' : 'HTTP';
+                    let streamType = streamDetails.url.endsWith('.m3u8') ? 'HLS' : 
+                                   streamDetails.url.endsWith('.mpd') ? 'DASH' : 'HTTP';
 
-            const proxyStream = {
-                name: `${channel.name} [P](${streamType})`,
-                title: `${channel.name} [P](${streamType})`,
-                url: proxyUrl,
-                behaviorHints: {
-                    notWebReady: false,
-                    bingeGroup: "tv"
+                    return {
+                        name: `${streamDetails.name} [P](${streamType})`,
+                        title: `${streamDetails.name} [P](${streamType})`,
+                        url: proxyUrl,
+                        behaviorHints: {
+                            notWebReady: false,
+                            bingeGroup: "tv"
+                        }
+                    };
+                } catch (error) {
+                    console.error('Errore per stream:', streamDetails.name, error.message);
+                    return null;
                 }
-            };
+            });
 
-            this.proxyCache.set(cacheKey, proxyStream);
-            this.lastCheck.set(cacheKey, Date.now());
-            streams.push(proxyStream);
+            // Attendiamo tutte le promesse in parallelo
+            const results = await Promise.all(streamPromises);
+            
+            // Filtriamo i risultati nulli e restituiamo gli stream validi
+            const validStreams = results.filter(stream => stream !== null);
+
+            if (validStreams.length === 0) {
+                console.log('Nessuno stream proxy valido trovato per:', channel.name);
+            } else {
+                console.log(`Trovati ${validStreams.length} stream proxy validi per:`, channel.name);
+            }
+
+            return validStreams;
 
         } catch (error) {
-            console.error('Errore proxy per il canale:', channel.name, error.message);
-            console.error('URL richiesto:', channel.url);
-            console.error('Headers:', channel.headers);
+            console.error('Errore generale proxy per il canale:', channel.name, error.message);
+            if (error.response) {
+                console.error('Status:', error.response.status);
+                console.error('Headers:', error.response.headers);
+            }
+            return [];
         }
-
-        return streams;
     }
 }
 
