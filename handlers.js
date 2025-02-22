@@ -42,41 +42,35 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
             if (epgToUse) {
                 console.log('[Handlers] Inizializzazione EPG con URL:', epgToUse);
                 await EPGManager.initializeEPG(epgToUse);
-            } else {
-                console.log('[Handlers] EPG abilitato ma nessun URL disponibile');
             }
         }
 
         let { search, genre, skip = 0 } = extra || {};
-        
-        if (genre && genre.includes('&skip')) {
-            const parts = genre.split('&skip');
-            genre = parts[0];
-            if (parts[1] && parts[1].startsWith('=')) {
-                skip = parseInt(parts[1].substring(1)) || 0;
-            }
-        }
-        
-        const cachedData = CacheManager.getCachedData();
+        skip = parseInt(skip) || 0;
         const ITEMS_PER_PAGE = 100;
-
-        let channels = [];
+        
+        // Ottieni tutti i canali
+        const cachedData = CacheManager.getCachedData();
+        
+        // Applica i filtri PRIMA della paginazione
+        let filteredChannels = [];
         if (genre) {
-            channels = CacheManager.getChannelsByGenre(genre);
+            filteredChannels = CacheManager.getChannelsByGenre(genre);
         } else if (search) {
-            channels = CacheManager.searchChannels(search);
+            filteredChannels = CacheManager.searchChannels(search);
         } else {
-            channels = cachedData.channels;
+            filteredChannels = cachedData.channels;
         }
 
-        channels.sort((a, b) => {
+        // Ordina i canali filtrati
+        filteredChannels.sort((a, b) => {
             const numA = parseInt(a.streamInfo?.tvg?.chno) || Number.MAX_SAFE_INTEGER;
             const numB = parseInt(b.streamInfo?.tvg?.chno) || Number.MAX_SAFE_INTEGER;
             return numA - numB || a.name.localeCompare(b.name);
         });
 
-        const startIdx = parseInt(skip) || 0;
-        const paginatedChannels = channels.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+        // Applica la paginazione DOPO il filtraggio
+        const paginatedChannels = filteredChannels.slice(skip, skip + ITEMS_PER_PAGE);
 
         const metas = paginatedChannels.map(channel => {
             const displayName = cleanNameForImage(channel.name);
