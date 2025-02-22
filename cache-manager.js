@@ -55,9 +55,9 @@ class CacheManager extends EventEmitter {
 
     // Controlla ogni tot secondi se è necessario aggiornare
         this.pollingInterval = setInterval(async () => {
-        // Aggiungi questo controllo
-            if (!this.cache.m3uUrl) {
-                console.log('Nessun URL M3U configurato o caricato, skip aggiornamento...');
+        // Controlla se abbiamo una cache valida
+            if (!this.cache?.stremioData) {
+                console.log('Cache non ancora inizializzata, skip aggiornamento...');
                 return;
             }
 
