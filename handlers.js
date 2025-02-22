@@ -45,12 +45,6 @@ function cleanNameForImage(name) {
 
 async function catalogHandler({ type, id, extra, config: userConfig }) {
     try {
-        console.log('\n=== Nuova richiesta catalogo ===');
-        console.log('Type:', type);
-        console.log('ID:', id);
-        console.log('Extra:', JSON.stringify(extra, null, 2));
-        console.log('Skip value:', extra?.skip);
-        console.log('Search value:', extra?.search);
 
         if (!userConfig.m3u) {
             console.log('[Handlers] URL M3U mancante nella configurazione');
@@ -84,8 +78,6 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
             if (parts[1] && parts[1].startsWith('=')) {
                 skip = parseInt(parts[1].substring(1)) || 0;
             }
-            console.log('Genre dopo parsing:', genre);
-            console.log('Skip dopo parsing:', skip);
         }
 
         // Se riceviamo un nuovo filtro (search o genre), lo salviamo
@@ -107,13 +99,7 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
 
         // Log dello stato del filtro
         const currentFilter = CacheManager.getLastFilter();
-        if (currentFilter) {
-            console.log('\nFiltro attivo:', currentFilter.type);
-            console.log('Valore filtro:', currentFilter.value);
-        } else {
-            console.log('\nNessun filtro attivo');
-        }
-        console.log('Canali trovati:', filteredChannels.length);
+
 
         // Ordina i canali
         filteredChannels.sort((a, b) => {
@@ -122,14 +108,7 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
             return numA - numB || a.name.localeCompare(b.name);
         });
 
-        // Log paginazione
-        console.log('\nPaginazione:');
-        console.log('Indice iniziale:', skip);
-        console.log('Indice finale:', skip + ITEMS_PER_PAGE);
-        console.log('Totale canali filtrati:', filteredChannels.length);
-
         const paginatedChannels = filteredChannels.slice(skip, skip + ITEMS_PER_PAGE);
-        console.log('Canali in questa pagina:', paginatedChannels.length);
 
         const metas = paginatedChannels.map(channel => {
             const displayName = cleanNameForImage(channel.name);
@@ -170,8 +149,6 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
             return enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
         });
 
-        console.log('Metas generati:', metas.length);
-        console.log('=== Fine richiesta catalogo ===\n');
 
         return {
             metas,
