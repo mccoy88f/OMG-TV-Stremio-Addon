@@ -224,7 +224,6 @@ class CacheManager extends EventEmitter {
     }
 
     clearLastFilter() {
-        console.log('Reset filtro');
         this.lastFilter = null;
     }
 
