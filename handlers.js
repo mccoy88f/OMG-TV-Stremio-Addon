@@ -20,6 +20,14 @@ function cleanNameForImage(name) {
 
 async function catalogHandler({ type, id, extra, config: userConfig }) {
     try {
+        // Log iniziale della richiesta
+        console.log('\n=== Nuova richiesta catalogo ===');
+        console.log('Type:', type);
+        console.log('ID:', id);
+        console.log('Extra:', JSON.stringify(extra, null, 2));
+        console.log('Skip value:', extra?.skip);
+        console.log('Search value:', extra?.search);
+
         if (!userConfig.m3u) {
             console.log('[Handlers] URL M3U mancante nella configurazione');
             return { metas: [], genres: [] };
@@ -40,37 +48,62 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
                     : null);
                     
             if (epgToUse) {
-                console.log('[Handlers] Inizializzazione EPG con URL:', epgToUse);
                 await EPGManager.initializeEPG(epgToUse);
             }
         }
 
         let { search, genre, skip = 0 } = extra || {};
+        
+        // Log dei parametri dopo l'estrazione
+        console.log('\nParametri estratti:');
+        console.log('Search:', search);
+        console.log('Genre:', genre);
+        console.log('Skip:', skip);
+        
+        if (genre && genre.includes('&skip')) {
+            const parts = genre.split('&skip');
+            genre = parts[0];
+            if (parts[1] && parts[1].startsWith('=')) {
+                skip = parseInt(parts[1].substring(1)) || 0;
+            }
+            console.log('Genre dopo parsing:', genre);
+            console.log('Skip dopo parsing:', skip);
+        }
+
         skip = parseInt(skip) || 0;
         const ITEMS_PER_PAGE = 100;
         
-        // Ottieni tutti i canali
         const cachedData = CacheManager.getCachedData();
-        
-        // Applica i filtri PRIMA della paginazione
         let filteredChannels = [];
+        
         if (genre) {
             filteredChannels = CacheManager.getChannelsByGenre(genre);
+            console.log('\nFiltro per genere:', genre);
+            console.log('Canali trovati:', filteredChannels.length);
         } else if (search) {
             filteredChannels = CacheManager.searchChannels(search);
+            console.log('\nFiltro per ricerca:', search);
+            console.log('Canali trovati:', filteredChannels.length);
         } else {
             filteredChannels = cachedData.channels;
+            console.log('\nNessun filtro applicato');
+            console.log('Totale canali:', filteredChannels.length);
         }
 
-        // Ordina i canali filtrati
         filteredChannels.sort((a, b) => {
             const numA = parseInt(a.streamInfo?.tvg?.chno) || Number.MAX_SAFE_INTEGER;
             const numB = parseInt(b.streamInfo?.tvg?.chno) || Number.MAX_SAFE_INTEGER;
             return numA - numB || a.name.localeCompare(b.name);
         });
 
-        // Applica la paginazione DOPO il filtraggio
+        // Log paginazione
+        console.log('\nPaginazione:');
+        console.log('Indice iniziale:', skip);
+        console.log('Indice finale:', skip + ITEMS_PER_PAGE);
+        console.log('Totale canali filtrati:', filteredChannels.length);
+
         const paginatedChannels = filteredChannels.slice(skip, skip + ITEMS_PER_PAGE);
+        console.log('Canali in questa pagina:', paginatedChannels.length);
 
         const metas = paginatedChannels.map(channel => {
             const displayName = cleanNameForImage(channel.name);
@@ -111,6 +144,9 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
             return enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
         });
 
+        console.log('Metas generati:', metas.length);
+        console.log('=== Fine richiesta catalogo ===\n');
+
         return {
             metas,
             genres: cachedData.genres
@@ -121,6 +157,8 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
         return { metas: [], genres: [] };
     }
 }
+
+
 
 function enrichWithEPG(meta, channelId, userConfig) {
     if (!userConfig.epg_enabled || !channelId) {
