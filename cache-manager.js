@@ -61,8 +61,6 @@ class CacheManager extends EventEmitter {
                 return;
             }
 
-        this.pollingInterval = setInterval(async () => {
-
             if (this.isStale(this.config)) {
                 console.log('Controllo aggiornamento cache...');
                 try {
