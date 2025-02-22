@@ -8,6 +8,7 @@ class CacheManager extends EventEmitter {
         this.config = config;
         this.cache = null;
         this.pollingInterval = null;
+        this.lastFilter = null; // Aggiungiamo questa proprietà
         this.initCache();
         this.startPolling();
     }
@@ -19,6 +20,7 @@ class CacheManager extends EventEmitter {
             updateInProgress: false,
             m3uUrl: null
         };
+        this.lastFilter = null; // Reset anche qui
     }
 
     updateConfig(newConfig) {
@@ -28,20 +30,17 @@ class CacheManager extends EventEmitter {
         
         this.config = { ...this.config, ...newConfig };
         
-        // Controlla cambiamenti nell'intervallo
         if (oldInterval !== newConfig.update_interval) {
             console.log('Intervallo aggiornamento modificato, riavvio polling...');
             console.log('Nuovo intervallo:', newConfig.update_interval);
             this.startPolling();
         }
 
-        // Controlla cambiamenti nell'EPG
         if (oldEpgEnabled !== newConfig.epg_enabled || oldEpgUrl !== newConfig.epg) {
             console.log('Configurazione EPG modificata...');
             console.log('EPG abilitato:', newConfig.epg_enabled);
             console.log('Nuovo URL EPG:', newConfig.epg || 'usa EPG dalla playlist');
             
-            // Forza il ricaricamento della cache per aggiornare l'EPG
             if (this.cache.m3uUrl) {
                 this.rebuildCache(this.cache.m3uUrl, this.config);
             }
@@ -49,14 +48,11 @@ class CacheManager extends EventEmitter {
     }
 
     startPolling() {
-    // Pulisci eventuali polling precedenti
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
         }
 
-    // Controlla ogni 30 secondi se è necessario aggiornare
         this.pollingInterval = setInterval(async () => {
-        // Aggiungi questo controllo
             if (!this.cache.m3uUrl) {
                 console.log('Nessun URL M3U configurato, skip aggiornamento...');
                 return;
@@ -103,7 +99,6 @@ class CacheManager extends EventEmitter {
             console.log('\n=== Inizio Ricostruzione Cache ===');
             console.log('URL M3U:', m3uUrl);
 
-            // Aggiorniamo this.config con i valori forniti
             if (config) {
                 this.config = {...this.config, ...config};
             }
@@ -186,19 +181,15 @@ class CacheManager extends EventEmitter {
     isStale(config = {}) {
         if (!this.cache || !this.cache.lastUpdated || !this.cache.stremioData) return true;
 
-        // Imposta l'intervallo di aggiornamento predefinito a 12 ore
         let updateIntervalMs = 12 * 60 * 60 * 1000;
 
-        // Se è stato fornito un intervallo personalizzato
         if (config.update_interval) {
-            // Supporta formati con e senza zero iniziale
             const timeMatch = config.update_interval.match(/^(\d{1,2}):(\d{2})$/);
             
             if (timeMatch) {
                 const hours = parseInt(timeMatch[1], 10);
                 const minutes = parseInt(timeMatch[2], 10);
                 
-                // Validazione ore e minuti
                 if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
                     updateIntervalMs = (hours * 60 * 60 + minutes * 60) * 1000;
                 } else {
@@ -217,6 +208,38 @@ class CacheManager extends EventEmitter {
         }
 
         return needsUpdate;
+    }
+
+    // Nuovi metodi per la gestione dei filtri
+    setLastFilter(filterType, value) {
+        console.log('Imposto nuovo filtro:', filterType, value);
+        this.lastFilter = { type: filterType, value };
+    }
+
+    getLastFilter() {
+        return this.lastFilter;
+    }
+
+    clearLastFilter() {
+        console.log('Reset filtro');
+        this.lastFilter = null;
+    }
+
+    getFilteredChannels() {
+        if (!this.cache?.stremioData?.channels) return [];
+        
+        let channels = this.cache.stremioData.channels;
+        
+        if (this.lastFilter) {
+            console.log('Applico filtro:', this.lastFilter.type, this.lastFilter.value);
+            if (this.lastFilter.type === 'genre') {
+                channels = this.getChannelsByGenre(this.lastFilter.value);
+            } else if (this.lastFilter.type === 'search') {
+                channels = this.searchChannels(this.lastFilter.value);
+            }
+        }
+
+        return channels;
     }
 
     cleanup() {
