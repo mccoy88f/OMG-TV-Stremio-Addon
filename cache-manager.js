@@ -21,6 +21,18 @@ class CacheManager extends EventEmitter {
         };
     }
 
+    updateConfig(newConfig) {
+        const oldInterval = this.config?.update_interval;
+        this.config = { ...this.config, ...newConfig };
+        
+        // Se l'intervallo è cambiato, riavvia il polling
+        if (oldInterval !== newConfig.update_interval) {
+            console.log('Intervallo aggiornamento modificato, riavvio polling...');
+            console.log('Nuovo intervallo:', newConfig.update_interval);
+            this.startPolling();
+        }
+    }
+
     startPolling() {
         // Pulisci eventuali polling precedenti
         if (this.pollingInterval) {
@@ -199,7 +211,6 @@ class CacheManager extends EventEmitter {
         return needsUpdate;
     }
 
-    // Pulisce le risorse quando l'addon viene chiuso
     cleanup() {
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
