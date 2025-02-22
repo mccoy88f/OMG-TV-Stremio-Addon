@@ -150,10 +150,18 @@ class CacheManager extends EventEmitter {
             if (timeMatch) {
                 const hours = parseInt(timeMatch[1], 10);
                 const minutes = parseInt(timeMatch[2], 10);
-                
+
+                            // Debug: mostra i valori parsati
+                console.log('Debug - Intervallo configurato:', {
+                    input: config.update_interval,
+                    hours,
+                    minutes
+                });
+
                 // Validazione ore e minuti
                 if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
                     updateIntervalMs = (hours * 60 * 60 + minutes * 60) * 1000;
+                    console.log('Debug - Intervallo in ms:', updateIntervalMs);
                 } else {
                     console.warn('Formato ora non valido, uso valore predefinito');
                 }
@@ -162,8 +170,19 @@ class CacheManager extends EventEmitter {
             }
         }
 
-        return (Date.now() - this.cache.lastUpdated) >= updateIntervalMs;
-    }
+        const timeSinceLastUpdate = Date.now() - this.cache.lastUpdated;
+        console.log('Debug - Tempo dall\'ultimo aggiornamento:', {
+            ms: timeSinceLastUpdate,
+            seconds: Math.floor(timeSinceLastUpdate / 1000),
+            minutes: Math.floor(timeSinceLastUpdate / (60 * 1000))
+        });
+
+        const needsUpdate = timeSinceLastUpdate >= updateIntervalMs;
+        if (needsUpdate) {
+            console.log('Cache obsoleta, necessario aggiornamento');
+        }
+
+        return needsUpdate;    }
 }
 
 module.exports = (config) => new CacheManager(config);
