@@ -23,13 +23,28 @@ class CacheManager extends EventEmitter {
 
     updateConfig(newConfig) {
         const oldInterval = this.config?.update_interval;
+        const oldEpgEnabled = this.config?.epg_enabled;
+        const oldEpgUrl = this.config?.epg;
+        
         this.config = { ...this.config, ...newConfig };
         
-        // Se l'intervallo è cambiato, riavvia il polling
+        // Controlla cambiamenti nell'intervallo
         if (oldInterval !== newConfig.update_interval) {
             console.log('Intervallo aggiornamento modificato, riavvio polling...');
             console.log('Nuovo intervallo:', newConfig.update_interval);
             this.startPolling();
+        }
+
+        // Controlla cambiamenti nell'EPG
+        if (oldEpgEnabled !== newConfig.epg_enabled || oldEpgUrl !== newConfig.epg) {
+            console.log('Configurazione EPG modificata...');
+            console.log('EPG abilitato:', newConfig.epg_enabled);
+            console.log('Nuovo URL EPG:', newConfig.epg || 'usa EPG dalla playlist');
+            
+            // Forza il ricaricamento della cache per aggiornare l'EPG
+            if (this.cache.m3uUrl) {
+                this.rebuildCache(this.cache.m3uUrl, this.config);
+            }
         }
     }
 
