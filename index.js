@@ -308,9 +308,8 @@ async function startAddon() {
        app.listen(port, () => {
            console.log('=============================\n');
            console.log('OMG ADDON - Avviato con successo`);
-           console.log('Addon attivo su:', `http://localhost:${port}`);
-           console.log('URL Manifest:', `http://localhost:${port}/manifest.json`);
-           console.log('Visita la pagina web per generare la configurazione e installarla su stremio`);
+           console.log('Visita la pagina web per generare la configurazione del manifest e installarla su stremio`);
+           console.log('Link alla pagina di configurazione:', `http://localhost:${port}`);
            console.log('=============================\n');
        });
    } catch (error) {
