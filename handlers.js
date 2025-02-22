@@ -8,14 +8,39 @@ function normalizeId(id) {
 }
 
 function cleanNameForImage(name) {
-    const cleaned = name
-        .replace(/[^a-zA-Z0-9\s-]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+    // Prima rimuoviamo la data e l'ora se presente (pattern: dd/dd/dd - dd:dd (CET))
+    let cleaned = name.replace(/\d{2}\/\d{2}\/\d{2}\s*-\s*\d{2}:\d{2}\s*\(CET\)/g, '').trim();
     
-    return cleaned.length > 15 
-        ? cleaned.substring(0, 12) + '...' 
-        : cleaned.substring(0, 15);
+    // Rimuoviamo l'anno se inizia con esso
+    cleaned = cleaned.replace(/^20\d{2}\s+/, '');
+    
+    // Rimuoviamo caratteri speciali mantenendo spazi e trattini
+    cleaned = cleaned.replace(/[^a-zA-Z0-9\s-]/g, '');
+    
+    // Rimuoviamo spazi multipli
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    
+    // Prendiamo solo la parte principale del nome
+    let parts = cleaned.split(' - ');
+    if (parts.length > 1) {
+        cleaned = parts[0].trim();
+    }
+    
+    // Se ancora troppo lungo, tronchiamo preservando parole intere
+    if (cleaned.length > 30) {
+        let words = cleaned.split(' ');
+        let result = '';
+        for (let word of words) {
+            if ((result + ' ' + word).length <= 27) {
+                result += (result ? ' ' : '') + word;
+            } else {
+                break;
+            }
+        }
+        cleaned = result + '...';
+    }
+    
+    return cleaned || '...';
 }
 
 async function catalogHandler({ type, id, extra, config: userConfig }) {
