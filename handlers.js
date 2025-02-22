@@ -126,7 +126,6 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
             return enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
         });
 
-        console.log('Metas generati:', metas.length);
         console.log('=== Fine richiesta catalogo ===\n');
 
         return {
