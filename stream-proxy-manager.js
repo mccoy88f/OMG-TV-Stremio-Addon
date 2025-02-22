@@ -62,12 +62,9 @@ class StreamProxyManager {
             d: streamUrl,
         });
 
-        // Aggiunge User-Agent con prefisso h_
-        if (headers['User-Agent'] || headers['user-agent']) {
-            params.append('h_user-agent', headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent);
-        } else {
-            params.append('h_user-agent', config.defaultUserAgent);
-        }
+        // Assicuriamoci di avere uno user agent valido
+        const userAgent = headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent;
+        params.append('h_user-agent', userAgent);
 
         // Verifica tutte le varianti di referer/referrer e aggiunge con prefisso h_
         if (headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer']) {
@@ -99,16 +96,30 @@ class StreamProxyManager {
             return [];
         }
 
+        let streams = [];
+
         try {
+            // Verifichiamo che il canale abbia degli URL validi
+            if (!channel.streamInfo?.urls || !Array.isArray(channel.streamInfo.urls)) {
+                console.error('Struttura stream non valida per il canale:', channel.name);
+                return streams;
+            }
+
             // Creiamo array di promesse per elaborazione parallela
             const streamPromises = channel.streamInfo.urls.map(async stream => {
-                const streamDetails = {
-                    name: stream.name || channel.name,
-                    url: stream.url,
-                    headers: stream.headers || { 'User-Agent': config.defaultUserAgent }
-                };
-
                 try {
+                    // Assicuriamoci di avere degli headers validi con user agent
+                    const headers = stream.headers || {};
+                    if (!headers['User-Agent'] && !headers['user-agent']) {
+                        headers['User-Agent'] = config.defaultUserAgent;
+                    }
+
+                    const streamDetails = {
+                        name: stream.name || channel.name,
+                        url: stream.url,
+                        headers: headers
+                    };
+
                     const proxyUrl = await this.buildProxyUrl(
                         streamDetails.url, 
                         streamDetails.headers, 
@@ -140,7 +151,7 @@ class StreamProxyManager {
                         }
                     };
                 } catch (error) {
-                    console.error('Errore per stream:', streamDetails.name, error.message);
+                    console.error('Errore elaborazione stream:', streamDetails?.name, error.message);
                     return null;
                 }
             });
@@ -149,15 +160,13 @@ class StreamProxyManager {
             const results = await Promise.all(streamPromises);
             
             // Filtriamo i risultati nulli e restituiamo gli stream validi
-            const validStreams = results.filter(stream => stream !== null);
+            streams = results.filter(stream => stream !== null);
 
-            if (validStreams.length === 0) {
+            if (streams.length === 0) {
                 console.log('Nessuno stream proxy valido trovato per:', channel.name);
             } else {
-                console.log(`Trovati ${validStreams.length} stream proxy validi per:`, channel.name);
+                console.log(`Trovati ${streams.length} stream proxy validi per:`, channel.name);
             }
-
-            return validStreams;
 
         } catch (error) {
             console.error('Errore generale proxy per il canale:', channel.name, error.message);
@@ -165,8 +174,9 @@ class StreamProxyManager {
                 console.error('Status:', error.response.status);
                 console.error('Headers:', error.response.headers);
             }
-            return [];
         }
+
+        return streams;
     }
 }
 
