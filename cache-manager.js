@@ -49,13 +49,19 @@ class CacheManager extends EventEmitter {
     }
 
     startPolling() {
-        // Pulisci eventuali polling precedenti
+    // Pulisci eventuali polling precedenti
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
         }
 
-        // Controlla ogni 30 secondi se è necessario aggiornare
+    // Controlla ogni 30 secondi se è necessario aggiornare
         this.pollingInterval = setInterval(async () => {
+        // Aggiungi questo controllo
+            if (!this.cache.m3uUrl) {
+                console.log('Nessun URL M3U configurato, skip aggiornamento...');
+                return;
+            }
+
             if (this.isStale(this.config)) {
                 console.log('Controllo aggiornamento cache...');
                 try {
@@ -64,7 +70,7 @@ class CacheManager extends EventEmitter {
                     console.error('Errore durante l\'aggiornamento automatico:', error);
                 }
             }
-        }, 30000); // 30 secondi
+        }, 60000); // 60 secondi
     }
 
     normalizeId(id, removeSuffix = false) {
