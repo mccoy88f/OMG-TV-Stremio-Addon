@@ -113,10 +113,11 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
         const paginatedChannels = filteredChannels.slice(skip, skip + ITEMS_PER_PAGE);
 
         const metas = paginatedChannels.map(channel => {
+        const metas = paginatedChannels.map(channel => {
             const displayName = cleanNameForImage(channel.name);
-            const encodedName = encodeURIComponent(displayName);
+            const encodedName = encodeURIComponent(displayName).replace(/%20/g, '+');
             const fallbackLogo = `https://dummyimage.com/500x500/590b8a/ffffff.jpg&text=${encodedName}`;
-            
+    
             const meta = {
                 id: channel.id,
                 type: 'tv',
@@ -272,7 +273,7 @@ async function streamHandler({ id, config: userConfig }) {
         }
 
         const displayName = cleanNameForImage(channel.name);
-        const encodedName = encodeURIComponent(displayName);
+        const encodedName = encodeURIComponent(displayName).replace(/%20/g, '+');
         const fallbackLogo = `https://dummyimage.com/500x500/590b8a/ffffff.jpg&text=${encodedName}`;
 
         const meta = {
