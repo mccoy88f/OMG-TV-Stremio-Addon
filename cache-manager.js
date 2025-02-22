@@ -7,7 +7,9 @@ class CacheManager extends EventEmitter {
         this.transformer = new PlaylistTransformer();
         this.config = config;
         this.cache = null;
+        this.pollingInterval = null;
         this.initCache();
+        this.startPolling();
     }
 
     initCache() {
@@ -17,6 +19,25 @@ class CacheManager extends EventEmitter {
             updateInProgress: false,
             m3uUrl: null
         };
+    }
+
+    startPolling() {
+        // Pulisci eventuali polling precedenti
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+        }
+
+        // Controlla ogni 30 secondi se è necessario aggiornare
+        this.pollingInterval = setInterval(async () => {
+            if (this.isStale(this.config)) {
+                console.log('Controllo aggiornamento cache...');
+                try {
+                    await this.rebuildCache(this.cache.m3uUrl, this.config);
+                } catch (error) {
+                    console.error('Errore durante l\'aggiornamento automatico:', error);
+                }
+            }
+        }, 30000); // 30 secondi
     }
 
     normalizeId(id, removeSuffix = false) {
@@ -94,8 +115,6 @@ class CacheManager extends EventEmitter {
             const normalizedChannelId = this.normalizeId(ch.id.replace('tv|', ''));
             const normalizedTvgId = this.normalizeId(ch.streamInfo?.tvg?.id);
             
-
-            
             return normalizedChannelId === normalizedSearchId || 
                    normalizedTvgId === normalizedSearchId;
         });
@@ -131,11 +150,6 @@ class CacheManager extends EventEmitter {
         });
     }
 
-    // Manteniamo questo metodo duplicato per compatibilità
-    normalizeId(id) {
-        return id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
-    }
-
     isStale(config = {}) {
         if (!this.cache || !this.cache.lastUpdated || !this.cache.stremioData) return true;
 
@@ -150,14 +164,14 @@ class CacheManager extends EventEmitter {
             if (timeMatch) {
                 const hours = parseInt(timeMatch[1], 10);
                 const minutes = parseInt(timeMatch[2], 10);
-
-                            // Debug: mostra i valori parsati
+                
+                // Debug: mostra i valori parsati
                 console.log('Debug - Intervallo configurato:', {
                     input: config.update_interval,
                     hours,
                     minutes
                 });
-
+                
                 // Validazione ore e minuti
                 if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
                     updateIntervalMs = (hours * 60 * 60 + minutes * 60) * 1000;
@@ -182,7 +196,16 @@ class CacheManager extends EventEmitter {
             console.log('Cache obsoleta, necessario aggiornamento');
         }
 
-        return needsUpdate;    }
+        return needsUpdate;
+    }
+
+    // Pulisce le risorse quando l'addon viene chiuso
+    cleanup() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+        }
+    }
 }
 
 module.exports = (config) => new CacheManager(config);
