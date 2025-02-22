@@ -90,23 +90,21 @@ class StreamProxyManager {
         return proxyUrl;
     }
 
-    async getProxyStreams(channel, userConfig = {}) {
+    async getProxyStreams(input, userConfig = {}) {
         if (!userConfig.proxy || !userConfig.proxy_pwd) {
-            console.log('Proxy non configurato per:', channel.name);
+            console.log('Proxy non configurato per:', input.name);
             return [];
         }
 
         let streams = [];
 
         try {
-            // Verifichiamo che il canale abbia degli URL validi
-            if (!channel.streamInfo?.urls || !Array.isArray(channel.streamInfo.urls)) {
-                console.error('Struttura stream non valida per il canale:', channel.name);
-                return streams;
-            }
+            // Determiniamo se stiamo ricevendo un channel o uno streamDetails
+            const isChannel = input.streamInfo?.urls;
+            const streamsList = isChannel ? input.streamInfo.urls : [input];
 
             // Creiamo array di promesse per elaborazione parallela
-            const streamPromises = channel.streamInfo.urls.map(async stream => {
+            const streamPromises = streamsList.map(async stream => {
                 try {
                     // Assicuriamoci di avere degli headers validi con user agent
                     const headers = stream.headers || {};
@@ -115,7 +113,7 @@ class StreamProxyManager {
                     }
 
                     const streamDetails = {
-                        name: stream.name || channel.name,
+                        name: stream.name || input.name,
                         url: stream.url,
                         headers: headers
                     };
@@ -151,7 +149,7 @@ class StreamProxyManager {
                         }
                     };
                 } catch (error) {
-                    console.error('Errore elaborazione stream:', streamDetails?.name, error.message);
+                    console.error('Errore elaborazione stream:', error.message);
                     return null;
                 }
             });
@@ -163,13 +161,13 @@ class StreamProxyManager {
             streams = results.filter(stream => stream !== null);
 
             if (streams.length === 0) {
-                console.log('Nessuno stream proxy valido trovato per:', channel.name);
+                console.log('Nessuno stream proxy valido trovato per:', input.name);
             } else {
-                console.log(`Trovati ${streams.length} stream proxy validi per:`, channel.name);
+                console.log(`Trovati ${streams.length} stream proxy validi per:`, input.name);
             }
 
         } catch (error) {
-            console.error('Errore generale proxy per il canale:', channel.name, error.message);
+            console.error('Errore generale proxy:', error.message);
             if (error.response) {
                 console.error('Status:', error.response.status);
                 console.error('Headers:', error.response.headers);
