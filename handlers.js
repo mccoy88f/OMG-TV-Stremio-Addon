@@ -45,19 +45,15 @@ function cleanNameForImage(name) {
 
 async function catalogHandler({ type, id, extra, config: userConfig }) {
     try {
-
         if (!userConfig.m3u) {
             console.log('[Handlers] URL M3U mancante nella configurazione');
             return { metas: [], genres: [] };
         }
 
         // Aggiorna sempre la configurazione
-        CacheManager.updateConfig(userConfig);
+        await CacheManager.updateConfig(userConfig);
 
-        if (CacheManager.cache.m3uUrl !== userConfig.m3u) {
-            await CacheManager.rebuildCache(userConfig.m3u, userConfig);
-        }
-
+        // Se l'EPG è abilitato, inizializzalo
         if (userConfig.epg_enabled === 'true') {
             const epgToUse = userConfig.epg ||
                 (CacheManager.cache.epgUrls && 
@@ -96,10 +92,6 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
         // Otteniamo i canali già filtrati
         let filteredChannels = CacheManager.getFilteredChannels();
         const cachedData = CacheManager.getCachedData();
-
-        // Log dello stato del filtro
-        const currentFilter = CacheManager.getLastFilter();
-
 
         // Ordina i canali
         filteredChannels.sort((a, b) => {
@@ -148,7 +140,6 @@ async function catalogHandler({ type, id, extra, config: userConfig }) {
 
             return enrichWithEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
         });
-
 
         return {
             metas,
@@ -205,12 +196,7 @@ async function streamHandler({ id, config: userConfig }) {
         }
 
         // Aggiorna sempre la configurazione
-        CacheManager.updateConfig(userConfig);
-
-        if (CacheManager.cache.m3uUrl !== userConfig.m3u) {
-            console.log('Cache non aggiornata, ricostruzione...');
-            await CacheManager.rebuildCache(userConfig.m3u, userConfig);
-        }
+        await CacheManager.updateConfig(userConfig);
 
         const channelId = id.split('|')[1];
         const channel = CacheManager.getChannel(channelId);
