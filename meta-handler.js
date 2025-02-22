@@ -133,7 +133,6 @@ async function metaHandler({ type, id, config: userConfig }) {
         const enrichedMeta = enrichWithDetailedEPG(meta, channel.streamInfo?.tvg?.id, userConfig);
 
         console.log('✓ Meta handler completato');
-        console.log('=== Fine Meta Handler ===\n');
         return { meta: enrichedMeta };
     } catch (error) {
         console.error('[MetaHandler] Errore:', error.message);
