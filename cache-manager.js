@@ -53,10 +53,6 @@ class CacheManager extends EventEmitter {
         }
 
         this.pollingInterval = setInterval(async () => {
-            if (!this.cache.m3uUrl) {
-                console.log('Nessun URL M3U configurato, skip aggiornamento...');
-                return;
-            }
 
             if (this.isStale(this.config)) {
                 console.log('Controllo aggiornamento cache...');
