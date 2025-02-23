@@ -45,7 +45,7 @@ class StreamProxyManager {
             }
 
             const response = await axios.get(proxyUrl, {
-                timeout: 3000,
+                timeout: 10000,
                 validateStatus: status => status < 400,
                 headers: finalHeaders
             });
