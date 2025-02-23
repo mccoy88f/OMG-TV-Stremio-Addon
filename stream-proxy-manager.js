@@ -6,7 +6,7 @@ class StreamProxyManager {
     constructor() {
         this.proxyCache = new Map();
         this.lastCheck = new Map();
-        this.CACHE_DURATION = 5 * 60 * 1000; // 5 minuti
+        this.CACHE_DURATION = 1 * 60 * 1000; // 5 minuti
     }
 
     async validateProxyUrl(url) {
@@ -19,7 +19,7 @@ class StreamProxyManager {
         }
     }
 
-    async checkProxyHealth(proxyUrl) {
+    async checkProxyHealth(proxyUrl, headers = {}) {
         const cacheKey = proxyUrl;
         const now = Date.now();
         const lastCheckTime = this.lastCheck.get(cacheKey);
@@ -31,10 +31,13 @@ class StreamProxyManager {
 
         try {
             const response = await axios.get(proxyUrl, {
-                timeout: 7000, // Ridotto da 10s a 3s
+                timeout: 5000,
                 validateStatus: status => status < 400,
                 headers: {
-                    'User-Agent': config.defaultUserAgent
+                    ...headers,  // Include tutti gli headers originali
+                    'User-Agent': headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent,
+                    'Referer': headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer'],
+                    'Origin': headers['origin'] || headers['Origin']
                 }
             });
             
@@ -45,7 +48,8 @@ class StreamProxyManager {
         } catch (error) {
             console.error('Verifica dello stato di salute del proxy fallita:', {
                 messaggio: error.message,
-                codice: error.code
+                codice: error.code,
+                headers: headers
             });
             return false;
         }
@@ -130,7 +134,7 @@ class StreamProxyManager {
 
                     // Controllo salute del proxy solo se non c'è in cache
                     if (!this.proxyCache.has(proxyUrl)) {
-                        const isHealthy = await this.checkProxyHealth(proxyUrl);
+                        const isHealthy = await this.checkProxyHealth(proxyUrl, streamDetails.headers);
                         if (!isHealthy) {
                             return null;
                         }
