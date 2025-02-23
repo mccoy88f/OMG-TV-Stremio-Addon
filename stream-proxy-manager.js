@@ -31,7 +31,7 @@ class StreamProxyManager {
 
         try {
             const response = await axios.get(proxyUrl, {
-                timeout: 3000, // Ridotto da 10s a 3s
+                timeout: 7000, // Ridotto da 10s a 3s
                 validateStatus: status => status < 400,
                 headers: {
                     'User-Agent': config.defaultUserAgent
