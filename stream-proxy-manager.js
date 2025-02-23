@@ -3,11 +3,7 @@ const { URL } = require('url');
 const config = require('./config');
 
 class StreamProxyManager {
-    constructor() {
-        this.proxyCache = new Map();
-        this.lastCheck = new Map();
-        this.CACHE_DURATION = 5 * 60 * 1000; // 5 minuti
-    }
+    constructor() {}
 
     async validateProxyUrl(url) {
         if (!url) return false;
@@ -15,51 +11,6 @@ class StreamProxyManager {
             const parsed = new URL(url);
             return parsed.protocol === 'http:' || parsed.protocol === 'https:';
         } catch {
-            return false;
-        }
-    }
-
-    async checkProxyHealth(proxyUrl, headers = {}) {
-        const cacheKey = proxyUrl;
-        const now = Date.now();
-        const lastCheckTime = this.lastCheck.get(cacheKey);
-
-        // Se abbiamo un check recente, usiamo quello
-        if (lastCheckTime && (now - lastCheckTime) < this.CACHE_DURATION) {
-            return this.proxyCache.get(cacheKey);
-        }
-
-        try {
-            // Usa gli stessi headers del flusso
-            const finalHeaders = {
-                'User-Agent': headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent
-            };
-
-            if (headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer']) {
-                finalHeaders['Referer'] = headers['referer'] || headers['Referer'] || 
-                                        headers['referrer'] || headers['Referrer'];
-            }
-
-            if (headers['origin'] || headers['Origin']) {
-                finalHeaders['Origin'] = headers['origin'] || headers['Origin'];
-            }
-
-            const response = await axios.get(proxyUrl, {
-                timeout: 3000,
-                validateStatus: status => status < 400,
-                headers: finalHeaders
-            });
-            
-            const isHealthy = response.status < 400;
-            this.proxyCache.set(cacheKey, isHealthy);
-            this.lastCheck.set(cacheKey, now);
-            return isHealthy;
-        } catch (error) {
-            console.error('Verifica dello stato di salute del proxy fallita:', {
-                messaggio: error.message,
-                codice: error.code,
-                headers: headers
-            });
             return false;
         }
     }
@@ -141,14 +92,6 @@ class StreamProxyManager {
                         return null;
                     }
 
-                    // Controllo salute del proxy solo se non c'è in cache
-                    if (!this.proxyCache.has(proxyUrl)) {
-                        const isHealthy = await this.checkProxyHealth(proxyUrl, streamDetails.headers);
-                        if (!isHealthy) {
-                            return null;
-                        }
-                    }
-
                     let streamType = streamDetails.url.endsWith('.m3u8') ? 'HLS' : 
                                    streamDetails.url.endsWith('.mpd') ? 'DASH' : 'HTTP';
 
@@ -170,13 +113,13 @@ class StreamProxyManager {
             // Attendiamo tutte le promesse in parallelo
             const results = await Promise.all(streamPromises);
             
-            // Filtriamo i risultati nulli e restituiamo gli stream validi
+            // Filtriamo i risultati nulli
             streams = results.filter(stream => stream !== null);
 
             if (streams.length === 0) {
-                console.log('Nessuno stream proxy valido trovato per:', input.name);
+                console.log('Nessuno stream proxy trovato per:', input.name);
             } else {
-                console.log(`Trovati ${streams.length} stream proxy validi per:`, input.name);
+                console.log(`Trovati ${streams.length} stream proxy per:`, input.name);
             }
 
         } catch (error) {
