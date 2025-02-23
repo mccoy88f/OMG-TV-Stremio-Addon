@@ -6,7 +6,7 @@ class StreamProxyManager {
     constructor() {
         this.proxyCache = new Map();
         this.lastCheck = new Map();
-        this.CACHE_DURATION = 1 * 60 * 1000; // 5 minuti
+        this.CACHE_DURATION = 5 * 60 * 1000; // 5 minuti
     }
 
     async validateProxyUrl(url) {
@@ -30,15 +30,24 @@ class StreamProxyManager {
         }
 
         try {
+            // Usa gli stessi headers del flusso
+            const finalHeaders = {
+                'User-Agent': headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent
+            };
+
+            if (headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer']) {
+                finalHeaders['Referer'] = headers['referer'] || headers['Referer'] || 
+                                        headers['referrer'] || headers['Referrer'];
+            }
+
+            if (headers['origin'] || headers['Origin']) {
+                finalHeaders['Origin'] = headers['origin'] || headers['Origin'];
+            }
+
             const response = await axios.get(proxyUrl, {
-                timeout: 5000,
+                timeout: 3000,
                 validateStatus: status => status < 400,
-                headers: {
-                    ...headers,  // Include tutti gli headers originali
-                    'User-Agent': headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent,
-                    'Referer': headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer'],
-                    'Origin': headers['origin'] || headers['Origin']
-                }
+                headers: finalHeaders
             });
             
             const isHealthy = response.status < 400;
