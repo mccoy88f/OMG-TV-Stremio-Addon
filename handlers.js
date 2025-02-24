@@ -213,6 +213,7 @@ async function streamHandler({ id, config: userConfig }) {
                 for (const stream of channel.streamInfo.urls) {
                     const streamDetails = {
                         name: channel.name,
+                        originalName: stream.name,
                         url: stream.url,
                         headers: stream.headers || { 'User-Agent': config.defaultUserAgent }
                     };
