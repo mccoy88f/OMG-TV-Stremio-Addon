@@ -14,11 +14,14 @@ services:
       - .:/app # Monta la directory corrente nel container (opzionale, se vuoi lavorare con file locali)
     command: >
       sh -c "
-        apt-get update && apt-get install -y git &&
+        apt-get update && apt-get install -y git python3 python3-pip &&
+        pip3 install requests &&
         rm -rf /tmp/repo &&
         git clone --branch main https://github.com/mccoy88f/OMG-TV-Stremio-Addon.git /tmp/repo &&
         cp -r /tmp/repo/* /app/ &&
-        mkdir -p /app/data && chown -R node:node /app/data &&
+        mkdir -p /app/data /app/temp && 
+        chmod 777 /app/temp &&
+        chown -R node:node /app/data &&
         cd /app &&
         npm install &&
         node index.js
