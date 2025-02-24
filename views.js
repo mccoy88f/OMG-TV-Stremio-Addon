@@ -256,6 +256,42 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                        <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreConfig(event)">
                        <button onclick="document.getElementById('restoreFile').click()">RIPRISTINA CONFIGURAZIONE</button>
                    </div>
+               </div>
+               
+               <div class="config-form" style="margin-top: 30px;">
+                    <h2>Genera Playlist con Script Python</h2>
+                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                        <p><strong>Questa funzione permette di:</strong></p>
+                        <ul style="text-align: left;">
+                            <li>Scaricare uno script Python da un URL</li>
+                            <li>Eseguirlo dentro il container Docker</li>
+                            <li>Utilizzare il file M3U generato come sorgente</li>
+                        </ul>
+                        <p><strong>Nota:</strong> L'URL deve puntare a uno script Python che genera un file M3U.</p>
+                    </div>
+                    
+                    <div id="pythonForm">
+                        <label>URL dello Script Python:</label>
+                        <input type="url" id="pythonScriptUrl" placeholder="https://example.com/script.py">
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button onclick="downloadPythonScript()" style="flex: 1;">SCARICA SCRIPT</button>
+                            <button onclick="executePythonScript()" style="flex: 1;">ESEGUI SCRIPT</button>
+                            <button onclick="checkPythonStatus()" style="flex: 1;">CONTROLLA STATO</button>
+                        </div>
+                        
+                        <div id="pythonStatus" style="margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px; display: none;">
+                            <h3>Stato Script Python</h3>
+                            <div id="pythonStatusContent"></div>
+                        </div>
+                        
+                        <div id="generatedM3uUrl" style="margin-top: 15px; background: rgba(0,255,0,0.1); padding: 10px; border-radius: 4px; display: none;">
+                            <h3>URL Playlist Generata</h3>
+                            <div id="m3uUrlContent"></div>
+                            <button onclick="useGeneratedM3u()" style="width: 100%; margin-top: 10px;">USA QUESTA PLAYLIST</button>
+                        </div>
+                    </div>
+                </div>
 
                    <div style="margin-top: 30px; text-align: center; font-size: 14px; color: #ccc;">
                        <p>Addon creato con passione da McCoy88f - <a href="https://github.com/mccoy88f/OMG-TV-Stremio-Addon" target="_blank">GitHub Repository</a></p>
@@ -280,7 +316,6 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                            </ul>
                        </div>
                    </div>
-               </div>
                
                <div id="confirmModal">
                    <div>
@@ -362,51 +397,169 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                    }
 
                    function backupConfig() {
-                           const queryString = getConfigQueryString();
-                           const params = Object.fromEntries(new URLSearchParams(queryString));
-                           
-                           params.epg_enabled = params.epg_enabled === 'true';
-                           params.force_proxy = params.force_proxy === 'true';
+                       const queryString = getConfigQueryString();
+                       const params = Object.fromEntries(new URLSearchParams(queryString));
+                       
+                       params.epg_enabled = params.epg_enabled === 'true';
+                       params.force_proxy = params.force_proxy === 'true';
 
-                           const configBlob = new Blob([JSON.stringify(params, null, 2)], {type: 'application/json'});
-                           const url = URL.createObjectURL(configBlob);
-                           const a = document.createElement('a');
-                           a.href = url;
-                           a.download = 'omg_tv_config.json';
-                           a.click();
-                           URL.revokeObjectURL(url);
-                       }
+                       const configBlob = new Blob([JSON.stringify(params, null, 2)], {type: 'application/json'});
+                       const url = URL.createObjectURL(configBlob);
+                       const a = document.createElement('a');
+                       a.href = url;
+                       a.download = 'omg_tv_config.json';
+                       a.click();
+                       URL.revokeObjectURL(url);
+                   }
 
-                       function restoreConfig(event) {
-                           const file = event.target.files[0];
-                           if (!file) return;
+                   function restoreConfig(event) {
+                       const file = event.target.files[0];
+                       if (!file) return;
 
-                           const reader = new FileReader();
-                           reader.onload = function(e) {
-                               try {
-                                   const config = JSON.parse(e.target.result);
-                                   
-                                   const form = document.getElementById('configForm');
-                                   for (const [key, value] of Object.entries(config)) {
-                                       const input = form.elements[key];
-                                       if (input) {
-                                           if (input.type === 'checkbox') {
-                                               input.checked = value;
-                                           } else {
-                                               input.value = value;
-                                           }
+                       const reader = new FileReader();
+                       reader.onload = function(e) {
+                           try {
+                               const config = JSON.parse(e.target.result);
+                               
+                               const form = document.getElementById('configForm');
+                               for (const [key, value] of Object.entries(config)) {
+                                   const input = form.elements[key];
+                                   if (input) {
+                                       if (input.type === 'checkbox') {
+                                           input.checked = value;
+                                       } else {
+                                           input.value = value;
                                        }
                                    }
-
-                                   const configQueryString = getConfigQueryString();
-                                   const configBase64 = btoa(configQueryString);
-                                   window.location.href = \`${protocol}://${host}/\${configBase64}/configure\`;
-                               } catch (error) {
-                                   alert('Errore nel caricamento del file di configurazione');
                                }
-                           };
-                           reader.readAsText(file);
+
+                               const configQueryString = getConfigQueryString();
+                               const configBase64 = btoa(configQueryString);
+                               window.location.href = \`${protocol}://${host}/\${configBase64}/configure\`;
+                           } catch (error) {
+                               alert('Errore nel caricamento del file di configurazione');
+                           }
+                       };
+                       reader.readAsText(file);
+                   }
+                   
+                   // Funzioni per la gestione dello script Python
+                   function showPythonStatus(data) {
+                       const statusEl = document.getElementById('pythonStatus');
+                       const contentEl = document.getElementById('pythonStatusContent');
+                       
+                       statusEl.style.display = 'block';
+                       
+                       let html = '<table style="width: 100%; text-align: left;">';
+                       html += '<tr><td><strong>In Esecuzione:</strong></td><td>' + (data.isRunning ? 'Sì' : 'No') + '</td></tr>';
+                       html += '<tr><td><strong>Ultima Esecuzione:</strong></td><td>' + data.lastExecution + '</td></tr>';
+                       html += '<tr><td><strong>Script Esistente:</strong></td><td>' + (data.scriptExists ? 'Sì' : 'No') + '</td></tr>';
+                       html += '<tr><td><strong>File M3U Esistente:</strong></td><td>' + (data.m3uExists ? 'Sì' : 'No') + '</td></tr>';
+                       if (data.scriptUrl) {
+                           html += '<tr><td><strong>URL Script:</strong></td><td>' + data.scriptUrl + '</td></tr>';
                        }
+                       if (data.lastError) {
+                           html += '<tr><td><strong>Ultimo Errore:</strong></td><td style="color: #ff6666;">' + data.lastError + '</td></tr>';
+                       }
+                       html += '</table>';
+                       
+                       contentEl.innerHTML = html;
+                   }
+
+                   function showM3uUrl(url) {
+                       const urlEl = document.getElementById('generatedM3uUrl');
+                       const contentEl = document.getElementById('m3uUrlContent');
+                       
+                       urlEl.style.display = 'block';
+                       contentEl.innerHTML = '<code style="word-break: break-all;">' + url + '</code>';
+                   }
+
+                   async function downloadPythonScript() {
+                       const url = document.getElementById('pythonScriptUrl').value;
+                       if (!url) {
+                           alert('Inserisci un URL valido per lo script Python');
+                           return;
+                       }
+                       
+                       try {
+                           const response = await fetch('/api/python-script', {
+                               method: 'POST',
+                               headers: {
+                                   'Content-Type': 'application/json'
+                               },
+                               body: JSON.stringify({
+                                   action: 'download',
+                                   url: url
+                               })
+                           });
+                           
+                           const data = await response.json();
+                           if (data.success) {
+                               alert('Script scaricato con successo!');
+                           } else {
+                               alert('Errore: ' + data.message);
+                           }
+                           
+                           checkPythonStatus();
+                       } catch (error) {
+                           alert('Errore nella richiesta: ' + error.message);
+                       }
+                   }
+
+                   async function executePythonScript() {
+                       try {
+                           const response = await fetch('/api/python-script', {
+                               method: 'POST',
+                               headers: {
+                                   'Content-Type': 'application/json'
+                               },
+                               body: JSON.stringify({
+                                   action: 'execute'
+                               })
+                           });
+                           
+                           const data = await response.json();
+                           if (data.success) {
+                               alert('Script eseguito con successo!');
+                               showM3uUrl(data.m3uUrl);
+                           } else {
+                               alert('Errore: ' + data.message);
+                           }
+                           
+                           checkPythonStatus();
+                       } catch (error) {
+                           alert('Errore nella richiesta: ' + error.message);
+                       }
+                   }
+
+                   async function checkPythonStatus() {
+                       try {
+                           const response = await fetch('/api/python-script', {
+                               method: 'POST',
+                               headers: {
+                                   'Content-Type': 'application/json'
+                               },
+                               body: JSON.stringify({
+                                   action: 'status'
+                               })
+                           });
+                           
+                           const data = await response.json();
+                           showPythonStatus(data);
+                           
+                           if (data.m3uExists) {
+                               showM3uUrl(window.location.origin + '/generated-m3u');
+                           }
+                       } catch (error) {
+                           alert('Errore nella richiesta: ' + error.message);
+                       }
+                   }
+
+                   function useGeneratedM3u() {
+                       const m3uUrl = window.location.origin + '/generated-m3u';
+                       document.querySelector('input[name="m3u"]').value = m3uUrl;
+                       alert('URL della playlist generata impostato nel campo M3U URL!');
+                   }
                </script>
            </div>
        </body>
