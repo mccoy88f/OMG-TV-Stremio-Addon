@@ -8,6 +8,7 @@ const EPGManager = require('./epg-manager');
 const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const { renderConfigPage } = require('./views');
+const PythonRunner = require('./python-runner');
 
 const app = express();
 app.use(cors());
@@ -299,6 +300,51 @@ app.get('/:config/meta/:type/:id.json', async (req, res) => {
     } catch (error) {
         console.error('Error handling meta request:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Route per servire il file M3U generato
+app.get('/generated-m3u', (req, res) => {
+    const m3uContent = PythonRunner.getM3UContent();
+    if (m3uContent) {
+        res.setHeader('Content-Type', 'text/plain');
+        res.send(m3uContent);
+    } else {
+        res.status(404).send('File M3U non trovato. Eseguire prima lo script Python.');
+    }
+});
+
+// Endpoint API per le operazioni sullo script Python
+app.post('/api/python-script', async (req, res) => {
+    const { action, url } = req.body;
+    
+    try {
+        if (action === 'download' && url) {
+            const success = await PythonRunner.downloadScript(url);
+            if (success) {
+                res.json({ success: true, message: 'Script scaricato con successo' });
+            } else {
+                res.status(500).json({ success: false, message: PythonRunner.getStatus().lastError });
+            }
+        } else if (action === 'execute') {
+            const success = await PythonRunner.executeScript();
+            if (success) {
+                res.json({ 
+                    success: true, 
+                    message: 'Script eseguito con successo', 
+                    m3uUrl: `${req.protocol}://${req.get('host')}/generated-m3u` 
+                });
+            } else {
+                res.status(500).json({ success: false, message: PythonRunner.getStatus().lastError });
+            }
+        } else if (action === 'status') {
+            res.json(PythonRunner.getStatus());
+        } else {
+            res.status(400).json({ success: false, message: 'Azione non valida' });
+        }
+    } catch (error) {
+        console.error('Errore API Python:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 
