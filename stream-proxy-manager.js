@@ -212,7 +212,7 @@ class StreamProxyManager {
                                    streamDetails.url.endsWith('.mpd') ? 'DASH' : 'HTTP';
 
                     return {
-                        name: `${streamDetails.name} [P](${streamType})`,
+                        name: `${streamDetails.name}`,
                         title: `${streamDetails.name} [P](${streamType})`,
                         url: proxyUrl,
                         behaviorHints: {
