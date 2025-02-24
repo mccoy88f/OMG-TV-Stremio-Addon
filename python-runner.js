@@ -258,6 +258,140 @@ class PythonRunner {
      * Legge il contenuto del file M3U generato
      * @returns {string|null} - Il contenuto del file M3U o null se non esiste
      */
+// Aggiungi questa funzione al file python-runner.js, subito prima di getM3UContent()
+
+/**
+ * Aggiunge il canale speciale per la rigenerazione della playlist alla fine del file M3U
+ * @returns {boolean} - true se l'operazione è avvenuta con successo
+ */
+    addRegenerateChannel() {
+        try {
+            if (!fs.existsSync(this.m3uOutputPath)) {
+                console.error('❌ File M3U non trovato, impossibile aggiungere canale di rigenerazione');
+                return false;
+            }
+    
+            console.log('Aggiunta canale di rigenerazione al file M3U...');
+            
+            // Leggi il contenuto attuale del file
+            const currentContent = fs.readFileSync(this.m3uOutputPath, 'utf8');
+            
+            // Prepara l'entry del canale speciale
+            const specialChannel = `
+    #EXTINF:-1 tvg-id="rigeneraplaylistpython" tvg-name="Rigenera Playlist Python" tvg-logo="https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/tv.png" group-title="MANUTENZIONE",Rigenera Playlist Python
+    `;
+            
+            // Verifica se il canale già esiste nel file
+            if (currentContent.includes('tvg-id="rigeneraplaylistpython"')) {
+                console.log('Il canale di rigenerazione è già presente nel file M3U');
+                return true;
+            }
+            
+            // Aggiungi il canale speciale alla fine del file
+            fs.appendFileSync(this.m3uOutputPath, specialChannel);
+            console.log('✓ Canale di rigenerazione aggiunto con successo al file M3U');
+            
+            return true;
+        } catch (error) {
+            console.error('❌ Errore nell\'aggiunta del canale di rigenerazione:', error.message);
+            return false;
+        }
+    }
+    
+    // Modifica la funzione executeScript per chiamare addRegenerateChannel
+    async executeScript() {
+        if (this.isRunning) {
+            console.log('⚠️ Un\'esecuzione è già in corso, attendere...');
+            return false;
+        }
+    
+        if (!fs.existsSync(this.scriptPath)) {
+            console.error('❌ Script Python non trovato. Eseguire prima downloadScript()');
+            this.lastError = 'Script Python non trovato';
+            return false;
+        }
+    
+        try {
+            this.isRunning = true;
+            console.log('\n=== Esecuzione script Python ===');
+            
+            // Elimina eventuali file M3U esistenti prima dell'esecuzione
+            this.cleanupM3UFiles();
+            
+            // Controlla se Python è installato
+            await execAsync('python3 --version').catch(() => 
+                execAsync('python --version')
+            );
+            
+            // Esegui lo script Python
+            const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+            const { stdout, stderr } = await execAsync(`${pythonCmd} ${this.scriptPath}`);
+            
+            if (stderr) {
+                console.warn('⚠️ Warning durante l\'esecuzione:', stderr);
+            }
+            
+            console.log('Output script:', stdout);
+            
+            // Cerca qualsiasi file M3U/M3U8 generato e rinominalo
+            const foundFiles = this.findAllM3UFiles();
+            
+            if (foundFiles.length > 0) {
+                console.log(`✓ Trovati ${foundFiles.length} file M3U/M3U8`);
+                
+                // Prendi il primo file trovato e rinominalo
+                const sourcePath = foundFiles[0];
+                
+                // Se il file destinazione esiste già, eliminalo
+                if (fs.existsSync(this.m3uOutputPath)) {
+                    fs.unlinkSync(this.m3uOutputPath);
+                }
+                
+                // Rinomina o copia il file
+                if (sourcePath !== this.m3uOutputPath) {
+                    fs.copyFileSync(sourcePath, this.m3uOutputPath);
+                    console.log(`✓ File rinominato/copiato da "${sourcePath}" a "${this.m3uOutputPath}"`);
+                    
+                    // Opzionale: elimina il file originale dopo la copia
+                    // fs.unlinkSync(sourcePath);
+                }
+                
+                // Aggiungi il canale di rigenerazione
+                this.addRegenerateChannel();
+                
+                this.lastExecution = new Date();
+                this.lastError = null;
+                this.isRunning = false;
+                return true;
+            } else {
+                // Prova a cercare percorsi nel testo dell'output
+                const possiblePath = this.findM3UPathFromOutput(stdout);
+                if (possiblePath && fs.existsSync(possiblePath)) {
+                    fs.copyFileSync(possiblePath, this.m3uOutputPath);
+                    console.log(`✓ File M3U trovato in ${possiblePath} e copiato in ${this.m3uOutputPath}`);
+                    
+                    // Aggiungi il canale di rigenerazione
+                    this.addRegenerateChannel();
+                    
+                    this.lastExecution = new Date();
+                    this.lastError = null;
+                    this.isRunning = false;
+                    return true;
+                }
+                
+                console.error('❌ Nessun file M3U trovato dopo l\'esecuzione dello script');
+                this.lastError = 'File M3U non generato dallo script';
+                this.isRunning = false;
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Errore durante l\'esecuzione dello script Python:', error.message);
+            this.lastError = `Errore esecuzione: ${error.message}`;
+            this.isRunning = false;
+            return false;
+        }
+    }
+    
     getM3UContent() {
         try {
             if (fs.existsSync(this.m3uOutputPath)) {
