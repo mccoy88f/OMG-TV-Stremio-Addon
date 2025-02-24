@@ -259,51 +259,58 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                </div>
                
                <div class="config-form" style="margin-top: 30px;">
-                    <h2>Genera Playlist con Script Python</h2>
-                    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-                        <p><strong>Questa funzione permette di:</strong></p>
-                        <ul style="text-align: left;">
-                            <li>Scaricare uno script Python da un URL</li>
-                            <li>Eseguirlo dentro il container Docker</li>
-                            <li>Utilizzare il file M3U generato come sorgente</li>
-                        </ul>
-                        <p><strong>Nota:</strong> L'URL deve puntare a uno script Python che genera un file M3U.</p>
-                    </div>
-                    
-                    <div id="pythonForm">
-                        <label>URL dello Script Python:</label>
-                        <input type="url" id="pythonScriptUrl" placeholder="https://example.com/script.py">
-                        
-                        <div style="display: flex; gap: 10px; margin-top: 15px;">
-                            <button onclick="downloadPythonScript()" style="flex: 1;">SCARICA SCRIPT</button>
-                            <button onclick="executePythonScript()" style="flex: 1;">ESEGUI SCRIPT</button>
-                            <button onclick="checkPythonStatus()" style="flex: 1;">CONTROLLA STATO</button>
-                        </div>
-                        
-                        <div style="margin-top: 15px;">
-                            <h4>Aggiornamento Automatico</h4>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="text" id="updateInterval" placeholder="HH:MM (es. 12:00)" style="flex: 2;">
-                                <button onclick="scheduleUpdates()" style="flex: 1;">PIANIFICA</button>
-                                <button onclick="stopScheduledUpdates()" style="flex: 1;">FERMA</button>
-                            </div>
-                            <small style="color: #999; display: block; margin-top: 5px;">
-                                Formato: HH:MM (es. 12:00 per 12 ore, 1:00 per 1 ora, 0:30 per 30 minuti)
-                            </small>
-                        </div>
-                        
-                        <div id="pythonStatus" style="margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px; display: none;">
-                            <h3>Stato Script Python</h3>
-                            <div id="pythonStatusContent"></div>
-                        </div>
-                        
-                        <div id="generatedM3uUrl" style="margin-top: 15px; background: rgba(0,255,0,0.1); padding: 10px; border-radius: 4px; display: none;">
-                            <h3>URL Playlist Generata</h3>
-                            <div id="m3uUrlContent"></div>
-                            <button onclick="useGeneratedM3u()" style="width: 100%; margin-top: 10px;">USA QUESTA PLAYLIST</button>
-                        </div>
-                    </div>
-                </div>
+                   <div class="advanced-settings">
+                       <div class="advanced-settings-header" onclick="togglePythonSection()">
+                           <strong>Genera Playlist con Script Python</strong>
+                           <span id="python-section-toggle">▼</span>
+                       </div>
+                       <div class="advanced-settings-content" id="python-section-content">
+                           <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 4px; margin-bottom: 20px; margin-top: 15px;">
+                               <p><strong>Questa funzione permette di:</strong></p>
+                               <ul style="text-align: left;">
+                                   <li>Scaricare uno script Python da un URL</li>
+                                   <li>Eseguirlo dentro il container Docker</li>
+                                   <li>Utilizzare il file M3U generato come sorgente</li>
+                               </ul>
+                               <p><strong>Nota:</strong> L'URL deve puntare a uno script Python che genera un file M3U.</p>
+                           </div>
+            
+                           <div id="pythonForm">
+                               <label>URL dello Script Python:</label>
+                               <input type="url" id="pythonScriptUrl" placeholder="https://example.com/script.py">
+                
+                               <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                   <button onclick="downloadPythonScript()" style="flex: 1;">SCARICA SCRIPT</button>
+                                   <button onclick="executePythonScript()" style="flex: 1;">ESEGUI SCRIPT</button>
+                                   <button onclick="checkPythonStatus()" style="flex: 1;">CONTROLLA STATO</button>
+                               </div>
+                
+                               <div style="margin-top: 15px;">
+                                   <h4>Aggiornamento Automatico</h4>
+                                   <div style="display: flex; gap: 10px; align-items: center;">
+                                       <input type="text" id="updateInterval" placeholder="HH:MM (es. 12:00)" style="flex: 2;">
+                                       <button onclick="scheduleUpdates()" style="flex: 1;">PIANIFICA</button>
+                                       <button onclick="stopScheduledUpdates()" style="flex: 1;">FERMA</button>
+                                   </div>
+                                   <small style="color: #999; display: block; margin-top: 5px;">
+                                       Formato: HH:MM (es. 12:00 per 12 ore, 1:00 per 1 ora, 0:30 per 30 minuti)
+                                   </small>
+                               </div>
+                
+                               <div id="pythonStatus" style="margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px; display: none;">
+                                   <h3>Stato Script Python</h3>
+                                   <div id="pythonStatusContent"></div>
+                               </div>
+                
+                               <div id="generatedM3uUrl" style="margin-top: 15px; background: rgba(0,255,0,0.1); padding: 10px; border-radius: 4px; display: none;">
+                                   <h3>URL Playlist Generata</h3>
+                                   <div id="m3uUrlContent"></div>
+                                   <button onclick="useGeneratedM3u()" style="width: 100%; margin-top: 10px;">USA QUESTA PLAYLIST</button>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+               </div>
 
                    <div style="margin-top: 30px; text-align: center; font-size: 14px; color: #ccc;">
                        <p>Addon creato con passione da McCoy88f - <a href="https://github.com/mccoy88f/OMG-TV-Stremio-Addon" target="_blank">GitHub Repository</a></p>
@@ -346,6 +353,12 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                    function toggleAdvancedSettings() {
                        const content = document.getElementById('advanced-settings-content');
                        const toggle = document.getElementById('advanced-settings-toggle');
+                       content.classList.toggle('show');
+                       toggle.textContent = content.classList.contains('show') ? '▲' : '▼';
+                   }
+                   function togglePythonSection() {
+                       const content = document.getElementById('python-section-content');
+                       const toggle = document.getElementById('python-section-toggle');
                        content.classList.toggle('show');
                        toggle.textContent = content.classList.contains('show') ? '▲' : '▼';
                    }
