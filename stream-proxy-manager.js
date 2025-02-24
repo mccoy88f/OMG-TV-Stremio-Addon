@@ -213,7 +213,7 @@ class StreamProxyManager {
 
                     return {
                         name: `${streamDetails.name}`,
-                        title: `🔄 ${streamDetails.originalName}\n[Proxy ${streamType}]`,
+                        title: `🔄 ${input.originalName}\n[Proxy ${streamType}]`,
                         url: proxyUrl,
                         behaviorHints: {
                             notWebReady: false,
