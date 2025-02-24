@@ -199,6 +199,68 @@ async function streamHandler({ id, config: userConfig }) {
         await CacheManager.updateConfig(userConfig);
 
         const channelId = id.split('|')[1];
+        
+        // Gestione canale speciale per la rigenerazione playlist
+        if (channelId === 'rigeneraplaylistpython') {
+            console.log('\n=== Richiesta rigenerazione playlist Python ===');
+            
+            // Verifica se stiamo usando un file m3u generato dallo script python
+            const isUsingGeneratedM3u = userConfig.m3u && userConfig.m3u.includes('/generated-m3u');
+            
+            if (!isUsingGeneratedM3u) {
+                console.log('❌ Non è in uso una playlist generata da script Python');
+                return { 
+                    streams: [{
+                        name: 'Errore',
+                        title: '❌ Errore: Non è in uso una playlist generata da script Python',
+                        url: 'https://static.vecteezy.com/system/resources/previews/001/803/236/mp4/no-signal-bad-tv-free-video.mp4',
+                        behaviorHints: {
+                            notWebReady: false,
+                            bingeGroup: "tv"
+                        }
+                    }]
+                };
+            }
+            
+            // Esegui lo script Python
+            const PythonRunner = require('./python-runner');
+            const result = await PythonRunner.executeScript();
+            
+            if (result) {
+                console.log('✓ Script Python eseguito con successo');
+                
+                // Ricostruisci la cache
+                console.log('Ricostruzione cache con il nuovo file generato...');
+                await CacheManager.rebuildCache(userConfig.m3u, userConfig);
+                
+                return { 
+                    streams: [{
+                        name: 'Completato',
+                        title: '✅ Playlist rigenerata con successo! Riavvia l\'addon o torna indietro.',
+                        url: 'https://static.vecteezy.com/system/resources/previews/001/803/236/mp4/no-signal-bad-tv-free-video.mp4',
+                        behaviorHints: {
+                            notWebReady: false,
+                            bingeGroup: "tv"
+                        }
+                    }]
+                };
+            } else {
+                console.log('❌ Errore nell\'esecuzione dello script Python');
+                return { 
+                    streams: [{
+                        name: 'Errore',
+                        title: `❌ Errore: ${PythonRunner.lastError || 'Errore sconosciuto'}`,
+                        url: 'https://static.vecteezy.com/system/resources/previews/001/803/236/mp4/no-signal-bad-tv-free-video.mp4',
+                        behaviorHints: {
+                            notWebReady: false,
+                            bingeGroup: "tv"
+                        }
+                    }]
+                };
+            }
+        }
+        
+        // Continua con il normale flusso per gli altri canali
         const channel = CacheManager.getChannel(channelId);
 
         if (!channel) {
