@@ -4,6 +4,7 @@ const path = require('path');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
+const cron = require('node-cron');
 
 class PythonRunner {
     constructor() {
@@ -13,6 +14,8 @@ class PythonRunner {
         this.lastError = null;
         this.isRunning = false;
         this.scriptUrl = null;
+        this.cronJob = null;
+        this.updateInterval = null;
         
         // Crea la directory temp se non esiste
         if (!fs.existsSync(path.join(__dirname, 'temp'))) {
@@ -133,6 +136,77 @@ class PythonRunner {
     }
 
     /**
+     * Imposta un aggiornamento automatico dello script con la pianificazione specificata
+     * @param {string} timeFormat - Formato orario "HH:MM" o "H:MM"
+     * @returns {boolean} - true se la pianificazione è stata impostata con successo
+     */
+    scheduleUpdate(timeFormat) {
+        // Ferma eventuali pianificazioni esistenti
+        this.stopScheduledUpdates();
+        
+        // Validazione del formato orario
+        if (!timeFormat || !/^\d{1,2}:\d{2}$/.test(timeFormat)) {
+            console.error('❌ Formato orario non valido. Usa HH:MM o H:MM');
+            this.lastError = 'Formato orario non valido. Usa HH:MM o H:MM';
+            return false;
+        }
+        
+        try {
+            // Estrai ore e minuti
+            const [hours, minutes] = timeFormat.split(':').map(Number);
+            
+            if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+                console.error('❌ Orario non valido. Ore: 0-23, Minuti: 0-59');
+                this.lastError = 'Orario non valido. Ore: 0-23, Minuti: 0-59';
+                return false;
+            }
+            
+            // Crea una pianificazione cron
+            // Se è 0:30, esegui ogni 30 minuti
+            // Se è 1:00, esegui ogni ora
+            // Se è 12:00, esegui ogni 12 ore
+            let cronExpression;
+            
+            if (hours === 0) {
+                // Esegui ogni X minuti
+                cronExpression = `*/${minutes} * * * *`;
+                console.log(`✓ Pianificazione impostata: ogni ${minutes} minuti`);
+            } else {
+                // Esegui ogni X ore
+                cronExpression = `${minutes} */${hours} * * *`;
+                console.log(`✓ Pianificazione impostata: ogni ${hours} ore e ${minutes} minuti`);
+            }
+            
+            this.cronJob = cron.schedule(cronExpression, async () => {
+                console.log(`\n=== Esecuzione automatica script Python (${new Date().toLocaleString()}) ===`);
+                await this.executeScript();
+            });
+            
+            this.updateInterval = timeFormat;
+            console.log(`✓ Aggiornamento automatico configurato: ${timeFormat}`);
+            return true;
+        } catch (error) {
+            console.error('❌ Errore nella pianificazione:', error.message);
+            this.lastError = `Errore nella pianificazione: ${error.message}`;
+            return false;
+        }
+    }
+    
+    /**
+     * Ferma gli aggiornamenti pianificati
+     */
+    stopScheduledUpdates() {
+        if (this.cronJob) {
+            this.cronJob.stop();
+            this.cronJob = null;
+            this.updateInterval = null;
+            console.log('✓ Aggiornamento automatico fermato');
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Elimina eventuali file M3U/M3U8 esistenti
      */
     cleanupM3UFiles() {
@@ -225,7 +299,9 @@ class PythonRunner {
             m3uExists: fs.existsSync(this.m3uOutputPath),
             m3uFiles: m3uFiles.length,
             scriptExists: fs.existsSync(this.scriptPath),
-            scriptUrl: this.scriptUrl
+            scriptUrl: this.scriptUrl,
+            updateInterval: this.updateInterval,
+            scheduledUpdates: this.cronJob !== null
         };
     }
 
