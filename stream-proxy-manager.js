@@ -6,7 +6,9 @@ class StreamProxyManager {
     constructor() {
         this.proxyCache = new Map();
         this.lastCheck = new Map();
-        this.CACHE_DURATION = 1 * 60 * 1000; // 5 minuti
+        this.CACHE_DURATION = 1 * 60 * 1000; // 1 minuto
+        this.MAX_RETRY_ATTEMPTS = 3; // Numero massimo di tentativi
+        this.RETRY_DELAY = 1000; // Intervallo tra i tentativi in ms
     }
 
     async validateProxyUrl(url) {
@@ -19,6 +21,11 @@ class StreamProxyManager {
         }
     }
 
+    // Funzione di sleep per il ritardo tra i tentativi
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     async checkProxyHealth(proxyUrl, headers = {}) {
         const cacheKey = proxyUrl;
         const now = Date.now();
@@ -29,39 +36,71 @@ class StreamProxyManager {
             return this.proxyCache.get(cacheKey);
         }
 
-        try {
-            // Usa gli stessi headers del flusso
-            const finalHeaders = {
-                'User-Agent': headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent
-            };
+        // Prepara gli headers finali per la richiesta
+        const finalHeaders = {
+            'User-Agent': headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent
+        };
 
-            if (headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer']) {
-                finalHeaders['Referer'] = headers['referer'] || headers['Referer'] || 
-                                        headers['referrer'] || headers['Referrer'];
-            }
-
-            if (headers['origin'] || headers['Origin']) {
-                finalHeaders['Origin'] = headers['origin'] || headers['Origin'];
-            }
-
-            const response = await axios.get(proxyUrl, {
-                timeout: 10000,
-                validateStatus: status => status < 400,
-                headers: finalHeaders
-            });
-            
-            const isHealthy = response.status < 400;
-            this.proxyCache.set(cacheKey, isHealthy);
-            this.lastCheck.set(cacheKey, now);
-            return isHealthy;
-        } catch (error) {
-            console.error('Verifica dello stato di salute del proxy fallita:', {
-                messaggio: error.message,
-                codice: error.code,
-                headers: headers
-            });
-            return false;
+        if (headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer']) {
+            finalHeaders['Referer'] = headers['referer'] || headers['Referer'] || 
+                                    headers['referrer'] || headers['Referrer'];
         }
+
+        if (headers['origin'] || headers['Origin']) {
+            finalHeaders['Origin'] = headers['origin'] || headers['Origin'];
+        }
+
+        // Implementazione dei tentativi multipli
+        let attempts = 0;
+        let isHealthy = false;
+        let lastError = null;
+
+        while (attempts < this.MAX_RETRY_ATTEMPTS && !isHealthy) {
+            attempts++;
+            
+            try {
+                console.log(`Tentativo ${attempts}/${this.MAX_RETRY_ATTEMPTS} di verifica proxy: ${proxyUrl}`);
+                
+                const response = await axios.get(proxyUrl, {
+                    timeout: 10000,
+                    validateStatus: status => status < 400,
+                    headers: finalHeaders
+                });
+                
+                isHealthy = response.status < 400;
+                
+                if (isHealthy) {
+                    console.log(`✓ Proxy verificato con successo al tentativo ${attempts}: ${proxyUrl}`);
+                } else {
+                    console.log(`✗ Proxy non valido al tentativo ${attempts}, status: ${response.status}`);
+                    if (attempts < this.MAX_RETRY_ATTEMPTS) {
+                        await this.sleep(this.RETRY_DELAY);
+                    }
+                }
+            } catch (error) {
+                lastError = error;
+                console.error(`✗ Errore al tentativo ${attempts}/${this.MAX_RETRY_ATTEMPTS}:`, {
+                    messaggio: error.message,
+                    codice: error.code
+                });
+                
+                // Se non è l'ultimo tentativo, aspetta prima di riprovare
+                if (attempts < this.MAX_RETRY_ATTEMPTS) {
+                    console.log(`Attesa di ${this.RETRY_DELAY}ms prima del prossimo tentativo...`);
+                    await this.sleep(this.RETRY_DELAY);
+                }
+            }
+        }
+
+        // Aggiorna la cache solo dopo tutti i tentativi
+        this.proxyCache.set(cacheKey, isHealthy);
+        this.lastCheck.set(cacheKey, now);
+        
+        if (!isHealthy && lastError) {
+            console.error('Tutti i tentativi falliti per:', proxyUrl, 'ultimo errore:', lastError.message);
+        }
+        
+        return isHealthy;
     }
 
     async buildProxyUrl(streamUrl, headers = {}, userConfig = {}) {
@@ -141,12 +180,10 @@ class StreamProxyManager {
                         return null;
                     }
 
-                    // Controllo salute del proxy solo se non c'è in cache
-                    if (!this.proxyCache.has(proxyUrl)) {
-                        const isHealthy = await this.checkProxyHealth(proxyUrl, streamDetails.headers);
-                        if (!isHealthy) {
-                            return null;
-                        }
+                    // Controllo salute del proxy con i tentativi multipli
+                    const isHealthy = await this.checkProxyHealth(proxyUrl, streamDetails.headers);
+                    if (!isHealthy) {
+                        return null;
                     }
 
                     let streamType = streamDetails.url.endsWith('.m3u8') ? 'HLS' : 
