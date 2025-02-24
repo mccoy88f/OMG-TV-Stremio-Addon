@@ -247,6 +247,7 @@ async function streamHandler({ id, config: userConfig }) {
                     if (userConfig.proxy && userConfig.proxy_pwd) {
                         const streamDetails = {
                             name: channel.name,
+                            originalName: stream.name,
                             url: stream.url,
                             headers: headers
                         };
