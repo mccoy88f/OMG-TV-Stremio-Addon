@@ -234,7 +234,7 @@ async function streamHandler({ id, config: userConfig }) {
                     
                     const streamMeta = {
                         name: channel.name,
-                        title: stream.name || channel.name,
+                        title: `📺 ${stream.name || channel.name}`,
                         url: stream.url,
                         headers: headers,
                         behaviorHints: {
