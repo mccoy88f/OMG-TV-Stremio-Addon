@@ -316,7 +316,7 @@ app.get('/generated-m3u', (req, res) => {
 
 // Endpoint API per le operazioni sullo script Python
 app.post('/api/python-script', async (req, res) => {
-    const { action, url } = req.body;
+    const { action, url, interval } = req.body;
     
     try {
         if (action === 'download' && url) {
@@ -339,6 +339,22 @@ app.post('/api/python-script', async (req, res) => {
             }
         } else if (action === 'status') {
             res.json(PythonRunner.getStatus());
+        } else if (action === 'schedule' && interval) {
+            const success = PythonRunner.scheduleUpdate(interval);
+            if (success) {
+                res.json({ 
+                    success: true, 
+                    message: `Aggiornamento automatico impostato ogni ${interval}` 
+                });
+            } else {
+                res.status(500).json({ success: false, message: PythonRunner.getStatus().lastError });
+            }
+        } else if (action === 'stopSchedule') {
+            const stopped = PythonRunner.stopScheduledUpdates();
+            res.json({ 
+                success: true, 
+                message: stopped ? 'Aggiornamento automatico fermato' : 'Nessun aggiornamento pianificato da fermare' 
+            });
         } else {
             res.status(400).json({ success: false, message: 'Azione non valida' });
         }
@@ -347,7 +363,6 @@ app.post('/api/python-script', async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 });
-
 async function startAddon() {
    try {
        const port = process.env.PORT || 10000;
