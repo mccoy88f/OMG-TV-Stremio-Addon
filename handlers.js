@@ -236,7 +236,7 @@ async function streamHandler({ id, config: userConfig }) {
                 return { 
                     streams: [{
                         name: 'Completato',
-                        title: '✅ Playlist rigenerata con successo! Riavvia l\'addon o torna indietro.',
+                        title: '✅ Playlist rigenerata con successo!\n Riavvia stremio o torna indietro.',
                         url: 'https://static.vecteezy.com/system/resources/previews/001/803/236/mp4/no-signal-bad-tv-free-video.mp4',
                         behaviorHints: {
                             notWebReady: false,
