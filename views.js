@@ -280,6 +280,18 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                             <button onclick="checkPythonStatus()" style="flex: 1;">CONTROLLA STATO</button>
                         </div>
                         
+                        <div style="margin-top: 15px;">
+                            <h4>Aggiornamento Automatico</h4>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="text" id="updateInterval" placeholder="HH:MM (es. 12:00)" style="flex: 2;">
+                                <button onclick="scheduleUpdates()" style="flex: 1;">PIANIFICA</button>
+                                <button onclick="stopScheduledUpdates()" style="flex: 1;">FERMA</button>
+                            </div>
+                            <small style="color: #999; display: block; margin-top: 5px;">
+                                Formato: HH:MM (es. 12:00 per 12 ore, 1:00 per 1 ora, 0:30 per 30 minuti)
+                            </small>
+                        </div>
+                        
                         <div id="pythonStatus" style="margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px; display: none;">
                             <h3>Stato Script Python</h3>
                             <div id="pythonStatusContent"></div>
@@ -455,6 +467,12 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                        html += '<tr><td><strong>Ultima Esecuzione:</strong></td><td>' + data.lastExecution + '</td></tr>';
                        html += '<tr><td><strong>Script Esistente:</strong></td><td>' + (data.scriptExists ? 'Sì' : 'No') + '</td></tr>';
                        html += '<tr><td><strong>File M3U Esistente:</strong></td><td>' + (data.m3uExists ? 'Sì' : 'No') + '</td></tr>';
+                       
+                       // Aggiungi informazioni sull'aggiornamento pianificato
+                       if (data.scheduledUpdates) {
+                           html += '<tr><td><strong>Aggiornamento Automatico:</strong></td><td>Attivo ogni ' + data.updateInterval + '</td></tr>';
+                       }
+                       
                        if (data.scriptUrl) {
                            html += '<tr><td><strong>URL Script:</strong></td><td>' + data.scriptUrl + '</td></tr>';
                        }
@@ -559,6 +577,58 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                        const m3uUrl = window.location.origin + '/generated-m3u';
                        document.querySelector('input[name="m3u"]').value = m3uUrl;
                        alert('URL della playlist generata impostato nel campo M3U URL!');
+                   }
+                   
+                   async function scheduleUpdates() {
+                       const interval = document.getElementById('updateInterval').value;
+                       if (!interval) {
+                           alert('Inserisci un intervallo valido (es. 12:00)');
+                           return;
+                       }
+                       
+                       try {
+                           const response = await fetch('/api/python-script', {
+                               method: 'POST',
+                               headers: {
+                                   'Content-Type': 'application/json'
+                               },
+                               body: JSON.stringify({
+                                   action: 'schedule',
+                                   interval: interval
+                               })
+                           });
+                           
+                           const data = await response.json();
+                           if (data.success) {
+                               alert(data.message);
+                           } else {
+                               alert('Errore: ' + data.message);
+                           }
+                           
+                           checkPythonStatus();
+                       } catch (error) {
+                           alert('Errore nella richiesta: ' + error.message);
+                       }
+                   }
+
+                   async function stopScheduledUpdates() {
+                       try {
+                           const response = await fetch('/api/python-script', {
+                               method: 'POST',
+                               headers: {
+                                   'Content-Type': 'application/json'
+                               },
+                               body: JSON.stringify({
+                                   action: 'stopSchedule'
+                               })
+                           });
+                           
+                           const data = await response.json();
+                           alert(data.message);
+                           checkPythonStatus();
+                       } catch (error) {
+                           alert('Errore nella richiesta: ' + error.message);
+                       }
                    }
                </script>
            </div>
