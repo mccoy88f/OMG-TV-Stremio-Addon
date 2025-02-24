@@ -209,18 +209,31 @@ class PythonRunner {
     /**
      * Elimina eventuali file M3U/M3U8 esistenti
      */
+
     cleanupM3UFiles() {
-        // Elimina solo il file destinazione, non tutti i file M3U nella directory
-        if (fs.existsSync(this.m3uOutputPath)) {
-            try {
-                fs.unlinkSync(this.m3uOutputPath);
-                console.log(`File ${this.m3uOutputPath} eliminato`);
-            } catch (e) {
-                console.error(`Errore nella pulizia del file ${this.m3uOutputPath}:`, e.message);
-            }
+        try {
+            // Trova tutti i file M3U e M3U8 nella directory
+            const dirFiles = fs.readdirSync(__dirname);
+            const m3uFiles = dirFiles.filter(file => 
+                file.endsWith('.m3u') || file.endsWith('.m3u8')
+            );
+    
+            // Elimina ogni file M3U/M3U8 trovato
+            m3uFiles.forEach(file => {
+                const fullPath = path.join(__dirname, file);
+                try {
+                    fs.unlinkSync(fullPath);
+                    console.log(`File ${fullPath} eliminato`);
+                } catch (e) {
+                    console.error(`Errore nell'eliminazione del file ${fullPath}:`, e.message);
+                }
+            });
+    
+            console.log(`✓ Eliminati ${m3uFiles.length} file M3U/M3U8`);
+        } catch (error) {
+            console.error('❌ Errore nella pulizia dei file M3U:', error.message);
         }
     }
-
     /**
      * Trova tutti i file M3U o M3U8 nella directory
      * @returns {string[]} - Array di percorsi dei file M3U trovati
