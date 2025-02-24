@@ -212,7 +212,7 @@ async function streamHandler({ id, config: userConfig }) {
             if (userConfig.proxy && userConfig.proxy_pwd) {
                 for (const stream of channel.streamInfo.urls) {
                     const streamDetails = {
-                        name: stream.name || channel.name,
+                        name: channel.name,
                         url: stream.url,
                         headers: stream.headers || { 'User-Agent': config.defaultUserAgent }
                     };
@@ -232,7 +232,7 @@ async function streamHandler({ id, config: userConfig }) {
                     }
                     
                     const streamMeta = {
-                        name: stream.name || channel.name,
+                        name: channel.name,
                         title: stream.name || channel.name,
                         url: stream.url,
                         headers: headers,
@@ -245,7 +245,7 @@ async function streamHandler({ id, config: userConfig }) {
 
                     if (userConfig.proxy && userConfig.proxy_pwd) {
                         const streamDetails = {
-                            name: stream.name || channel.name,
+                            name: channel.name,
                             url: stream.url,
                             headers: headers
                         };
