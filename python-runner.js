@@ -277,9 +277,10 @@ class PythonRunner {
             const currentContent = fs.readFileSync(this.m3uOutputPath, 'utf8');
             
             // Prepara l'entry del canale speciale
+
             const specialChannel = `
-    #EXTINF:-1 tvg-id="rigeneraplaylistpython" tvg-name="Rigenera Playlist Python" tvg-logo="https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/tv.png" group-title="MANUTENZIONE",Rigenera Playlist Python
-    `;
+#EXTINF:-1 tvg-id="rigeneraplaylistpython" tvg-name="Rigenera Playlist Python" tvg-logo="https://raw.githubusercontent.com/mccoy88f/OMG-TV-Stremio-Addon/refs/heads/main/tv.png" group-title="MANUTENZIONE",Rigenera Playlist Python
+http://127.0.0.1/regenerate`;
             
             // Verifica se il canale già esiste nel file
             if (currentContent.includes('tvg-id="rigeneraplaylistpython"')) {
