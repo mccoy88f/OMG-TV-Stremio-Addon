@@ -62,6 +62,9 @@ class PythonRunner {
             this.isRunning = true;
             console.log('\n=== Esecuzione script Python ===');
             
+            // Elimina eventuali file M3U esistenti prima dell'esecuzione
+            this.cleanupM3UFiles();
+            
             // Controlla se Python è installato
             await execAsync('python3 --version').catch(() => 
                 execAsync('python --version')
@@ -77,18 +80,37 @@ class PythonRunner {
             
             console.log('Output script:', stdout);
             
-            // Verifica se il file M3U è stato generato
-            if (fs.existsSync(this.m3uOutputPath)) {
-                console.log(`✓ File M3U generato con successo: ${this.m3uOutputPath}`);
+            // Cerca qualsiasi file M3U/M3U8 generato e rinominalo
+            const foundFiles = this.findAllM3UFiles();
+            
+            if (foundFiles.length > 0) {
+                console.log(`✓ Trovati ${foundFiles.length} file M3U/M3U8`);
+                
+                // Prendi il primo file trovato e rinominalo
+                const sourcePath = foundFiles[0];
+                
+                // Se il file destinazione esiste già, eliminalo
+                if (fs.existsSync(this.m3uOutputPath)) {
+                    fs.unlinkSync(this.m3uOutputPath);
+                }
+                
+                // Rinomina o copia il file
+                if (sourcePath !== this.m3uOutputPath) {
+                    fs.copyFileSync(sourcePath, this.m3uOutputPath);
+                    console.log(`✓ File rinominato/copiato da "${sourcePath}" a "${this.m3uOutputPath}"`);
+                    
+                    // Opzionale: elimina il file originale dopo la copia
+                    // fs.unlinkSync(sourcePath);
+                }
+                
                 this.lastExecution = new Date();
                 this.lastError = null;
                 this.isRunning = false;
                 return true;
             } else {
-                // Cerca in base all'output se il file è stato salvato in un percorso diverso
+                // Prova a cercare percorsi nel testo dell'output
                 const possiblePath = this.findM3UPathFromOutput(stdout);
                 if (possiblePath && fs.existsSync(possiblePath)) {
-                    // Copia il file nella posizione prevista
                     fs.copyFileSync(possiblePath, this.m3uOutputPath);
                     console.log(`✓ File M3U trovato in ${possiblePath} e copiato in ${this.m3uOutputPath}`);
                     this.lastExecution = new Date();
@@ -97,7 +119,7 @@ class PythonRunner {
                     return true;
                 }
                 
-                console.error('❌ File M3U non trovato dopo l\'esecuzione dello script');
+                console.error('❌ Nessun file M3U trovato dopo l\'esecuzione dello script');
                 this.lastError = 'File M3U non generato dallo script';
                 this.isRunning = false;
                 return false;
@@ -111,13 +133,44 @@ class PythonRunner {
     }
 
     /**
+     * Elimina eventuali file M3U/M3U8 esistenti
+     */
+    cleanupM3UFiles() {
+        // Elimina solo il file destinazione, non tutti i file M3U nella directory
+        if (fs.existsSync(this.m3uOutputPath)) {
+            try {
+                fs.unlinkSync(this.m3uOutputPath);
+                console.log(`File ${this.m3uOutputPath} eliminato`);
+            } catch (e) {
+                console.error(`Errore nella pulizia del file ${this.m3uOutputPath}:`, e.message);
+            }
+        }
+    }
+
+    /**
+     * Trova tutti i file M3U o M3U8 nella directory
+     * @returns {string[]} - Array di percorsi dei file M3U trovati
+     */
+    findAllM3UFiles() {
+        try {
+            const dirFiles = fs.readdirSync(__dirname);
+            return dirFiles
+                .filter(file => file.endsWith('.m3u') || file.endsWith('.m3u8'))
+                .map(file => path.join(__dirname, file));
+        } catch (error) {
+            console.error('Errore nella ricerca dei file M3U:', error.message);
+            return [];
+        }
+    }
+
+    /**
      * Cerca un percorso di file M3U nell'output dello script
      * @param {string} output - L'output dello script Python
      * @returns {string|null} - Il percorso del file M3U o null se non trovato
      */
     findM3UPathFromOutput(output) {
-        // Cerca percorsi che terminano con .m3u
-        const m3uPathRegex = /[\w\/\\\.]+\.m3u\b/g;
+        // Cerca percorsi che terminano con .m3u o .m3u8
+        const m3uPathRegex = /[\w\/\\\.]+\.m3u8?\b/g;
         const matches = output.match(m3uPathRegex);
         
         if (matches && matches.length > 0) {
@@ -136,6 +189,13 @@ class PythonRunner {
             if (fs.existsSync(this.m3uOutputPath)) {
                 return fs.readFileSync(this.m3uOutputPath, 'utf8');
             }
+            
+            // Se il file standard non esiste, cerca altri file M3U
+            const files = this.findAllM3UFiles();
+            if (files.length > 0) {
+                return fs.readFileSync(files[0], 'utf8');
+            }
+            
             return null;
         } catch (error) {
             console.error('❌ Errore nella lettura del file M3U:', error.message);
@@ -156,11 +216,14 @@ class PythonRunner {
      * @returns {Object} - Lo stato attuale
      */
     getStatus() {
+        const m3uFiles = this.findAllM3UFiles();
+        
         return {
             isRunning: this.isRunning,
             lastExecution: this.lastExecution ? this.formatDate(this.lastExecution) : 'Mai',
             lastError: this.lastError,
             m3uExists: fs.existsSync(this.m3uOutputPath),
+            m3uFiles: m3uFiles.length,
             scriptExists: fs.existsSync(this.scriptPath),
             scriptUrl: this.scriptUrl
         };
