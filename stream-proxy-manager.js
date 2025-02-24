@@ -59,7 +59,7 @@ class StreamProxyManager {
             attempts++;
             
             try {
-                console.log(`Tentativo ${attempts}/${this.MAX_RETRY_ATTEMPTS} di verifica proxy: ${proxyUrl}`);
+                console.log(`Tentativo ${attempts}/${this.MAX_RETRY_ATTEMPTS} di verifica proxy`);
                 
                 const response = await axios.get(proxyUrl, {
                     timeout: 10000,
@@ -70,9 +70,9 @@ class StreamProxyManager {
                 isHealthy = response.status < 400;
                 
                 if (isHealthy) {
-                    console.log(`✓ Proxy verificato con successo al tentativo ${attempts}: ${proxyUrl}`);
+                    console.log(`✓ Proxy verificato con successo al tentativo ${attempts}`);
                 } else {
-                    console.log(`✗ Proxy non valido al tentativo ${attempts}, status: ${response.status}`);
+                    console.log(`✗ Proxy non valido al tentativo ${attempts}`);
                     if (attempts < this.MAX_RETRY_ATTEMPTS) {
                         await this.sleep(this.RETRY_DELAY);
                     }
@@ -86,7 +86,6 @@ class StreamProxyManager {
                 
                 // Se non è l'ultimo tentativo, aspetta prima di riprovare
                 if (attempts < this.MAX_RETRY_ATTEMPTS) {
-                    console.log(`Attesa di ${this.RETRY_DELAY}ms prima del prossimo tentativo...`);
                     await this.sleep(this.RETRY_DELAY);
                 }
             }
@@ -96,8 +95,31 @@ class StreamProxyManager {
         this.proxyCache.set(cacheKey, isHealthy);
         this.lastCheck.set(cacheKey, now);
         
-        if (!isHealthy && lastError) {
-            console.error('Tutti i tentativi falliti per:', proxyUrl, 'ultimo errore:', lastError.message);
+        if (!isHealthy) {
+            // Log dettagliato in caso di fallimento di tutti i tentativi
+            console.error('❌ ERRORE PROXY HEALTH CHECK - Tutti i tentativi falliti:');
+            console.error(`  URL: ${proxyUrl}`);
+            console.error(`  Tentativi effettuati: ${attempts}/${this.MAX_RETRY_ATTEMPTS}`);
+            
+            if (lastError) {
+                console.error(`  Ultimo errore: ${lastError.message}`);
+                console.error(`  Codice errore: ${lastError.code || 'N/A'}`);
+                
+                if (lastError.response) {
+                    console.error(`  Status HTTP: ${lastError.response.status}`);
+                    console.error(`  Headers risposta:`, lastError.response.headers);
+                }
+                
+                // Log dello stack trace per debug avanzato
+            } else {
+                console.error(`  Nessun errore specifico rilevato, controllo fallito senza eccezioni`);
+            }
+            
+            // Log degli headers usati nella richiesta
+            console.error('============================================================');
+        } else if (attempts > 1) {
+            // Log di successo dopo tentativi multipli
+            console.log(`✅ Proxy verificato con successo dopo ${attempts} tentativi`);
         }
         
         return isHealthy;
