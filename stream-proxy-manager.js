@@ -6,7 +6,7 @@ class StreamProxyManager {
     constructor() {
         this.proxyCache = new Map();
         this.lastCheck = new Map();
-        this.CACHE_DURATION = 1 * 60 * 1000; // 5 minuti
+        this.CACHE_DURATION = 30 * 1000;
     }
 
     async validateProxyUrl(url) {
@@ -45,7 +45,7 @@ class StreamProxyManager {
             }
 
             const response = await axios.get(proxyUrl, {
-                timeout: 10000,
+                timeout: 15000,
                 validateStatus: status => status < 400,
                 headers: finalHeaders
             });
