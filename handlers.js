@@ -2,6 +2,8 @@ const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const EPGManager = require('./epg-manager');
 const StreamProxyManager = require('./stream-proxy-manager')(config);
+const ResolverStreamManager = require('./resolver-stream-manager')(config);
+
 
 function normalizeId(id) {
     return id?.toLowerCase().replace(/[^\w.]/g, '').trim() || '';
@@ -316,6 +318,35 @@ async function streamHandler({ id, config: userConfig }) {
                         const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
                         streams.push(...proxyStreams);
                     }
+                }
+            }
+        }
+
+        // Aggiungi gli stream risolti se il resolver è abilitato
+        if (userConfig.resolver_enabled === 'true' && userConfig.resolver_script) {
+            const ResolverStreamManager = require('./resolver-stream-manager')(config);
+            
+            if (streams.length > 0) {
+                const streamDetails = {
+                    name: channel.name,
+                    originalName: channel.name,
+                    streamInfo: {
+                        urls: channel.streamInfo.urls
+                    }
+                };
+                
+                try {
+                    console.log(`\n=== Risoluzione flussi per ${channel.name} ===`);
+                    const resolvedStreams = await ResolverStreamManager.getResolvedStreams(streamDetails, userConfig);
+                    
+                    if (resolvedStreams && resolvedStreams.length > 0) {
+                        console.log(`✓ Aggiunti ${resolvedStreams.length} flussi risolti`);
+                        streams.push(...resolvedStreams);
+                    } else {
+                        console.log('⚠️ Nessun flusso risolto disponibile');
+                    }
+                } catch (resolverError) {
+                    console.error('❌ Errore durante la risoluzione dei flussi:', resolverError);
                 }
             }
         }
