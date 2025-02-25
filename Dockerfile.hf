@@ -21,6 +21,8 @@ RUN npm install
 # Create directories for Python scripts and generated playlists
 RUN mkdir -p /app/temp && \
     chmod 777 /app/temp
+RUN chmod 777 /app
+
 
 # Expose the port (Hugging Face uses 7860)
 EXPOSE 7860
