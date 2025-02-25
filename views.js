@@ -260,7 +260,8 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                                <small style="color: #999;">Formato HH:MM (es. 1:00 o 01:00), predefinito 12:00</small>
                            </div>
                        </div>
-                       
+                       <input type="hidden" name="python_script_url" id="hidden_python_script_url" value="${query.python_script_url || ''}">
+                       <input type="hidden" name="python_update_interval" id="hidden_python_update_interval" value="${query.python_update_interval || ''}">
                        <input type="submit" value="Genera Configurazione">
                    </form>
 
