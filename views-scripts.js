@@ -124,6 +124,15 @@ const getViewScripts = (protocol, host) => {
                             }
                         }
                     }
+                    
+                    // Ripristina anche i campi Python negli input visibili dell'interfaccia
+                    if (config.python_script_url) {
+                        document.getElementById('pythonScriptUrl').value = config.python_script_url;
+                    }
+                    
+                    if (config.python_update_interval) {
+                        document.getElementById('updateInterval').value = config.python_update_interval;
+                    }
 
                     const configQueryString = getConfigQueryString();
                     const configBase64 = btoa(configQueryString);
@@ -178,6 +187,9 @@ const getViewScripts = (protocol, host) => {
                 alert('Inserisci un URL valido per lo script Python');
                 return;
             }
+            
+            // Salva l'URL nel campo nascosto del form
+            document.getElementById('hidden_python_script_url').value = url;
             
             try {
                 const response = await fetch('/api/python-script', {
@@ -256,6 +268,20 @@ const getViewScripts = (protocol, host) => {
         function useGeneratedM3u() {
             const m3uUrl = window.location.origin + '/generated-m3u';
             document.querySelector('input[name="m3u"]').value = m3uUrl;
+            
+            // Ottieni i valori attuali dai campi
+            const pythonScriptUrl = document.getElementById('pythonScriptUrl').value;
+            const updateInterval = document.getElementById('updateInterval').value;
+            
+            // Se abbiamo i valori, assicuriamoci che siano salvati nei campi nascosti
+            if (pythonScriptUrl) {
+                document.getElementById('hidden_python_script_url').value = pythonScriptUrl;
+            }
+            
+            if (updateInterval) {
+                document.getElementById('hidden_python_update_interval').value = updateInterval;
+            }
+            
             alert('URL della playlist generata impostato nel campo M3U URL!');
         }
         
@@ -265,6 +291,9 @@ const getViewScripts = (protocol, host) => {
                 alert('Inserisci un intervallo valido (es. 12:00)');
                 return;
             }
+            
+            // Salva l'intervallo nel campo nascosto del form
+            document.getElementById('hidden_python_update_interval').value = interval;
             
             try {
                 const response = await fetch('/api/python-script', {
@@ -507,6 +536,31 @@ const getViewScripts = (protocol, host) => {
                 alert('Errore nella richiesta: ' + error.message);
             }
         }
+        
+        // Funzione per inizializzare i campi Python con i valori dai campi nascosti
+        function initializePythonFields() {
+            // Copia i valori dai campi nascosti del form ai campi dell'interfaccia Python
+            const pythonScriptUrl = document.getElementById('hidden_python_script_url').value;
+            const pythonUpdateInterval = document.getElementById('hidden_python_update_interval').value;
+            
+            if (pythonScriptUrl) {
+                document.getElementById('pythonScriptUrl').value = pythonScriptUrl;
+            }
+            
+            if (pythonUpdateInterval) {
+                document.getElementById('updateInterval').value = pythonUpdateInterval;
+            }
+            
+            // Se abbiamo un URL, eseguiamo il controllo dello stato
+            if (pythonScriptUrl) {
+                checkPythonStatus();
+            }
+        }
+
+        // Inizializza i campi Python all'avvio
+        window.addEventListener('DOMContentLoaded', function() {
+            initializePythonFields();
+        });
     `;
 };
 
