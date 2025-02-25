@@ -176,7 +176,10 @@ class StreamProxyManager {
             console.log(`⚠️ URL già proxato, salto: ${input.url}`);
             return [];
         }
-    
+        if (input.url.includes(userConfig.proxy)) {
+            console.log(`⚠️ L'URL è già un proxy, salto: ${input.url}`);
+            return [];
+        }
         // Aggiunge l'URL al Set per evitare duplicati
         this.uniqueStreams.add(input.url);
         
