@@ -6,7 +6,6 @@ class StreamProxyManager {
     constructor() {
         this.proxyCache = new Map();  // Usato per memorizzare lo stato di salute dei proxy
         this.lastCheck = new Map();   // Usato per memorizzare l'ultimo controllo di salute
-        this.uniqueStreams = new Set(); // Usato per evitare duplicati
         this.CACHE_DURATION = 1 * 60 * 1000; // 1 minuto
         this.MAX_RETRY_ATTEMPTS = 3; // Numero massimo di tentativi
         this.RETRY_DELAY = 1000; // Intervallo tra i tentativi in ms
