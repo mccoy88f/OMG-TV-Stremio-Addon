@@ -191,7 +191,7 @@ const getViewScripts = (protocol, host) => {
                     
                     const configQueryString = getConfigQueryString();
                     const configBase64 = btoa(configQueryString);
-                    window.location.href = `${protocol}://${host}/${configBase64}/configure`;
+                    window.location.href = \`${protocol}://\${host}/\${configBase64}/configure\`;
                 } catch (error) {
                     alert('Errore nel caricamento del file di configurazione');
                 }
