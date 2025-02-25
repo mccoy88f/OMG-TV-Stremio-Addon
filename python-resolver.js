@@ -142,12 +142,12 @@ class PythonResolver {
                 const resultText = fs.readFileSync(outputFile, 'utf8');
                 
                 // Elimina i file temporanei
-                try {
-                    fs.unlinkSync(inputFile);
-                    fs.unlinkSync(outputFile);
-                } catch (e) {
-                    console.error('Errore nella pulizia dei file temporanei:', e.message);
-                }
+//                try {
+//                    fs.unlinkSync(inputFile);
+//                    fs.unlinkSync(outputFile);
+//                } catch (e) {
+//                    console.error('Errore nella pulizia dei file temporanei:', e.message);
+//                }
                 
                 try {
                     const result = JSON.parse(resultText);
