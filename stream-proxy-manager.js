@@ -166,7 +166,6 @@ class StreamProxyManager {
     }
 
     async getProxyStreams(input, userConfig = {}) {
-    async getProxyStreams(input, userConfig = {}) {
         // Resetta la cache all'inizio di ogni chiamata
         this.uniqueStreams.clear();  // Resetta il Set per evitare duplicati
     
