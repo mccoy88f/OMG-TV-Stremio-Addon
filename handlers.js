@@ -290,7 +290,7 @@ async function streamHandler({ id, config: userConfig }) {
             }
         }
 
-        // NUOVA LOGICA: Se il resolver è abilitato, utilizza quello INVECE dei flussi originali
+        // NUOVA LOGICA: Se il resolver è abilitato, ottiene i flussi risolti
         if (userConfig.resolver_enabled === 'true' && userConfig.resolver_script) {
             console.log(`\n=== Utilizzo Resolver per ${channel.name} ===`);
             
@@ -308,30 +308,55 @@ async function streamHandler({ id, config: userConfig }) {
                 if (resolvedStreams && resolvedStreams.length > 0) {
                     console.log(`✓ Ottenuti ${resolvedStreams.length} flussi risolti`);
                     
-                    if (userConfig.force_proxy === 'true' && userConfig.proxy && userConfig.proxy_pwd) {
-                        console.log('⚙️ Applicazione proxy ai flussi risolti...');
-                        // Processa ogni stream risolto attraverso il proxy
-                        for (const resolvedStream of resolvedStreams) {
-                            // Creiamo un oggetto streamDetails adatto al proxy
-                            const proxyStreamDetails = {
-                                name: resolvedStream.name,
-                                originalName: resolvedStream.title,
-                                url: resolvedStream.url,
-                                headers: resolvedStream.headers || {}
-                            };
+                    if (userConfig.force_proxy === 'true') {
+                        // Se force_proxy è attivo, mostriamo SOLO i flussi passati attraverso il proxy
+                        if (userConfig.proxy && userConfig.proxy_pwd) {
+                            console.log('⚙️ Applicazione proxy ai flussi risolti (modalità forzata)...');
                             
-                            const proxiedResolvedStreams = await StreamProxyManager.getProxyStreams(proxyStreamDetails, userConfig);
-                            streams.push(...proxiedResolvedStreams);
-                        }
-                        
-                        if (streams.length === 0) {
-                            // Se non abbiamo ottenuto proxy validi, usiamo i resolved originali
-                            console.log('⚠️ Nessun proxy valido per i flussi risolti, uso i flussi risolti originali');
+                            for (const resolvedStream of resolvedStreams) {
+                                const proxyStreamDetails = {
+                                    name: resolvedStream.name,
+                                    originalName: resolvedStream.title,
+                                    url: resolvedStream.url,
+                                    headers: resolvedStream.headers || {}
+                                };
+                                
+                                const proxiedResolvedStreams = await StreamProxyManager.getProxyStreams(proxyStreamDetails, userConfig);
+                                streams.push(...proxiedResolvedStreams);
+                            }
+                            
+                            if (streams.length === 0) {
+                                // Non usiamo più i flussi risolti come fallback
+                                console.log('⚠️ Nessun proxy valido per i flussi risolti e force_proxy è attivo, nessun flusso disponibile');
+                                // Non facciamo nulla, streams rimane vuoto
+                            }
+                        } else {
+                            // In questo caso il proxy è richiesto ma non configurato, quindi mostro i flussi risolti
+                            // Questo è necessario perché l'utente ha richiesto force_proxy ma ha dimenticato di configurare il proxy
+                            console.log('⚠️ Proxy forzato ma non configurato correttamente, uso i flussi risolti originali');
                             streams = resolvedStreams;
                         }
                     } else {
-                        // Usa i flussi risolti direttamente
+                        // Se force_proxy NON è attivo:
+                        // 1. Aggiungiamo prima i flussi risolti originali
                         streams = resolvedStreams;
+                        
+                        // 2. Aggiungiamo anche i flussi risolti tramite proxy, se il proxy è configurato
+                        if (userConfig.proxy && userConfig.proxy_pwd) {
+                            console.log('⚙️ Aggiunta dei flussi proxy ai flussi risolti...');
+                            
+                            for (const resolvedStream of resolvedStreams) {
+                                const proxyStreamDetails = {
+                                    name: resolvedStream.name,
+                                    originalName: resolvedStream.title,
+                                    url: resolvedStream.url,
+                                    headers: resolvedStream.headers || {}
+                                };
+                                
+                                const proxiedResolvedStreams = await StreamProxyManager.getProxyStreams(proxyStreamDetails, userConfig);
+                                streams.push(...proxiedResolvedStreams);
+                            }
+                        }
                     }
                 } else {
                     console.log('⚠️ Nessun flusso risolto disponibile, utilizzo flussi standard');
