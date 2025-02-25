@@ -106,17 +106,26 @@ class ResolverStreamManager {
             console.log('Resolver non configurato per:', input.name);
             return [];
         }
-
+    
         let streams = [];
-
+    
         try {
             // Inizializza il resolver se necessario
             await this.initializeResolver(userConfig);
             
+            // Prepara la configurazione del proxy se disponibile
+            let proxyConfig = null;
+            if (userConfig.proxy && userConfig.proxy_pwd) {
+                proxyConfig = {
+                    url: userConfig.proxy,
+                    password: userConfig.proxy_pwd
+                };
+            }
+            
             // Determiniamo se stiamo ricevendo un channel o uno streamDetails
             const isChannel = input.streamInfo?.urls;
             const streamsList = isChannel ? input.streamInfo.urls : [input];
-
+    
             // Creiamo array di promesse per elaborazione parallela
             const streamPromises = streamsList.map(async stream => {
                 try {
@@ -125,20 +134,21 @@ class ResolverStreamManager {
                     if (!headers['User-Agent'] && !headers['user-agent']) {
                         headers['User-Agent'] = config.defaultUserAgent;
                     }
-
+    
                     const streamDetails = {
                         name: stream.name || input.name,
                         url: stream.url,
                         headers: headers
                     };
-
-                    // Risolvi l'URL tramite lo script Python
+    
+                    // Risolvi l'URL tramite lo script Python, passando opzionalmente la configurazione del proxy
                     const result = await PythonResolver.resolveLink(
                         streamDetails.url, 
                         streamDetails.headers,
-                        isChannel ? input.name : input.originalName || input.name
+                        isChannel ? input.name : input.originalName || input.name,
+                        proxyConfig // Pass proxy configuration
                     );
-
+    
                     if (!result || !result.resolved_url) {
                         console.log(`❌ Nessun URL risolto per: ${streamDetails.name}`);
                         return null;
@@ -153,7 +163,7 @@ class ResolverStreamManager {
                         console.log(`❌ URL risolto non valido per: ${streamDetails.name}`);
                         return null;
                     }
-
+    
                     // Determina il tipo di stream
                     let streamType = 'HTTP';
                     if (result.resolved_url.includes('.m3u8')) {
@@ -161,7 +171,7 @@ class ResolverStreamManager {
                     } else if (result.resolved_url.includes('.mpd')) {
                         streamType = 'DASH';
                     }
-
+    
                     return {
                         name: `${streamDetails.name}`,
                         title: `🔍 ${input.originalName || streamDetails.name}\n[Resolver ${streamType}]`,
@@ -177,19 +187,19 @@ class ResolverStreamManager {
                     return null;
                 }
             });
-
+    
             // Attendiamo tutte le promesse in parallelo
             const results = await Promise.all(streamPromises);
             
             // Filtriamo i risultati nulli e restituiamo gli stream validi
             streams = results.filter(stream => stream !== null);
-
+    
             if (streams.length === 0) {
                 console.log('Nessuno stream risolto valido trovato per:', input.name);
             } else {
                 console.log(`✓ Trovati ${streams.length} stream risolti per:`, input.name);
             }
-
+    
         } catch (error) {
             console.error('Errore generale resolver:', error.message);
             if (error.response) {
@@ -197,7 +207,7 @@ class ResolverStreamManager {
                 console.error('Headers:', error.response.headers);
             }
         }
-
+    
         return streams;
     }
 
