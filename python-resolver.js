@@ -155,7 +155,7 @@ class PythonResolver {
                     this.lastExecution = new Date();
                     this.lastError = null;
                     console.log(`✓ URL risolto per ${channelName}: ${result.resolved_url.substring(0, 50)}...`);
-                    return result;
+
 
                     // Elimina i file temporanei
                     try {
@@ -164,6 +164,7 @@ class PythonResolver {
                     } catch (e) {
                         console.error('Errore nella pulizia dei file temporanei:', e.message);
                     }
+                    return result;
                     
                 } catch (parseError) {
                     console.error('❌ Errore nel parsing del risultato:', parseError.message);
