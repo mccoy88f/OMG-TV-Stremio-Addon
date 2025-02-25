@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { getViewScripts } = require('./views-scripts');
 
 const renderConfigPage = (protocol, host, query, manifest) => {
    // Verifica se il file addon-config.json esiste
@@ -215,7 +216,7 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                        <input type="url" name="epg" value="${query.epg || ''}">
                        
                        <label>
-                           <input type="checkbox" name="epg_enabled" checked ${query.epg_enabled === 'true' ? 'checked' : ''}>
+                           <input type="checkbox" name="epg_enabled" ${query.epg_enabled === 'true' ? 'checked' : ''}>
                            Abilita EPG
                        </label>
 
@@ -244,6 +245,18 @@ const renderConfigPage = (protocol, host, query, manifest) => {
 
                                <label>Intervallo Aggiornamento Playlist:</label>
                                <input type="text" name="update_interval" value="${query.update_interval || '12:00'}" placeholder="HH:MM (predefinito 12:00)">
+                               <small style="color: #999;">Formato HH:MM (es. 1:00 o 01:00), predefinito 12:00</small>
+                               
+                               <label>URL Script Resolver Python:</label>
+                               <input type="url" name="resolver_script" value="${query.resolver_script || ''}">
+                               
+                               <label>
+                                   <input type="checkbox" name="resolver_enabled" ${query.resolver_enabled === 'true' ? 'checked' : ''}>
+                                   Abilita Resolver Python
+                               </label>
+                               
+                               <label>Intervallo Aggiornamento Resolver:</label>
+                               <input type="text" name="resolver_update_interval" value="${query.resolver_update_interval || '12:00'}" placeholder="HH:MM (predefinito 12:00)">
                                <small style="color: #999;">Formato HH:MM (es. 1:00 o 01:00), predefinito 12:00</small>
                            </div>
                        </div>
@@ -312,29 +325,80 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                    </div>
                </div>
 
-                   <div style="margin-top: 30px; text-align: center; font-size: 14px; color: #ccc;">
-                       <p>Addon creato con passione da McCoy88f - <a href="https://github.com/mccoy88f/OMG-TV-Stremio-Addon" target="_blank">GitHub Repository</a></p>
-                       
-                       <h3 style="margin-top: 20px;">Sostieni questo progetto!</h3>
-                       
-                       <div style="margin-top: 15px;">
-                           <a href="https://www.buymeacoffee.com/mccoy88f" target="_blank">
-                               <img src="https://img.buymeacoffee.com/button-api/?text=Offrimi una birra&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" alt="Buy Me a Coffee" style="max-width: 300px; margin: 0 auto;"/>
-                           </a>
+               <!-- Nuova sezione per il Resolver Python -->
+               <div class="config-form" style="margin-top: 30px;">
+                   <div class="advanced-settings">
+                       <div class="advanced-settings-header" onclick="toggleResolverSection()">
+                           <strong>Resolver Python per Stream</strong>
+                           <span id="resolver-section-toggle">▼</span>
                        </div>
+                       <div class="advanced-settings-content" id="resolver-section-content">
+                           <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 4px; margin-bottom: 20px; margin-top: 15px;">
+                               <p><strong>Cos'è il Resolver Python?</strong></p>
+                               <p>Il Resolver Python ti permette di:</p>
+                               <ul style="text-align: left;">
+                                   <li>Risolvere dinamicamente gli URL di streaming</li>
+                                   <li>Aggiungere token di autenticazione agli stream</li>
+                                   <li>Gestire API protette per i provider di contenuti</li>
+                                   <li>Personalizzare le richieste con header specifici</li>
+                               </ul>
+                               <p><strong>Nota:</strong> È necessario uno script Python che implementi la funzione <code>resolve_link</code>.</p>
+                           </div>
                        
-                       <p style="margin-top: 15px;">
-                           <a href="https://paypal.me/mccoy88f?country.x=IT&locale.x=it_IT" target="_blank">Puoi anche offrirmi una birra con PayPal 🍻</a>
-                       </p>
+                           <div id="resolverForm">
+                               <label>URL dello Script Resolver:</label>
+                               <input type="url" id="resolverScriptUrl" placeholder="https://example.com/resolver.py">
                        
-                       <div style="margin-top: 30px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 4px;">
-                           <strong>ATTENZIONE!</strong>
-                           <ul style="text-align: center; margin-top: 10px;">
-                               <p>Non sono responsabile per l'uso illecito dell'addon.</p>
-                               <p>Verifica e rispetta la normativa vigente nel tuo paese!</p>
-                           </ul>
+                               <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                   <button onclick="downloadResolverScript()" style="flex: 1;">SCARICA SCRIPT</button>
+                                   <button onclick="createResolverTemplate()" style="flex: 1;">CREA TEMPLATE</button>
+                                   <button onclick="checkResolverHealth()" style="flex: 1;">VERIFICA SCRIPT</button>
+                               </div>
+                       
+                               <div style="margin-top: 15px;">
+                                   <h4>Gestione Cache e Aggiornamenti</h4>
+                                   <div style="display: flex; gap: 10px; align-items: center;">
+                                       <input type="text" id="resolverUpdateInterval" placeholder="HH:MM (es. 12:00)" style="flex: 2;">
+                                       <button onclick="scheduleResolverUpdates()" style="flex: 1;">PIANIFICA</button>
+                                       <button onclick="clearResolverCache()" style="flex: 1;">PULISCI CACHE</button>
+                                   </div>
+                                   <small style="color: #999; display: block; margin-top: 5px;">
+                                       Formato: HH:MM (es. 12:00 per 12 ore, 1:00 per 1 ora, 0:30 per 30 minuti)
+                                   </small>
+                               </div>
+                       
+                               <div id="resolverStatus" style="margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px; display: none;">
+                                   <h3>Stato Resolver Python</h3>
+                                   <div id="resolverStatusContent"></div>
+                               </div>
+                           </div>
                        </div>
                    </div>
+               </div>
+
+               <div style="margin-top: 30px; text-align: center; font-size: 14px; color: #ccc;">
+                   <p>Addon creato con passione da McCoy88f - <a href="https://github.com/mccoy88f/OMG-TV-Stremio-Addon" target="_blank">GitHub Repository</a></p>
+                   
+                   <h3 style="margin-top: 20px;">Sostieni questo progetto!</h3>
+                   
+                   <div style="margin-top: 15px;">
+                       <a href="https://www.buymeacoffee.com/mccoy88f" target="_blank">
+                           <img src="https://img.buymeacoffee.com/button-api/?text=Offrimi una birra&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" alt="Buy Me a Coffee" style="max-width: 300px; margin: 0 auto;"/>
+                       </a>
+                   </div>
+                   
+                   <p style="margin-top: 15px;">
+                       <a href="https://paypal.me/mccoy88f?country.x=IT&locale.x=it_IT" target="_blank">Puoi anche offrirmi una birra con PayPal 🍻</a>
+                   </p>
+                   
+                   <div style="margin-top: 30px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 4px;">
+                       <strong>ATTENZIONE!</strong>
+                       <ul style="text-align: center; margin-top: 10px;">
+                           <p>Non sono responsabile per l'uso illecito dell'addon.</p>
+                           <p>Verifica e rispetta la normativa vigente nel tuo paese!</p>
+                       </ul>
+                   </div>
+               </div>
                
                <div id="confirmModal">
                    <div>
@@ -350,299 +414,7 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                <div id="toast" class="toast">URL Copiato!</div>
                
                <script>
-                   function toggleAdvancedSettings() {
-                       const content = document.getElementById('advanced-settings-content');
-                       const toggle = document.getElementById('advanced-settings-toggle');
-                       content.classList.toggle('show');
-                       toggle.textContent = content.classList.contains('show') ? '▲' : '▼';
-                   }
-                   function togglePythonSection() {
-                       const content = document.getElementById('python-section-content');
-                       const toggle = document.getElementById('python-section-toggle');
-                       content.classList.toggle('show');
-                       toggle.textContent = content.classList.contains('show') ? '▲' : '▼';
-                   }
-
-                   function getConfigQueryString() {
-                       const form = document.getElementById('configForm');
-                       const formData = new FormData(form);
-                       const params = new URLSearchParams();
-                       
-                       formData.forEach((value, key) => {
-                           if (value || key === 'epg_enabled' || key === 'force_proxy') {
-                               if (key === 'epg_enabled' || key === 'force_proxy') {
-                                   params.append(key, form.elements[key].checked);
-                               } else {
-                                   params.append(key, value);
-                               }
-                           }
-                       });
-                       
-                       return params.toString();
-                   }
-
-                   function showConfirmModal() {
-                       document.getElementById('confirmModal').style.display = 'flex';
-                   }
-
-                   function cancelInstallation() {
-                       document.getElementById('confirmModal').style.display = 'none';
-                   }
-
-                   function proceedInstallation() {
-                       const configQueryString = getConfigQueryString();
-                       const configBase64 = btoa(configQueryString);
-                       window.location.href = \`stremio://${host}/\${configBase64}/manifest.json\`;
-                       document.getElementById('confirmModal').style.display = 'none';
-                   }
-
-                   function installAddon() {
-                       showConfirmModal();
-                   }
-
-                   function updateConfig(e) {
-                       e.preventDefault();
-                       const configQueryString = getConfigQueryString();
-                       const configBase64 = btoa(configQueryString);
-                       window.location.href = \`${protocol}://${host}/\${configBase64}/configure\`;
-                   }
-
-                   function copyManifestUrl() {
-                       const configQueryString = getConfigQueryString();
-                       const configBase64 = btoa(configQueryString);
-                       const manifestUrl = \`${protocol}://${host}/\${configBase64}/manifest.json\`;
-                       
-                       navigator.clipboard.writeText(manifestUrl).then(() => {
-                           const toast = document.getElementById('toast');
-                           toast.style.display = 'block';
-                           setTimeout(() => {
-                               toast.style.display = 'none';
-                           }, 2000);
-                       });
-                   }
-
-                   function backupConfig() {
-                       const queryString = getConfigQueryString();
-                       const params = Object.fromEntries(new URLSearchParams(queryString));
-                       
-                       params.epg_enabled = params.epg_enabled === 'true';
-                       params.force_proxy = params.force_proxy === 'true';
-
-                       const configBlob = new Blob([JSON.stringify(params, null, 2)], {type: 'application/json'});
-                       const url = URL.createObjectURL(configBlob);
-                       const a = document.createElement('a');
-                       a.href = url;
-                       a.download = 'omg_tv_config.json';
-                       a.click();
-                       URL.revokeObjectURL(url);
-                   }
-
-                   function restoreConfig(event) {
-                       const file = event.target.files[0];
-                       if (!file) return;
-
-                       const reader = new FileReader();
-                       reader.onload = function(e) {
-                           try {
-                               const config = JSON.parse(e.target.result);
-                               
-                               const form = document.getElementById('configForm');
-                               for (const [key, value] of Object.entries(config)) {
-                                   const input = form.elements[key];
-                                   if (input) {
-                                       if (input.type === 'checkbox') {
-                                           input.checked = value;
-                                       } else {
-                                           input.value = value;
-                                       }
-                                   }
-                               }
-
-                               const configQueryString = getConfigQueryString();
-                               const configBase64 = btoa(configQueryString);
-                               window.location.href = \`${protocol}://${host}/\${configBase64}/configure\`;
-                           } catch (error) {
-                               alert('Errore nel caricamento del file di configurazione');
-                           }
-                       };
-                       reader.readAsText(file);
-                   }
-                   
-                   // Funzioni per la gestione dello script Python
-                   function showPythonStatus(data) {
-                       const statusEl = document.getElementById('pythonStatus');
-                       const contentEl = document.getElementById('pythonStatusContent');
-                       
-                       statusEl.style.display = 'block';
-                       
-                       let html = '<table style="width: 100%; text-align: left;">';
-                       html += '<tr><td><strong>In Esecuzione:</strong></td><td>' + (data.isRunning ? 'Sì' : 'No') + '</td></tr>';
-                       html += '<tr><td><strong>Ultima Esecuzione:</strong></td><td>' + data.lastExecution + '</td></tr>';
-                       html += '<tr><td><strong>Script Esistente:</strong></td><td>' + (data.scriptExists ? 'Sì' : 'No') + '</td></tr>';
-                       html += '<tr><td><strong>File M3U Esistente:</strong></td><td>' + (data.m3uExists ? 'Sì' : 'No') + '</td></tr>';
-                       
-                       // Aggiungi informazioni sull'aggiornamento pianificato
-                       if (data.scheduledUpdates) {
-                           html += '<tr><td><strong>Aggiornamento Automatico:</strong></td><td>Attivo ogni ' + data.updateInterval + '</td></tr>';
-                       }
-                       
-                       if (data.scriptUrl) {
-                           html += '<tr><td><strong>URL Script:</strong></td><td>' + data.scriptUrl + '</td></tr>';
-                       }
-                       if (data.lastError) {
-                           html += '<tr><td><strong>Ultimo Errore:</strong></td><td style="color: #ff6666;">' + data.lastError + '</td></tr>';
-                       }
-                       html += '</table>';
-                       
-                       contentEl.innerHTML = html;
-                   }
-
-                   function showM3uUrl(url) {
-                       const urlEl = document.getElementById('generatedM3uUrl');
-                       const contentEl = document.getElementById('m3uUrlContent');
-                       
-                       urlEl.style.display = 'block';
-                       contentEl.innerHTML = '<code style="word-break: break-all;">' + url + '</code>';
-                   }
-
-                   async function downloadPythonScript() {
-                       const url = document.getElementById('pythonScriptUrl').value;
-                       if (!url) {
-                           alert('Inserisci un URL valido per lo script Python');
-                           return;
-                       }
-                       
-                       try {
-                           const response = await fetch('/api/python-script', {
-                               method: 'POST',
-                               headers: {
-                                   'Content-Type': 'application/json'
-                               },
-                               body: JSON.stringify({
-                                   action: 'download',
-                                   url: url
-                               })
-                           });
-                           
-                           const data = await response.json();
-                           if (data.success) {
-                               alert('Script scaricato con successo!');
-                           } else {
-                               alert('Errore: ' + data.message);
-                           }
-                           
-                           checkPythonStatus();
-                       } catch (error) {
-                           alert('Errore nella richiesta: ' + error.message);
-                       }
-                   }
-
-                   async function executePythonScript() {
-                       try {
-                           const response = await fetch('/api/python-script', {
-                               method: 'POST',
-                               headers: {
-                                   'Content-Type': 'application/json'
-                               },
-                               body: JSON.stringify({
-                                   action: 'execute'
-                               })
-                           });
-                           
-                           const data = await response.json();
-                           if (data.success) {
-                               alert('Script eseguito con successo!');
-                               showM3uUrl(data.m3uUrl);
-                           } else {
-                               alert('Errore: ' + data.message);
-                           }
-                           
-                           checkPythonStatus();
-                       } catch (error) {
-                           alert('Errore nella richiesta: ' + error.message);
-                       }
-                   }
-
-                   async function checkPythonStatus() {
-                       try {
-                           const response = await fetch('/api/python-script', {
-                               method: 'POST',
-                               headers: {
-                                   'Content-Type': 'application/json'
-                               },
-                               body: JSON.stringify({
-                                   action: 'status'
-                               })
-                           });
-                           
-                           const data = await response.json();
-                           showPythonStatus(data);
-                           
-                           if (data.m3uExists) {
-                               showM3uUrl(window.location.origin + '/generated-m3u');
-                           }
-                       } catch (error) {
-                           alert('Errore nella richiesta: ' + error.message);
-                       }
-                   }
-
-                   function useGeneratedM3u() {
-                       const m3uUrl = window.location.origin + '/generated-m3u';
-                       document.querySelector('input[name="m3u"]').value = m3uUrl;
-                       alert('URL della playlist generata impostato nel campo M3U URL!');
-                   }
-                   
-                   async function scheduleUpdates() {
-                       const interval = document.getElementById('updateInterval').value;
-                       if (!interval) {
-                           alert('Inserisci un intervallo valido (es. 12:00)');
-                           return;
-                       }
-                       
-                       try {
-                           const response = await fetch('/api/python-script', {
-                               method: 'POST',
-                               headers: {
-                                   'Content-Type': 'application/json'
-                               },
-                               body: JSON.stringify({
-                                   action: 'schedule',
-                                   interval: interval
-                               })
-                           });
-                           
-                           const data = await response.json();
-                           if (data.success) {
-                               alert(data.message);
-                           } else {
-                               alert('Errore: ' + data.message);
-                           }
-                           
-                           checkPythonStatus();
-                       } catch (error) {
-                           alert('Errore nella richiesta: ' + error.message);
-                       }
-                   }
-
-                   async function stopScheduledUpdates() {
-                       try {
-                           const response = await fetch('/api/python-script', {
-                               method: 'POST',
-                               headers: {
-                                   'Content-Type': 'application/json'
-                               },
-                               body: JSON.stringify({
-                                   action: 'stopSchedule'
-                               })
-                           });
-                           
-                           const data = await response.json();
-                           alert(data.message);
-                           checkPythonStatus();
-                       } catch (error) {
-                           alert('Errore nella richiesta: ' + error.message);
-                       }
-                   }
+                   ${getViewScripts(protocol, host)}
                </script>
            </div>
        </body>
