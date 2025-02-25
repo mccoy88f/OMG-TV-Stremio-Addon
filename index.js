@@ -9,6 +9,8 @@ const config = require('./config');
 const CacheManager = require('./cache-manager')(config);
 const { renderConfigPage } = require('./views');
 const PythonRunner = require('./python-runner');
+const ResolverStreamManager = require('./resolver-stream-manager')();
+const PythonResolver = require('./python-resolver');
 
 const app = express();
 app.use(cors());
@@ -311,6 +313,64 @@ app.get('/generated-m3u', (req, res) => {
         res.send(m3uContent);
     } else {
         res.status(404).send('File M3U non trovato. Eseguire prima lo script Python.');
+    }
+});
+
+app.post('/api/resolver', async (req, res) => {
+    const { action, url, interval } = req.body;
+    
+    try {
+        if (action === 'download' && url) {
+            const success = await PythonResolver.downloadScript(url);
+            if (success) {
+                res.json({ success: true, message: 'Script resolver scaricato con successo' });
+            } else {
+                res.status(500).json({ success: false, message: PythonResolver.getStatus().lastError });
+            }
+        } else if (action === 'create-template') {
+            const success = await PythonResolver.createScriptTemplate();
+            if (success) {
+                res.json({ 
+                    success: true, 
+                    message: 'Template script resolver creato con successo',
+                    scriptPath: PythonResolver.scriptPath
+                });
+            } else {
+                res.status(500).json({ success: false, message: PythonResolver.getStatus().lastError });
+            }
+        } else if (action === 'check-health') {
+            const isHealthy = await PythonResolver.checkScriptHealth();
+            res.json({ 
+                success: isHealthy, 
+                message: isHealthy ? 'Script resolver valido' : PythonResolver.getStatus().lastError 
+            });
+        } else if (action === 'status') {
+            res.json(PythonResolver.getStatus());
+        } else if (action === 'clear-cache') {
+            PythonResolver.clearCache();
+            res.json({ success: true, message: 'Cache resolver svuotata' });
+        } else if (action === 'schedule' && interval) {
+            const success = PythonResolver.scheduleUpdate(interval);
+            if (success) {
+                res.json({ 
+                    success: true, 
+                    message: `Aggiornamento automatico impostato ogni ${interval}` 
+                });
+            } else {
+                res.status(500).json({ success: false, message: PythonResolver.getStatus().lastError });
+            }
+        } else if (action === 'stopSchedule') {
+            const stopped = PythonResolver.stopScheduledUpdates();
+            res.json({ 
+                success: true, 
+                message: stopped ? 'Aggiornamento automatico fermato' : 'Nessun aggiornamento pianificato da fermare' 
+            });
+        } else {
+            res.status(400).json({ success: false, message: 'Azione non valida' });
+        }
+    } catch (error) {
+        console.error('Errore API Resolver:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 
