@@ -141,13 +141,7 @@ class PythonResolver {
             if (fs.existsSync(outputFile)) {
                 const resultText = fs.readFileSync(outputFile, 'utf8');
                 
-                // Elimina i file temporanei
-//                try {
-//                    fs.unlinkSync(inputFile);
-//                    fs.unlinkSync(outputFile);
-//                } catch (e) {
-//                    console.error('Errore nella pulizia dei file temporanei:', e.message);
-//                }
+
                 
                 try {
                     const result = JSON.parse(resultText);
@@ -162,6 +156,15 @@ class PythonResolver {
                     this.lastError = null;
                     console.log(`✓ URL risolto per ${channelName}: ${result.resolved_url.substring(0, 50)}...`);
                     return result;
+
+                    // Elimina i file temporanei
+                    try {
+                        fs.unlinkSync(inputFile);
+                        fs.unlinkSync(outputFile);
+                    } catch (e) {
+                        console.error('Errore nella pulizia dei file temporanei:', e.message);
+                    }
+                    
                 } catch (parseError) {
                     console.error('❌ Errore nel parsing del risultato:', parseError.message);
                     console.error('Contenuto risultato:', resultText);
