@@ -104,15 +104,15 @@ const getViewScripts = (protocol, host) => {
             URL.revokeObjectURL(url);
         }
 
-        function restoreConfig(event) {
+        async function restoreConfig(event) {
             const file = event.target.files[0];
             if (!file) return;
         
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const config = JSON.parse(e.target.result);
-                    
+        
                     const form = document.getElementById('configForm');
                     for (const [key, value] of Object.entries(config)) {
                         const input = form.elements[key];
@@ -124,13 +124,13 @@ const getViewScripts = (protocol, host) => {
                             }
                         }
                     }
-                    
+        
                     // Ripristina anche i campi Python negli input visibili dell'interfaccia
                     if (config.python_script_url) {
                         document.getElementById('pythonScriptUrl').value = config.python_script_url;
-                        
-                        // Aggiungi la logica per scaricare e eseguire lo script Python
-                        fetch('/api/python-script', {
+        
+                        // Scarica lo script Python
+                        const downloadResponse = await fetch('/api/python-script', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -139,45 +139,39 @@ const getViewScripts = (protocol, host) => {
                                 action: 'download',
                                 url: config.python_script_url
                             })
-                        })
-                        .then(response => response.json())
-                        .then(downloadData => {
-                            if (downloadData.success) {
-                                // Se il download ha successo, esegui lo script
-                                return fetch('/api/python-script', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        action: 'execute'
-                                    })
-                                });
-                            }
-                            throw new Error('Download dello script fallito');
-                        })
-                        .then(executeResponse => executeResponse.json())
-                        .then(executeData => {
-                            if (executeData.success) {
-                                alert('Script Python scaricato ed eseguito con successo!');
-                                // Mostra l'URL del file M3U generato (senza modificare l'input M3U)
-                                showM3uUrl(executeData.m3uUrl);
-                            } else {
-                                throw new Error('Esecuzione dello script fallita');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Errore:', error);
-                            alert('Errore nel download o esecuzione dello script Python: ' + error.message);
                         });
+        
+                        const downloadData = await downloadResponse.json();
+                        if (!downloadData.success) {
+                            throw new Error('Download dello script fallito');
+                        }
+        
+                        // Esegui lo script Python
+                        const executeResponse = await fetch('/api/python-script', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                action: 'execute'
+                            })
+                        });
+        
+                        const executeData = await executeResponse.json();
+                        if (!executeData.success) {
+                            throw new Error('Esecuzione dello script fallita');
+                        }
+        
+                        alert('Script Python scaricato ed eseguito con successo!');
+                        showM3uUrl(executeData.m3uUrl);
                     }
-                    
+        
                     // Gestisci l'intervallo di aggiornamento
                     if (config.python_update_interval) {
                         document.getElementById('updateInterval').value = config.python_update_interval;
-                        
+        
                         // Pianifica l'aggiornamento se presente
-                        fetch('/api/python-script', {
+                        await fetch('/api/python-script', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -188,12 +182,15 @@ const getViewScripts = (protocol, host) => {
                             })
                         });
                     }
-                    
+        
+                    // Aggiorna la pagina solo dopo che tutte le operazioni sono state completate
                     const configQueryString = getConfigQueryString();
                     const configBase64 = btoa(configQueryString);
-                    window.location.href = \`${protocol}://\${host}/\${configBase64}/configure\`;
+                    window.location.href = \`${protocol}://${host}/\${configBase64}/configure\`;
+        
                 } catch (error) {
-                    alert('Errore nel caricamento del file di configurazione');
+                    console.error('Errore:', error);
+                    alert('Errore nel caricamento del file di configurazione: ' + error.message);
                 }
             };
             reader.readAsText(file);
