@@ -64,6 +64,38 @@ class ResolverStreamManager {
     }
 
     /**
+     * Verifica se l'URL risolto è valido (non è uguale all'originale e non contiene errori)
+     * @param {String} originalUrl - URL originale
+     * @param {String} resolvedUrl - URL risolto
+     * @returns {Boolean} - true se l'URL risolto è valido
+     */
+    isValidResolvedUrl(originalUrl, resolvedUrl) {
+        // Se l'URL risolto è uguale all'originale, non è stato effettivamente risolto
+        if (resolvedUrl === originalUrl) {
+            console.log('⚠️ L\'URL risolto è identico all\'originale');
+            return false;
+        }
+        
+        // Verifica la presenza di errori nell'URL risolto
+        const errorPatterns = [
+            '500 Server Error', 
+            'Internal Server Error',
+            'Error 404',
+            'Not Found',
+            'Service Unavailable'
+        ];
+        
+        for (const pattern of errorPatterns) {
+            if (resolvedUrl.includes(pattern)) {
+                console.log(`⚠️ L'URL risolto contiene un errore: "${pattern}"`);
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    /**
      * Ottiene gli stream risolti
      * @param {Object} input - Oggetto con i dettagli dello stream
      * @param {Object} userConfig - Configurazione utente
@@ -109,6 +141,16 @@ class ResolverStreamManager {
 
                     if (!result || !result.resolved_url) {
                         console.log(`❌ Nessun URL risolto per: ${streamDetails.name}`);
+                        return null;
+                    }
+                    
+                    // Debug: Mostra l'URL originale e quello risolto
+                    console.log(`🔍 URL originale: ${streamDetails.url.substring(0, 50)}...`);
+                    console.log(`🔍 URL risolto: ${result.resolved_url.substring(0, 50)}...`);
+                    
+                    // Verifica che l'URL risolto sia valido
+                    if (!this.isValidResolvedUrl(streamDetails.url, result.resolved_url)) {
+                        console.log(`❌ URL risolto non valido per: ${streamDetails.name}`);
                         return null;
                     }
 
