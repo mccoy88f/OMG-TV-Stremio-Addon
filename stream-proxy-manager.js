@@ -166,56 +166,56 @@ class StreamProxyManager {
     }
 
     async getProxyStreams(input, userConfig = {}) {
+    async getProxyStreams(input, userConfig = {}) {
         // Resetta la cache all'inizio di ogni chiamata
         this.uniqueStreams.clear();  // Resetta il Set per evitare duplicati
-
+    
         if (!userConfig.proxy || !userConfig.proxy_pwd) {
             console.log('Proxy non configurato per:', input.name);
             return [];
         }
-
+    
         let streams = [];
-
+    
         try {
             const isChannel = input.streamInfo?.urls;
             const streamsList = isChannel ? input.streamInfo.urls : [input];
-
+    
             // Elabora ogni stream del canale
             for (const stream of streamsList) {
-                // Verifica se lo stream è già stato elaborato
-                const streamKey = stream.url;
-                if (this.uniqueStreams.has(streamKey)) {
-                    console.log('Stream già elaborato, skip:', streamKey);
+                // Verifica se lo stream con lo stesso URL è già stato elaborato
+                if (this.uniqueStreams.has(stream.url)) {
+                    console.log(`⚠️ Flusso già proxato, salto: ${stream.url}`);
                     continue;
                 }
-
+    
                 try {
                     const headers = stream.headers || {};
                     if (!headers['User-Agent'] && !headers['user-agent']) {
                         headers['User-Agent'] = config.defaultUserAgent;
                     }
-
+    
                     const streamDetails = {
                         name: stream.name || input.name,
                         originalName: stream.title,
                         url: stream.url,
                         headers: headers
                     };
-
+    
                     const proxyUrl = await this.buildProxyUrl(
                         streamDetails.url, 
                         streamDetails.headers, 
                         userConfig
                     );
-
+    
                     const isHealthy = await this.checkProxyHealth(proxyUrl, streamDetails.headers);
                     if (!isHealthy) {
                         continue;
                     }
-
+    
                     let streamType = streamDetails.url.endsWith('.m3u8') ? 'HLS' : 
                                    streamDetails.url.endsWith('.mpd') ? 'DASH' : 'HTTP';
-
+    
                     streams.push({
                         name: `${streamDetails.name}`,
                         title: `🔄 ${input.originalName || streamDetails.name}\n[Proxy ${streamType}]`,
@@ -225,27 +225,28 @@ class StreamProxyManager {
                             bingeGroup: "tv"
                         }
                     });
-
-                    // Aggiungi lo stream al Set per evitare duplicazioni
-                    this.uniqueStreams.add(streamKey);
-
+    
+                    // Aggiungi l'URL del flusso al Set per evitare duplicazioni
+                    this.uniqueStreams.add(streamDetails.url);
+    
                 } catch (error) {
                     console.error('Errore elaborazione stream:', error.message);
                 }
             }
-
+    
             if (streams.length === 0) {
                 console.log('Nessuno stream proxy valido trovato per:', input.name);
             } else {
                 console.log(`Trovati ${streams.length} stream proxy validi per:`, input.name);
             }
-
+    
         } catch (error) {
             console.error('Errore generale proxy:', error.message);
         }
-
+    
         return streams;
     }
+
 }
 
 module.exports = () => new StreamProxyManager();
