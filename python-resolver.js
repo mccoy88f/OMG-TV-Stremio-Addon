@@ -84,14 +84,16 @@ class PythonResolver {
         }
     }
 
+
     /**
      * Risolve un URL tramite lo script Python
      * @param {string} url - L'URL da risolvere
      * @param {object} headers - Gli header da passare allo script
      * @param {string} channelName - Nome del canale (per logging)
+     * @param {object} proxyConfig - Configurazione del proxy (opzionale)
      * @returns {Promise<object>} - Oggetto con l'URL risolto e gli header
      */
-    async resolveLink(url, headers = {}, channelName = 'unknown') {
+    async resolveLink(url, headers = {}, channelName = 'unknown', proxyConfig = null) {
         // Controllo della cache
         const cacheKey = `${url}:${JSON.stringify(headers)}`;
         const cachedResult = this.resolvedLinksCache.get(cacheKey);
@@ -99,27 +101,28 @@ class PythonResolver {
             console.log(`✓ Usando URL in cache per: ${channelName}`);
             return cachedResult.data;
         }
-
+    
         if (!fs.existsSync(this.scriptPath)) {
             console.error('❌ Script Python resolver non trovato');
             this.lastError = 'Script Python resolver non trovato';
             return null;
         }
-
+    
         if (this.isRunning) {
             console.log('⚠️ Un\'altra risoluzione è in corso, attendere...');
             await new Promise(resolve => setTimeout(resolve, 500));
         }
-
+    
         try {
             this.isRunning = true;
             console.log(`\n=== Risoluzione URL per: ${channelName} ===`);
-
+    
             // Crea un file temporaneo con i parametri di input
             const inputParams = {
                 url: url,
                 headers: headers,
-                channel_name: channelName
+                channel_name: channelName,
+                proxy_config: proxyConfig // Aggiungi la configurazione del proxy
             };
             
             const inputFile = path.join(__dirname, 'temp', `input_${Date.now()}.json`);
@@ -141,8 +144,6 @@ class PythonResolver {
             if (fs.existsSync(outputFile)) {
                 const resultText = fs.readFileSync(outputFile, 'utf8');
                 
-
-                
                 try {
                     const result = JSON.parse(resultText);
                     
@@ -155,8 +156,8 @@ class PythonResolver {
                     this.lastExecution = new Date();
                     this.lastError = null;
                     console.log(`✓ URL risolto per ${channelName}: ${result.resolved_url.substring(0, 50)}...`);
-
-
+    
+    
                     // Elimina i file temporanei
                     try {
                         fs.unlinkSync(inputFile);
