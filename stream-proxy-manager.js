@@ -9,7 +9,6 @@ class StreamProxyManager {
         this.CACHE_DURATION = 1 * 60 * 1000; // 1 minuto
         this.MAX_RETRY_ATTEMPTS = 3; // Numero massimo di tentativi
         this.RETRY_DELAY = 1000; // Intervallo tra i tentativi in ms
-        this.proxyCache = new Set(); // Per evitare duplicazioni
     }
 
     async validateProxyUrl(url) {
@@ -227,7 +226,7 @@ class StreamProxyManager {
                     });
 
                     // Aggiungi lo stream alla cache per evitare duplicazioni
-                    this.proxyCache.add(streamKey);
+                    this.proxyCache.set(streamKey);
 
                 } catch (error) {
                     console.error('Errore elaborazione stream:', error.message);
