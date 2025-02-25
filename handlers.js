@@ -271,62 +271,30 @@ async function streamHandler({ id, config: userConfig }) {
         }
 
         let streams = [];
+        let originalStreamDetails = [];
 
-        if (userConfig.force_proxy === 'true') {
-            if (userConfig.proxy && userConfig.proxy_pwd) {
-                for (const stream of channel.streamInfo.urls) {
-                    const streamDetails = {
-                        name: channel.name,
-                        originalName: stream.name,
-                        url: stream.url,
-                        headers: stream.headers || { 'User-Agent': config.defaultUserAgent }
-                    };
-                    if (!streamDetails.headers['User-Agent']) {
-                        streamDetails.headers['User-Agent'] = config.defaultUserAgent;
-                    }
-                    const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
-                    streams.push(...proxyStreams);
+        // Prepara i dettagli dello stream originale per potenziale risoluzione o proxy
+        if (channel.streamInfo.urls) {
+            for (const stream of channel.streamInfo.urls) {
+                const headers = stream.headers || {};
+                if (!headers['User-Agent']) {
+                    headers['User-Agent'] = config.defaultUserAgent;
                 }
-            }
-        } else {
-            if (channel.streamInfo.urls) {
-                for (const stream of channel.streamInfo.urls) {
-                    const headers = stream.headers || {};
-                    if (!headers['User-Agent']) {
-                        headers['User-Agent'] = config.defaultUserAgent;
-                    }
-                    
-                    const streamMeta = {
-                        name: channel.name,
-                        title: `📺 ${stream.name || channel.name}`,
-                        url: stream.url,
-                        headers: headers,
-                        behaviorHints: {
-                            notWebReady: false,
-                            bingeGroup: "tv"
-                        }
-                    };
-                    streams.push(streamMeta);
-
-                    if (userConfig.proxy && userConfig.proxy_pwd) {
-                        const streamDetails = {
-                            name: channel.name,
-                            originalName: stream.name,
-                            url: stream.url,
-                            headers: headers
-                        };
-                        const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
-                        streams.push(...proxyStreams);
-                    }
-                }
+                
+                originalStreamDetails.push({
+                    name: channel.name,
+                    originalName: stream.name,
+                    url: stream.url,
+                    headers: headers
+                });
             }
         }
 
-        // Aggiungi gli stream risolti se il resolver è abilitato
+        // NUOVA LOGICA: Se il resolver è abilitato, utilizza quello INVECE dei flussi originali
         if (userConfig.resolver_enabled === 'true' && userConfig.resolver_script) {
-            const ResolverStreamManager = require('./resolver-stream-manager')(config);
+            console.log(`\n=== Utilizzo Resolver per ${channel.name} ===`);
             
-            if (streams.length > 0) {
+            try {
                 const streamDetails = {
                     name: channel.name,
                     originalName: channel.name,
@@ -335,22 +303,52 @@ async function streamHandler({ id, config: userConfig }) {
                     }
                 };
                 
-                try {
-                    console.log(`\n=== Risoluzione flussi per ${channel.name} ===`);
-                    const resolvedStreams = await ResolverStreamManager.getResolvedStreams(streamDetails, userConfig);
+                const resolvedStreams = await ResolverStreamManager.getResolvedStreams(streamDetails, userConfig);
+                
+                if (resolvedStreams && resolvedStreams.length > 0) {
+                    console.log(`✓ Ottenuti ${resolvedStreams.length} flussi risolti`);
                     
-                    if (resolvedStreams && resolvedStreams.length > 0) {
-                        console.log(`✓ Aggiunti ${resolvedStreams.length} flussi risolti`);
-                        streams.push(...resolvedStreams);
+                    if (userConfig.force_proxy === 'true' && userConfig.proxy && userConfig.proxy_pwd) {
+                        console.log('⚙️ Applicazione proxy ai flussi risolti...');
+                        // Processa ogni stream risolto attraverso il proxy
+                        for (const resolvedStream of resolvedStreams) {
+                            // Creiamo un oggetto streamDetails adatto al proxy
+                            const proxyStreamDetails = {
+                                name: resolvedStream.name,
+                                originalName: resolvedStream.title,
+                                url: resolvedStream.url,
+                                headers: resolvedStream.headers || {}
+                            };
+                            
+                            const proxiedResolvedStreams = await StreamProxyManager.getProxyStreams(proxyStreamDetails, userConfig);
+                            streams.push(...proxiedResolvedStreams);
+                        }
+                        
+                        if (streams.length === 0) {
+                            // Se non abbiamo ottenuto proxy validi, usiamo i resolved originali
+                            console.log('⚠️ Nessun proxy valido per i flussi risolti, uso i flussi risolti originali');
+                            streams = resolvedStreams;
+                        }
                     } else {
-                        console.log('⚠️ Nessun flusso risolto disponibile');
+                        // Usa i flussi risolti direttamente
+                        streams = resolvedStreams;
                     }
-                } catch (resolverError) {
-                    console.error('❌ Errore durante la risoluzione dei flussi:', resolverError);
+                } else {
+                    console.log('⚠️ Nessun flusso risolto disponibile, utilizzo flussi standard');
+                    // Riprendi con la logica standard solo se il resolver fallisce
+                    streams = await processOriginalStreams(originalStreamDetails, channel, userConfig);
                 }
+            } catch (resolverError) {
+                console.error('❌ Errore durante la risoluzione dei flussi:', resolverError);
+                // In caso di errore del resolver, riprendi con la logica standard
+                streams = await processOriginalStreams(originalStreamDetails, channel, userConfig);
             }
+        } else {
+            // Usa la logica standard se il resolver non è abilitato
+            streams = await processOriginalStreams(originalStreamDetails, channel, userConfig);
         }
 
+        // Aggiungi i metadati a tutti gli stream
         const displayName = cleanNameForImage(channel.name);
         const encodedName = encodeURIComponent(displayName).replace(/%20/g, '+');
         const fallbackLogo = `https://dummyimage.com/500x500/590b8a/ffffff.jpg&text=${encodedName}`;
@@ -393,7 +391,46 @@ async function streamHandler({ id, config: userConfig }) {
     }
 }
 
+// Funzione ausiliaria per processare gli stream originali (codice esistente estratto)
+async function processOriginalStreams(originalStreamDetails, channel, userConfig) {
+    let streams = [];
+    
+    if (userConfig.force_proxy === 'true') {
+        if (userConfig.proxy && userConfig.proxy_pwd) {
+            for (const streamDetails of originalStreamDetails) {
+                const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
+                streams.push(...proxyStreams);
+            }
+        }
+    } else {
+        // Aggiungi prima gli stream originali
+        for (const streamDetails of originalStreamDetails) {
+            const streamMeta = {
+                name: streamDetails.name,
+                title: `📺 ${streamDetails.originalName || streamDetails.name}`,
+                url: streamDetails.url,
+                headers: streamDetails.headers,
+                behaviorHints: {
+                    notWebReady: false,
+                    bingeGroup: "tv"
+                }
+            };
+            streams.push(streamMeta);
+
+            // Aggiungi anche stream proxy se configurato
+            if (userConfig.proxy && userConfig.proxy_pwd) {
+                const proxyStreams = await StreamProxyManager.getProxyStreams(streamDetails, userConfig);
+                streams.push(...proxyStreams);
+            }
+        }
+    }
+    
+    return streams;
+}
+
 module.exports = {
     catalogHandler,
-    streamHandler
+    streamHandler,
+    // Esporta anche la nuova funzione ausiliaria per poterla utilizzare in altri moduli se necessario
+    processOriginalStreams
 };
