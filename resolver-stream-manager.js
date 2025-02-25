@@ -174,7 +174,7 @@ class ResolverStreamManager {
     
                     return {
                         name: `${streamDetails.name}`,
-                        title: `🔍 ${input.originalName || streamDetails.name}\n[Resolver ${streamType}]`,
+                        title: `🧩 ${input.originalName || streamDetails.name}\n[Resolver ${streamType}]`,
                         url: result.resolved_url,
                         headers: result.headers || streamDetails.headers,
                         behaviorHints: {
