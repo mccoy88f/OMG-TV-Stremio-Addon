@@ -166,22 +166,11 @@ class StreamProxyManager {
     }
 
     async getProxyStreams(input, userConfig = {}) {
-        // Inizializza il Set se non esiste
-        if (!this.uniqueStreams) {
-            this.uniqueStreams = new Set();
-        }
-    
-        // 🚨 BLOCCA SUBITO URL DUPLICATI
-        if (this.uniqueStreams.has(input.url)) {
-            console.log(`⚠️ URL già proxato, salto: ${input.url}`);
-            return [];
-        }
+        // Blocca solo gli URL che sono già proxy
         if (input.url.includes(userConfig.proxy)) {
             console.log(`⚠️ L'URL è già un proxy, salto: ${input.url}`);
             return [];
         }
-        // Aggiunge l'URL al Set per evitare duplicati
-        this.uniqueStreams.add(input.url);
         
         // Se il proxy non è configurato, interrompe l'elaborazione
         if (!userConfig.proxy || !userConfig.proxy_pwd) {
