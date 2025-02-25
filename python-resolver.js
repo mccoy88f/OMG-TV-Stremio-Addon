@@ -10,7 +10,7 @@ class PythonResolver {
     constructor() {
         this.scriptPath = path.join(__dirname, 'resolver_script.py');
         this.resolvedLinksCache = new Map();
-        this.cacheExpiryTime = 30 * 60 * 1000; // 30 minuti di cache per i link risolti
+        this.cacheExpiryTime = 20 * 60 * 1000; // 20 minuti di cache per i link risolti
         this.lastExecution = null;
         this.lastError = null;
         this.isRunning = false;
