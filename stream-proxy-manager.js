@@ -4,8 +4,9 @@ const config = require('./config');
 
 class StreamProxyManager {
     constructor() {
-        this.proxyCache = new Map();
-        this.lastCheck = new Map();
+        this.proxyCache = new Map();  // Usato per memorizzare lo stato di salute dei proxy
+        this.lastCheck = new Map();   // Usato per memorizzare l'ultimo controllo di salute
+        this.uniqueStreams = new Set(); // Usato per evitare duplicati
         this.CACHE_DURATION = 1 * 60 * 1000; // 1 minuto
         this.MAX_RETRY_ATTEMPTS = 3; // Numero massimo di tentativi
         this.RETRY_DELAY = 1000; // Intervallo tra i tentativi in ms
@@ -166,7 +167,7 @@ class StreamProxyManager {
 
     async getProxyStreams(input, userConfig = {}) {
         // Resetta la cache all'inizio di ogni chiamata
-        this.proxyCache.clear();
+        this.uniqueStreams.clear();  // Resetta il Set per evitare duplicati
 
         if (!userConfig.proxy || !userConfig.proxy_pwd) {
             console.log('Proxy non configurato per:', input.name);
@@ -181,10 +182,10 @@ class StreamProxyManager {
 
             // Elabora ogni stream del canale
             for (const stream of streamsList) {
-                // Verifica se lo stream è già stato proxato
+                // Verifica se lo stream è già stato elaborato
                 const streamKey = stream.url;
-                if (this.proxyCache.has(streamKey)) {
-                    console.log('Stream già proxato, skip:', streamKey);
+                if (this.uniqueStreams.has(streamKey)) {
+                    console.log('Stream già elaborato, skip:', streamKey);
                     continue;
                 }
 
@@ -225,8 +226,8 @@ class StreamProxyManager {
                         }
                     });
 
-                    // Aggiungi lo stream alla cache per evitare duplicazioni
-                    this.proxyCache.set(streamKey);
+                    // Aggiungi lo stream al Set per evitare duplicazioni
+                    this.uniqueStreams.add(streamKey);
 
                 } catch (error) {
                     console.error('Errore elaborazione stream:', error.message);
@@ -245,7 +246,6 @@ class StreamProxyManager {
 
         return streams;
     }
-        
 }
 
 module.exports = () => new StreamProxyManager();
