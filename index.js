@@ -31,6 +31,24 @@ app.get('/:config/configure', async (req, res) => {
         const host = req.headers['x-forwarded-host'] || req.get('host');
         const configString = Buffer.from(req.params.config, 'base64').toString();
         const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
+        
+        // Inizializza il generatore Python se configurato
+        if (decodedConfig.python_script_url) {
+            console.log('Inizializzazione Script Python Generatore dalla configurazione');
+            try {
+                // Scarica lo script Python se non già scaricato
+                await PythonRunner.downloadScript(decodedConfig.python_script_url);
+                
+                // Se è stato definito un intervallo di aggiornamento, impostalo
+                if (decodedConfig.python_update_interval) {
+                    console.log('Impostazione dell\'aggiornamento automatico del generatore Python');
+                    PythonRunner.scheduleUpdate(decodedConfig.python_update_interval);
+                }
+            } catch (pythonError) {
+                console.error('Errore nell\'inizializzazione dello script Python:', pythonError);
+            }
+        }
+        
         res.send(renderConfigPage(protocol, host, decodedConfig, config.manifest));
     } catch (error) {
         console.error('Errore nella configurazione:', error);
@@ -111,6 +129,23 @@ app.get('/:config/manifest.json', async (req, res) => {
 
         if (decodedConfig.m3u && CacheManager.cache.m3uUrl !== decodedConfig.m3u) {
             await CacheManager.rebuildCache(decodedConfig.m3u);
+        }
+        
+        // Inizializza il generatore Python se configurato
+        if (decodedConfig.python_script_url) {
+            console.log('Inizializzazione Script Python Generatore dalla configurazione');
+            try {
+                // Scarica lo script Python se non già scaricato
+                await PythonRunner.downloadScript(decodedConfig.python_script_url);
+                
+                // Se è stato definito un intervallo di aggiornamento, impostalo
+                if (decodedConfig.python_update_interval) {
+                    console.log('Impostazione dell\'aggiornamento automatico del generatore Python');
+                    PythonRunner.scheduleUpdate(decodedConfig.python_update_interval);
+                }
+            } catch (pythonError) {
+                console.error('Errore nell\'inizializzazione dello script Python:', pythonError);
+            }
         }
 
         const { genres } = CacheManager.getCachedData();
