@@ -204,7 +204,7 @@ class StreamProxyManager {
             // Aggiunge lo stream proxato all'array
             streams.push({
                 name: input.name,
-                title: `✅ ${input.originalName}\n[Proxy ${streamType}]`,
+                title: `🌐 ${input.originalName}\n[Proxy ${streamType}]`,
                 url: proxyUrl,
                 behaviorHints: {
                     notWebReady: false,
