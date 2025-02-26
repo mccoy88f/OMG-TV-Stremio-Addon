@@ -161,7 +161,7 @@ class ResolverStreamManager {
                         console.log(`ℹ️ URL non modificato dal resolver per: ${streamDetails.name}, lo manteniamo`);
                         return {
                             name: `${input.originalName}`,
-                            title: `🔄 ${streamDetails.name}\n[Flusso Originale]`,
+                            title: `${streamDetails.name}\n[Flusso Originale]`,
                             url: streamDetails.url,
                             headers: streamDetails.headers,
                             behaviorHints: {
