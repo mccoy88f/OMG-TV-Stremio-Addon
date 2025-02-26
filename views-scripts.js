@@ -43,7 +43,12 @@ const getViewScripts = (protocol, host) => {
                     }
                 }
             });
-            
+
+            // Aggiungi manualmente l'intervallo del resolver se presente
+            const resolverInterval = document.getElementById('resolverUpdateInterval').value;
+            if (resolverInterval) {
+                params.append('resolver_update_interval', resolverInterval);
+            }
             return params.toString();
         }
 
@@ -182,7 +187,23 @@ const getViewScripts = (protocol, host) => {
                             })
                         });
                     }
-        
+
+                    if (config.resolver_update_interval) {
+                        document.getElementById('resolverUpdateInterval').value = config.resolver_update_interval;
+                        
+                        // Pianifica l'aggiornamento
+                        await fetch('/api/resolver', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                action: 'schedule',
+                                interval: config.resolver_update_interval
+                            })
+                        });
+                    }
+                    
                     // NUOVO: Avvia esplicitamente la ricostruzione della cache
                     if (config.m3u) {
                         try {
