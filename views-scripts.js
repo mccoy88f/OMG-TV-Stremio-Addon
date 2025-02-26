@@ -99,7 +99,17 @@ const getViewScripts = (protocol, host) => {
             params.epg_enabled = params.epg_enabled === 'true';
             params.force_proxy = params.force_proxy === 'true';
             params.resolver_enabled = params.resolver_enabled === 'true';
-
+        
+            // Salva sul server
+            fetch('/api/save-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(params)
+            });
+        
+            // Genera file di download
             const configBlob = new Blob([JSON.stringify(params, null, 2)], {type: 'application/json'});
             const url = URL.createObjectURL(configBlob);
             const a = document.createElement('a');
@@ -117,7 +127,16 @@ const getViewScripts = (protocol, host) => {
             reader.onload = async function(e) {
                 try {
                     const config = JSON.parse(e.target.result);
-        
+                    
+                    // Salva la configurazione sul server
+                    const saveResponse = await fetch('/api/save-config', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(config)
+                    });
+                    
                     const form = document.getElementById('configForm');
                     for (const [key, value] of Object.entries(config)) {
                         const input = form.elements[key];
