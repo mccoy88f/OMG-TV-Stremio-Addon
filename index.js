@@ -409,6 +409,27 @@ app.post('/api/resolver', async (req, res) => {
     }
 });
 
+app.post('/api/rebuild-cache', async (req, res) => {
+    try {
+        const m3uUrl = req.body.m3u;
+        if (!m3uUrl) {
+            return res.status(400).json({ success: false, message: 'URL M3U richiesto' });
+        }
+
+        console.log('Richiesta di ricostruzione cache con URL:', m3uUrl);
+        
+        await CacheManager.rebuildCache(m3uUrl, req.body);
+        
+        res.json({ 
+            success: true, 
+            message: 'Ricostruzione cache avviata con successo'
+        });
+    } catch (error) {
+        console.error('Errore nella ricostruzione della cache:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // Endpoint API per le operazioni sullo script Python
 app.post('/api/python-script', async (req, res) => {
     const { action, url, interval } = req.body;
