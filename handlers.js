@@ -290,7 +290,7 @@ async function streamHandler({ id, config: userConfig }) {
             }
         }
 
-        // NUOVA LOGICA: Se il resolver è abilitato, ottiene i flussi risolti
+
         if (userConfig.resolver_enabled === 'true' && userConfig.resolver_script) {
             console.log(`\n=== Utilizzo Resolver per ${channel.name} ===`);
             
@@ -326,13 +326,9 @@ async function streamHandler({ id, config: userConfig }) {
                             }
                             
                             if (streams.length === 0) {
-                                // Non usiamo più i flussi risolti come fallback
                                 console.log('⚠️ Nessun proxy valido per i flussi risolti e force_proxy è attivo, nessun flusso disponibile');
-                                // Non facciamo nulla, streams rimane vuoto
                             }
                         } else {
-                            // In questo caso il proxy è richiesto ma non configurato, quindi mostro i flussi risolti
-                            // Questo è necessario perché l'utente ha richiesto force_proxy ma ha dimenticato di configurare il proxy
                             console.log('⚠️ Proxy forzato ma non configurato correttamente, uso i flussi risolti originali');
                             streams = resolvedStreams;
                         }
