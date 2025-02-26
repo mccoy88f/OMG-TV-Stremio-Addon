@@ -203,7 +203,7 @@ class StreamProxyManager {
     
             // Aggiunge lo stream proxato all'array
             streams.push({
-                name: input.name,
+                name: input.channelName ,
                 title: `✅ ${input.name}\n[Proxy ${streamType}]`,
                 url: proxyUrl,
                 behaviorHints: {
