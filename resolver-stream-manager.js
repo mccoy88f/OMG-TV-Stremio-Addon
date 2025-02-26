@@ -152,7 +152,7 @@ class ResolverStreamManager {
                     // Se la risoluzione non produce un URL, restituisci lo stream originale
                     if (!result || !result.resolved_url || result.resolved_url === streamDetails.url) {
                         console.log(`❌ Nessun URL risolto per: ${streamDetails.name}`);
-                        return stream;
+                        return null; // Restituisci null per escludere questo stream
                     }
                     
                     // Debug: Mostra l'URL originale e quello risolto
@@ -179,21 +179,24 @@ class ResolverStreamManager {
                     };
                 } catch (error) {
                     console.error('Errore elaborazione stream:', error.message);
-                    return stream; // Restituisci lo stream originale in caso di errore
+                    return null; // Restituisci null per escludere questo stream
                 }
             });
 
             // Attendiamo tutte le promesse in parallelo
             const results = await Promise.all(streamPromises);
             
-            // Filtriamo i risultati
-            streams = results;
+            // Filtriamo i risultati escludendo i valori null
+            streams = results.filter(item => item !== null);
 
             if (streams.length === 0) {
                 console.log('Nessuno stream risolto valido trovato per:', input.name);
             } else {
                 console.log(`✓ Trovati ${streams.length} stream risolti per:`, input.name);
             }
+            
+            // Ritorniamo solo gli stream risolti, senza proxy
+            return streams;
 
         } catch (error) {
             console.error('Errore generale resolver:', error.message);
@@ -201,9 +204,8 @@ class ResolverStreamManager {
                 console.error('Status:', error.response.status);
                 console.error('Headers:', error.response.headers);
             }
+            return [];
         }
-
-        return streams;
     }
 
     /**
