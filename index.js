@@ -416,14 +416,22 @@ app.post('/api/rebuild-cache', async (req, res) => {
             return res.status(400).json({ success: false, message: 'URL M3U richiesto' });
         }
 
-        console.log('Richiesta di ricostruzione cache con URL:', m3uUrl);
+        console.log('🔄 Richiesta di ricostruzione cache ricevuta');
+        await CacheManager.rebuildCache(req.body.m3u, req.body);
         
-        await CacheManager.rebuildCache(m3uUrl, req.body);
-        
-        res.json({ 
-            success: true, 
-            message: 'Ricostruzione cache avviata con successo'
-        });
+        if (req.body.epg_enabled === 'true') {
+            console.log('📡 Ricostruzione EPG in corso...');
+            const epgToUse = req.body.epg || 
+                (CacheManager.getCachedData().epgUrls && CacheManager.getCachedData().epgUrls.length > 0 
+                    ? CacheManager.getCachedData().epgUrls.join(',') 
+                    : null);
+            if (epgToUse) {
+                await EPGManager.initializeEPG(epgToUse);
+            }
+        }
+
+        res.json({ success: true, message: 'Cache e EPG ricostruiti con successo' });
+       
     } catch (error) {
         console.error('Errore nella ricostruzione della cache:', error);
         res.status(500).json({ success: false, message: error.message });
