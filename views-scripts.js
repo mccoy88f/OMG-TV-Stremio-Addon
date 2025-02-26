@@ -105,6 +105,7 @@ const getViewScripts = (protocol, host) => {
         }
 
         async function restoreConfig(event) {
+        async function restoreConfig(event) {
             const file = event.target.files[0];
             if (!file) return;
         
@@ -181,6 +182,29 @@ const getViewScripts = (protocol, host) => {
                                 interval: config.python_update_interval
                             })
                         });
+                    }
+        
+                    // NUOVO: Avvia esplicitamente la ricostruzione della cache
+                    if (config.m3u) {
+                        try {
+                            const rebuildResponse = await fetch('/api/rebuild-cache', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(config)
+                            });
+                            
+                            const rebuildResult = await rebuildResponse.json();
+                            if (rebuildResult.success) {
+                                alert('Configurazione ripristinata e ricostruzione cache avviata!');
+                            } else {
+                                alert('Configurazione ripristinata ma errore nella ricostruzione: ' + rebuildResult.message);
+                            }
+                        } catch (rebuildError) {
+                            console.error('Errore rebuild:', rebuildError);
+                            alert('Configurazione ripristinata ma errore nella ricostruzione della cache');
+                        }
                     }
         
                     // Aggiorna la pagina solo dopo che tutte le operazioni sono state completate
