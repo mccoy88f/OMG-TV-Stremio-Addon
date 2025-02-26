@@ -11,11 +11,46 @@ const { renderConfigPage } = require('./views');
 const PythonRunner = require('./python-runner');
 const ResolverStreamManager = require('./resolver-stream-manager')();
 const PythonResolver = require('./python-resolver');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Funzione per salvare la configurazione
+function saveConfiguration(config) {
+    try {
+        const configPath = path.join(__dirname, 'last-config.json');
+        
+        // Rimuovi valori nulli o undefined
+        const cleanConfig = Object.fromEntries(
+            Object.entries(config).filter(([_, v]) => v != null && v !== '')
+        );
+
+        fs.writeFileSync(configPath, JSON.stringify(cleanConfig, null, 2), 'utf8');
+        console.log('Configurazione salvata con successo');
+        return true;
+    } catch (error) {
+        console.error('Errore nel salvataggio della configurazione:', error);
+        return false;
+    }
+}
+
+// Funzione per caricare l'ultima configurazione
+function loadLastConfiguration() {
+    const configPath = path.join(__dirname, 'last-config.json');
+    try {
+        if (fs.existsSync(configPath)) {
+            const rawData = fs.readFileSync(configPath, 'utf8');
+            return JSON.parse(rawData);
+        }
+    } catch (error) {
+        console.error('Errore nel caricamento della configurazione:', error);
+    }
+    return null;
+}
 
 // Route principale - supporta sia il vecchio che il nuovo sistema
 app.get('/', async (req, res) => {
@@ -62,6 +97,9 @@ app.get('/manifest.json', async (req, res) => {
         const protocol = req.headers['x-forwarded-proto'] || req.protocol;
         const host = req.headers['x-forwarded-host'] || req.get('host');
         const configUrl = `${protocol}://${host}/?${new URLSearchParams(req.query)}`;
+
+        // Salva la configurazione corrente
+        saveConfiguration(req.query);
 
         if (req.query.m3u && CacheManager.cache.m3uUrl !== req.query.m3u) {
             await CacheManager.rebuildCache(req.query.m3u);
@@ -126,6 +164,9 @@ app.get('/:config/manifest.json', async (req, res) => {
         const host = req.headers['x-forwarded-host'] || req.get('host');
         const configString = Buffer.from(req.params.config, 'base64').toString();
         const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
+
+        // Salva la configurazione corrente
+        saveConfiguration(decodedConfig);
 
         if (decodedConfig.m3u && CacheManager.cache.m3uUrl !== decodedConfig.m3u) {
             await CacheManager.rebuildCache(decodedConfig.m3u);
@@ -203,140 +244,20 @@ app.get('/:config/manifest.json', async (req, res) => {
     }
 });
 
-// Manteniamo la route esistente per gli altri endpoint
-app.get('/:resource/:type/:id/:extra?.json', async (req, res, next) => {
-    const { resource, type, id } = req.params;
-    const extra = req.params.extra 
-        ? safeParseExtra(req.params.extra) 
-        : {};
-    
+// Endpoint API per salvare la configurazione
+app.post('/api/save-config', (req, res) => {
     try {
-        let result;
-        switch (resource) {
-            case 'stream':
-                result = await streamHandler({ type, id, config: req.query });
-                break;
-            case 'catalog':
-                result = await catalogHandler({ type, id, extra, config: req.query });
-                break;
-            case 'meta':
-                result = await metaHandler({ type, id, config: req.query });
-                break;
-            default:
-                next();
-                return;
-        }
-        
-        res.setHeader('Content-Type', 'application/json');
-        res.send(result);
-    } catch (error) {
-        console.error('Error handling request:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-function safeParseExtra(extraParam) {
-    try {
-        if (!extraParam) return {};
-        
-        const decodedExtra = decodeURIComponent(extraParam);
-        
-        // Supporto per skip con genere
-        if (decodedExtra.includes('genre=') && decodedExtra.includes('&skip=')) {
-            const parts = decodedExtra.split('&');
-            const genre = parts.find(p => p.startsWith('genre=')).split('=')[1];
-            const skip = parts.find(p => p.startsWith('skip=')).split('=')[1];
-            
-            return { 
-                genre, 
-                skip: parseInt(skip, 10) || 0 
-            };
-        }
-        
-        if (decodedExtra.startsWith('skip=')) {
-            return { skip: parseInt(decodedExtra.split('=')[1], 10) || 0 };
-        }
-        
-        if (decodedExtra.startsWith('genre=')) {
-            return { genre: decodedExtra.split('=')[1] };
-        }
-        
-        if (decodedExtra.startsWith('search=')) {
-            return { search: decodedExtra.split('=')[1] };
-        }
-        
-        try {
-            return JSON.parse(decodedExtra);
-        } catch {
-            return {};
-        }
-    } catch (error) {
-        console.error('Error parsing extra:', error);
-        return {};
-    }
-}
-
-// Per il catalog con config codificato
-app.get('/:config/catalog/:type/:id/:extra?.json', async (req, res) => {
-    try {
-        const configString = Buffer.from(req.params.config, 'base64').toString();
-        const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
-        const extra = req.params.extra 
-            ? safeParseExtra(req.params.extra) 
-            : {};
-        
-        const result = await catalogHandler({ 
-            type: req.params.type, 
-            id: req.params.id, 
-            extra, 
-            config: decodedConfig 
+        const result = saveConfiguration(req.body);
+        res.json({ 
+            success: result, 
+            message: result ? 'Configurazione salvata con successo' : 'Errore nel salvataggio' 
         });
-        
-        res.setHeader('Content-Type', 'application/json');
-        res.send(result);
     } catch (error) {
-        console.error('Error handling catalog request:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Per lo stream con config codificato
-app.get('/:config/stream/:type/:id.json', async (req, res) => {
-    try {
-        const configString = Buffer.from(req.params.config, 'base64').toString();
-        const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
-        
-        const result = await streamHandler({ 
-            type: req.params.type, 
-            id: req.params.id, 
-            config: decodedConfig 
+        console.error('Errore nel salvataggio della configurazione:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Errore nel salvataggio della configurazione' 
         });
-        
-        res.setHeader('Content-Type', 'application/json');
-        res.send(result);
-    } catch (error) {
-        console.error('Error handling stream request:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Per il meta con config codificato
-app.get('/:config/meta/:type/:id.json', async (req, res) => {
-    try {
-        const configString = Buffer.from(req.params.config, 'base64').toString();
-        const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
-        
-        const result = await metaHandler({ 
-            type: req.params.type, 
-            id: req.params.id, 
-            config: decodedConfig 
-        });
-        
-        res.setHeader('Content-Type', 'application/json');
-        res.send(result);
-    } catch (error) {
-        console.error('Error handling meta request:', error);
-        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -479,9 +400,160 @@ app.post('/api/python-script', async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 });
+
+// Route per gestire le richieste di tipo catalog, stream e meta con configurazione codificata
+app.get('/:config/catalog/:type/:id/:extra?.json', async (req, res) => {
+    try {
+        const configString = Buffer.from(req.params.config, 'base64').toString();
+        const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
+        const extra = req.params.extra 
+            ? safeParseExtra(req.params.extra) 
+            : {};
+        
+        const result = await catalogHandler({ 
+            type: req.params.type, 
+            id: req.params.id, 
+            extra, 
+            config: decodedConfig 
+        });
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.send(result);
+    } catch (error) {
+        console.error('Error handling catalog request:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Route per gestire le richieste di tipo stream con configurazione codificata
+app.get('/:config/stream/:type/:id.json', async (req, res) => {
+    try {
+        const configString = Buffer.from(req.params.config, 'base64').toString();
+        const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
+        
+        const result = await streamHandler({ 
+            type: req.params.type, 
+            id: req.params.id, 
+            config: decodedConfig 
+        });
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.send(result);
+    } catch (error) {
+        console.error('Error handling stream request:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Route per gestire le richieste di tipo meta con configurazione codificata
+app.get('/:config/meta/:type/:id.json', async (req, res) => {
+    try {
+        const configString = Buffer.from(req.params.config, 'base64').toString();
+        const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
+        
+        const result = await metaHandler({ 
+            type: req.params.type, 
+            id: req.params.id, 
+            config: decodedConfig 
+        });
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.send(result);
+    } catch (error) {
+        console.error('Error handling meta request:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Funzione per analizzare i parametri extra in modo sicuro
+function safeParseExtra(extraParam) {
+    try {
+        if (!extraParam) return {};
+        
+        const decodedExtra = decodeURIComponent(extraParam);
+        
+        // Supporto per skip con genere
+        if (decodedExtra.includes('genre=') && decodedExtra.includes('&skip=')) {
+            const parts = decodedExtra.split('&');
+            const genre = parts.find(p => p.startsWith('genre=')).split('=')[1];
+            const skip = parts.find(p => p.startsWith('skip=')).split('=')[1];
+            
+            return { 
+                genre, 
+                skip: parseInt(skip, 10) || 0 
+            };
+        }
+        
+        if (decodedExtra.startsWith('skip=')) {
+            return { skip: parseInt(decodedExtra.split('=')[1], 10) || 0 };
+        }
+        
+        if (decodedExtra.startsWith('genre=')) {
+            return { genre: decodedExtra.split('=')[1] };
+        }
+        
+        if (decodedExtra.startsWith('search=')) {
+            return { search: decodedExtra.split('=')[1] };
+        }
+        
+        try {
+            return JSON.parse(decodedExtra);
+        } catch {
+            return {};
+        }
+    } catch (error) {
+        console.error('Error parsing extra:', error);
+        return {};
+    }
+}
+
 async function startAddon() {
    try {
        const port = process.env.PORT || 10000;
+       
+       // Carica la configurazione salvata
+       const lastConfig = loadLastConfiguration();
+       
+       // Se esiste una configurazione salvata, esegui operazioni di inizializzazione
+       if (lastConfig) {
+           console.log('Configurazione precedente caricata');
+           
+           // Ripristina Python Script
+           if (lastConfig.python_script_url) {
+               try {
+                   await PythonRunner.downloadScript(lastConfig.python_script_url);
+                   
+                   if (lastConfig.python_update_interval) {
+                       PythonRunner.scheduleUpdate(lastConfig.python_update_interval);
+                   }
+               } catch (pythonError) {
+                   console.error('Errore nel ripristino dello script Python:', pythonError);
+               }
+           }
+
+           // Ripristina Resolver Script
+           if (lastConfig.resolver_script && lastConfig.resolver_enabled === 'true') {
+               try {
+                   await PythonResolver.downloadScript(lastConfig.resolver_script);
+                   
+                   if (lastConfig.resolver_update_interval) {
+                       PythonResolver.scheduleUpdate(lastConfig.resolver_update_interval);
+                   }
+               } catch (resolverError) {
+                   console.error('Errore nel ripristino dello script Resolver:', resolverError);
+               }
+           }
+
+           // Ricostruisci la cache se è presente un M3U
+           if (lastConfig.m3u) {
+               try {
+                   await CacheManager.rebuildCache(lastConfig.m3u, lastConfig);
+               } catch (cacheError) {
+                   console.error('Errore nella ricostruzione della cache:', cacheError);
+               }
+           }
+       }
+
        app.listen(port, () => {
           console.log('=============================\n');
           console.log('OMG ADDON Avviato con successo');
