@@ -5,7 +5,7 @@ class ResolverStreamManager {
     constructor() {
         this.resolverCache = new Map();
         this.lastCheck = new Map();
-        this.CACHE_DURATION = 30 * 60 * 1000; // 30 minuti di cache
+        this.CACHE_DURATION = 20 * 60 * 1000; // 30 minuti di cache
     }
 
     /**
