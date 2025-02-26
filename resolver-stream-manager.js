@@ -149,10 +149,26 @@ class ResolverStreamManager {
                         proxyConfig
                     );
 
-                    // Se la risoluzione non produce un URL, restituisci lo stream originale
-                    if (!result || !result.resolved_url || result.resolved_url === streamDetails.url) {
-                        console.log(`❌ Nessun URL risolto per: ${streamDetails.name}`);
-                        return null; // Restituisci null per escludere questo stream
+                    // Se la risoluzione non produce un risultato, restituisci null
+                    if (!result || !result.resolved_url) {
+                        console.log(`❌ Nessun risultato dal resolver per: ${streamDetails.name}`);
+                        return null;
+                    }
+                    
+                    // Se l'URL è lo stesso (non è stato processato dal resolver perché non è Vavoo),
+                    // restituisci comunque uno stream con l'URL originale
+                    if (result.resolved_url === streamDetails.url) {
+                        console.log(`ℹ️ URL non modificato dal resolver per: ${streamDetails.name}, lo manteniamo`);
+                        return {
+                            name: `${input.originalName}`,
+                            title: `🔄 ${streamDetails.name}\n[Flusso Originale]`,
+                            url: streamDetails.url,
+                            headers: streamDetails.headers,
+                            behaviorHints: {
+                                notWebReady: false,
+                                bingeGroup: "tv"
+                            }
+                        };
                     }
                     
                     // Debug: Mostra l'URL originale e quello risolto
