@@ -106,9 +106,9 @@ class ResolverStreamManager {
             console.log('Resolver non configurato per:', input.name);
             return [];
         }
-    
+
         let streams = [];
-    
+
         try {
             // Inizializza il resolver se necessario
             await this.initializeResolver(userConfig);
@@ -125,7 +125,7 @@ class ResolverStreamManager {
             // Determiniamo se stiamo ricevendo un channel o uno streamDetails
             const isChannel = input.streamInfo?.urls;
             const streamsList = isChannel ? input.streamInfo.urls : [input];
-    
+
             // Creiamo array di promesse per elaborazione parallela
             const streamPromises = streamsList.map(async stream => {
                 try {
@@ -134,36 +134,31 @@ class ResolverStreamManager {
                     if (!headers['User-Agent'] && !headers['user-agent']) {
                         headers['User-Agent'] = config.defaultUserAgent;
                     }
-    
+
                     const streamDetails = {
                         name: stream.name || input.name,
                         url: stream.url,
                         headers: headers
                     };
-    
-                    // Risolvi l'URL tramite lo script Python, passando opzionalmente la configurazione del proxy
+
+                    // Risolvi l'URL tramite lo script Python
                     const result = await PythonResolver.resolveLink(
                         streamDetails.url, 
                         streamDetails.headers,
                         isChannel ? input.name : input.originalName || input.name,
-                        proxyConfig // Pass proxy configuration
+                        proxyConfig
                     );
-    
-                    if (!result || !result.resolved_url) {
+
+                    // Se la risoluzione non produce un URL, restituisci lo stream originale
+                    if (!result || !result.resolved_url || result.resolved_url === streamDetails.url) {
                         console.log(`❌ Nessun URL risolto per: ${streamDetails.name}`);
-                        return null;
+                        return stream;
                     }
                     
                     // Debug: Mostra l'URL originale e quello risolto
                     console.log(`🔍 URL originale: ${streamDetails.url.substring(0, 50)}...`);
                     console.log(`🔍 URL risolto: ${result.resolved_url.substring(0, 50)}...`);
-                    
-                    // Verifica che l'URL risolto sia valido
-                    if (!this.isValidResolvedUrl(streamDetails.url, result.resolved_url)) {
-                        console.log(`❌ URL risolto non valido per: ${streamDetails.name}`);
-                        return null;
-                    }
-    
+
                     // Determina il tipo di stream
                     let streamType = 'HTTP';
                     if (result.resolved_url.includes('.m3u8')) {
@@ -171,7 +166,7 @@ class ResolverStreamManager {
                     } else if (result.resolved_url.includes('.mpd')) {
                         streamType = 'DASH';
                     }
-    
+
                     return {
                         name: `${streamDetails.name}`,
                         title: `🧩 ${input.originalName || streamDetails.name}\n[Resolver ${streamType}]`,
@@ -184,22 +179,22 @@ class ResolverStreamManager {
                     };
                 } catch (error) {
                     console.error('Errore elaborazione stream:', error.message);
-                    return null;
+                    return stream; // Restituisci lo stream originale in caso di errore
                 }
             });
-    
+
             // Attendiamo tutte le promesse in parallelo
             const results = await Promise.all(streamPromises);
             
-            // Filtriamo i risultati nulli e restituiamo gli stream validi
-            streams = results.filter(stream => stream !== null);
-    
+            // Filtriamo i risultati
+            streams = results;
+
             if (streams.length === 0) {
                 console.log('Nessuno stream risolto valido trovato per:', input.name);
             } else {
                 console.log(`✓ Trovati ${streams.length} stream risolti per:`, input.name);
             }
-    
+
         } catch (error) {
             console.error('Errore generale resolver:', error.message);
             if (error.response) {
@@ -207,7 +202,7 @@ class ResolverStreamManager {
                 console.error('Headers:', error.response.headers);
             }
         }
-    
+
         return streams;
     }
 
