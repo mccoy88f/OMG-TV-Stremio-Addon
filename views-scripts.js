@@ -105,7 +105,6 @@ const getViewScripts = (protocol, host) => {
         }
 
         async function restoreConfig(event) {
-        async function restoreConfig(event) {
             const file = event.target.files[0];
             if (!file) return;
         
