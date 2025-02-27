@@ -126,7 +126,35 @@ const getViewScripts = (protocol, host) => {
                             }
                         }
                     }
-        
+
+                    if (config.resolver_update_interval) {
+                        document.getElementById('resolverUpdateInterval').value = config.resolver_update_interval;
+                    
+                        // Crea un campo nascosto nel form se non esiste già
+                        let hiddenField = document.querySelector('input[name="resolver_update_interval"]');
+                        if (!hiddenField) {
+                            hiddenField = document.createElement('input');
+                            hiddenField.type = 'hidden';
+                            hiddenField.name = 'resolver_update_interval';
+                            document.getElementById('configForm').appendChild(hiddenField);
+                        }
+                        
+                        // Imposta il valore nel campo nascosto
+                        hiddenField.value = config.resolver_update_interval;
+                    
+                        // Pianifica l'aggiornamento del resolver
+                        await fetch('/api/resolver', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                action: 'schedule',
+                                interval: config.resolver_update_interval
+                            })
+                        });
+                    }
+                    
                     // Ripristina anche i campi Python negli input visibili dell'interfaccia
                     if (config.python_script_url) {
                         document.getElementById('pythonScriptUrl').value = config.python_script_url;
