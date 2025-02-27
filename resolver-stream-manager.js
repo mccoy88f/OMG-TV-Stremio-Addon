@@ -5,7 +5,7 @@ class ResolverStreamManager {
     constructor() {
         this.resolverCache = new Map();
         this.lastCheck = new Map();
-        this.CACHE_DURATION = 20 * 60 * 1000; // 30 minuti di cache
+        this.CACHE_DURATION = 20 * 60 * 1000; 
     }
 
     /**
@@ -72,7 +72,6 @@ class ResolverStreamManager {
     isValidResolvedUrl(originalUrl, resolvedUrl) {
         // Se l'URL risolto è uguale all'originale, non è stato effettivamente risolto
         if (resolvedUrl === originalUrl) {
-            console.log('⚠️ L\'URL risolto è identico all\'originale');
             return false;
         }
         
@@ -87,7 +86,6 @@ class ResolverStreamManager {
         
         for (const pattern of errorPatterns) {
             if (resolvedUrl.includes(pattern)) {
-                console.log(`⚠️ L'URL risolto contiene un errore: "${pattern}"`);
                 return false;
             }
         }
@@ -189,8 +187,6 @@ class ResolverStreamManager {
                     }
                     
                     // Debug: Mostra l'URL originale e quello risolto
-                    console.log(`🔍 URL originale: ${streamDetails.url.substring(0, 50)}...`);
-                    console.log(`🔍 URL risolto: ${result.resolved_url.substring(0, 50)}...`);
 
                     // Determina il tipo di stream
                     let streamType = 'HTTP';
@@ -222,11 +218,6 @@ class ResolverStreamManager {
             // Filtriamo i risultati escludendo i valori null
             streams = results.filter(item => item !== null);
 
-            if (streams.length === 0) {
-                console.log('Nessuno stream risolto valido trovato per:', input.name);
-            } else {
-                console.log(`✓ Trovati ${streams.length} stream risolti per:`, input.name);
-            }
             
             // Ritorniamo solo gli stream risolti, senza proxy
             return streams;
