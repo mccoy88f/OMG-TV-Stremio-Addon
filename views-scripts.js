@@ -467,27 +467,28 @@ const getViewScripts = (protocol, host) => {
         }
 
         function initializeResolverFields() {
-            // Leggi il valore dell'intervallo dalla query o dal campo nascosto
-            const form = document.getElementById('configForm');
-            const resolverUpdateInterval = new URLSearchParams(window.location.search).get('resolver_update_interval') || '';
+            // Cerca il valore dell'intervallo nella query dell'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const resolverUpdateInterval = urlParams.get('resolver_update_interval');
             
-            if (resolverUpdateInterval) {
-                document.getElementById('resolverUpdateInterval').value = resolverUpdateInterval;
-                
-                // Assicurati che esista un campo nascosto per questo valore
-                let hiddenField = document.querySelector('input[name="resolver_update_interval"]');
-                if (!hiddenField) {
-                    hiddenField = document.createElement('input');
-                    hiddenField.type = 'hidden';
-                    hiddenField.name = 'resolver_update_interval';
-                    form.appendChild(hiddenField);
-                }
-                hiddenField.value = resolverUpdateInterval;
+            // In alternativa, cerca il campo nascosto nel form
+            const hiddenField = document.querySelector('input[name="resolver_update_interval"]');
+            
+            // Imposta il valore nel campo visibile
+            if (resolverUpdateInterval || (hiddenField && hiddenField.value)) {
+                document.getElementById('resolverUpdateInterval').value = resolverUpdateInterval || hiddenField.value;
+                console.log(`Intervallo aggiornamento resolver caricato: ${resolverUpdateInterval || hiddenField.value}`);
             }
             
             // Esegui il controllo dello stato
             checkResolverStatus();
         }
+        
+        // Assicurati che questa funzione venga chiamata al caricamento della pagina
+        window.addEventListener('DOMContentLoaded', function() {
+            initializePythonFields();
+            initializeResolverFields();
+        });
         
         // Aggiungi questa chiamata all'evento DOMContentLoaded
         window.addEventListener('DOMContentLoaded', function() {
@@ -720,6 +721,7 @@ const getViewScripts = (protocol, host) => {
         // Inizializza i campi Python all'avvio
         window.addEventListener('DOMContentLoaded', function() {
             initializePythonFields();
+            initializeResolverFields();
         });
     `;
 };
