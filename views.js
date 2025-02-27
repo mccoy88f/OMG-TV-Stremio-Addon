@@ -228,7 +228,8 @@ const renderConfigPage = (protocol, host, query, manifest) => {
 
            <div class="content">
                <img class="logo" src="${manifest.logo}" alt="logo">
-               <h1>${manifest.name}</h1>
+               <h1>${manifest.name} <span style="font-size: 16px; color: #aaa;">v${manifest.version}</span></h1>
+
                
                <div class="manifest-url">
                    <strong>URL Manifest:</strong><br>
