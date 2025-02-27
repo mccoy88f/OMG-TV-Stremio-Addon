@@ -1,7 +1,7 @@
 FROM node:16-slim
 
 # Define build argument for branch
-ARG BRANCH=main
+ARG BRANCH=rc-1
 
 # Install git, Python and pip
 RUN apt-get update && \
