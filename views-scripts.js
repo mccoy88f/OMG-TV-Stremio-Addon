@@ -502,6 +502,8 @@ const getViewScripts = (protocol, host) => {
 
         async function createResolverTemplate() {
             try {
+                showLoader('Creazione template in corso...');
+                
                 const response = await fetch('/api/resolver', {
                     method: 'POST',
                     headers: {
@@ -513,14 +515,20 @@ const getViewScripts = (protocol, host) => {
                 });
                 
                 const data = await response.json();
+                hideLoader();
+                
                 if (data.success) {
-                    alert('Template dello script resolver creato con successo! Puoi scaricarlo dal server e modificarlo secondo le tue esigenze.');
+                    alert('Template dello script resolver creato con successo! Il download inizierà automaticamente.');
+                    
+                    // Avvia il download automatico
+                    window.location.href = '/api/resolver/download-template';
+                    
+                    checkResolverStatus();
                 } else {
                     alert('Errore: ' + data.message);
                 }
-                
-                checkResolverStatus();
             } catch (error) {
+                hideLoader();
                 alert('Errore nella richiesta: ' + error.message);
             }
         }
