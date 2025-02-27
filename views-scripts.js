@@ -467,11 +467,22 @@ const getViewScripts = (protocol, host) => {
         }
 
         function initializeResolverFields() {
-            // Copia il valore dell'intervallo dalla configurazione avanzata
-            const resolverUpdateInterval = document.querySelector('input[name="resolver_update_interval"]').value;
+            // Leggi il valore dell'intervallo dalla query o dal campo nascosto
+            const form = document.getElementById('configForm');
+            const resolverUpdateInterval = new URLSearchParams(window.location.search).get('resolver_update_interval') || '';
             
             if (resolverUpdateInterval) {
                 document.getElementById('resolverUpdateInterval').value = resolverUpdateInterval;
+                
+                // Assicurati che esista un campo nascosto per questo valore
+                let hiddenField = document.querySelector('input[name="resolver_update_interval"]');
+                if (!hiddenField) {
+                    hiddenField = document.createElement('input');
+                    hiddenField.type = 'hidden';
+                    hiddenField.name = 'resolver_update_interval';
+                    form.appendChild(hiddenField);
+                }
+                hiddenField.value = resolverUpdateInterval;
             }
             
             // Esegui il controllo dello stato
@@ -635,6 +646,20 @@ const getViewScripts = (protocol, host) => {
             }
             
             try {
+                showLoader('Configurazione aggiornamento automatico in corso...');
+                
+                // Crea un campo nascosto nel form se non esiste già
+                let hiddenField = document.querySelector('input[name="resolver_update_interval"]');
+                if (!hiddenField) {
+                    hiddenField = document.createElement('input');
+                    hiddenField.type = 'hidden';
+                    hiddenField.name = 'resolver_update_interval';
+                    document.getElementById('configForm').appendChild(hiddenField);
+                }
+                
+                // Imposta il valore dell'intervallo nel campo nascosto
+                hiddenField.value = interval;
+                
                 const response = await fetch('/api/resolver', {
                     method: 'POST',
                     headers: {
@@ -647,15 +672,17 @@ const getViewScripts = (protocol, host) => {
                 });
                 
                 const data = await response.json();
+                hideLoader();
+                
                 if (data.success) {
                     alert(data.message);
-                    document.querySelector('input[name="resolver_update_interval"]').value = interval;
                 } else {
                     alert('Errore: ' + data.message);
                 }
                 
                 checkResolverStatus();
             } catch (error) {
+                hideLoader();
                 alert('Errore nella richiesta: ' + error.message);
             }
         }
