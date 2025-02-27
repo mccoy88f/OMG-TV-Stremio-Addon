@@ -127,9 +127,7 @@ class StreamProxyManager {
             d: streamUrl,
         });
     
-        // Debug all'inizio
-    
-        // Assicuriamoci di avere uno user agent valido
+        // Assicurati di avere uno user agent valido
         const userAgent = headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent;
         params.append('h_user-agent', userAgent);
     
@@ -155,16 +153,31 @@ class StreamProxyManager {
             params.append('h_origin', origin);
         }
     
-        let proxyUrl;
-        if (streamUrl.endsWith('.m3u8')) {
-            proxyUrl = `${baseUrl}/proxy/hls/manifest.m3u8?${params.toString()}`;
-        } else if (streamUrl.endsWith('.mpd')) {
-            proxyUrl = `${baseUrl}/proxy/mpd/manifest.m3u8?${params.toString()}`;
-        } else if (streamUrl.startsWith('https://')) {
-            proxyUrl = `${baseUrl}/proxy/stream?${params.toString()}`;
-        }
+        try {
+            // Segui i reindirizzamenti e ottieni l'URL finale
+            const response = await axios.head(streamUrl, {
+                maxRedirects: 5,
+                validateStatus: status => status < 400 || status === 302
+            });
     
-        return proxyUrl;
+            // Usa l'URL finale dopo i reindirizzamenti
+            const finalUrl = response.request.res.responseUrl || streamUrl;
+    
+            // Costruisci l'URL del proxy basato sull'URL finale
+            let proxyUrl;
+            if (finalUrl.endsWith('.m3u8') || finalUrl.includes('playlist.m3u8')) {
+                proxyUrl = `${baseUrl}/proxy/hls/manifest.m3u8?${params.toString()}`;
+            } else if (finalUrl.endsWith('.mpd') || finalUrl.includes('manifest.mpd')) {
+                proxyUrl = `${baseUrl}/proxy/mpd/manifest.m3u8?${params.toString()}`;
+            } else {
+                proxyUrl = `${baseUrl}/proxy/stream?${params.toString()}`;
+            }
+    
+            return proxyUrl;
+        } catch (error) {
+            console.warn('Errore nel rilevamento del tipo di stream:', error.message);
+            return `${baseUrl}/proxy/stream?${params.toString()}`;
+        }
     }
 
     async getProxyStreams(input, userConfig = {}) {
