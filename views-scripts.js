@@ -477,7 +477,6 @@ const getViewScripts = (protocol, host) => {
             // Imposta il valore nel campo visibile
             if (resolverUpdateInterval || (hiddenField && hiddenField.value)) {
                 document.getElementById('resolverUpdateInterval').value = resolverUpdateInterval || hiddenField.value;
-                console.log(`Intervallo aggiornamento resolver caricato: ${resolverUpdateInterval || hiddenField.value}`);
             }
             
             // Esegui il controllo dello stato
