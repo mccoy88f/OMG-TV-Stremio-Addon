@@ -58,9 +58,7 @@ class StreamProxyManager {
         while (attempts < this.MAX_RETRY_ATTEMPTS && !isHealthy) {
             attempts++;
             
-            try {
-                console.log(`Tentativo ${attempts}/${this.MAX_RETRY_ATTEMPTS} di verifica proxy`);
-                
+            try {                
                 const response = await axios.get(proxyUrl, {
                     timeout: 10000,
                     validateStatus: status => status < 400,
@@ -98,17 +96,10 @@ class StreamProxyManager {
         if (!isHealthy) {
             // Log dettagliato in caso di fallimento di tutti i tentativi
             console.error('❌ ERRORE PROXY HEALTH CHECK - Tutti i tentativi falliti:');
-            console.error(`  URL: ${proxyUrl}`);
-            console.error(`  Tentativi effettuati: ${attempts}/${this.MAX_RETRY_ATTEMPTS}`);
             
             if (lastError) {
                 console.error(`  Ultimo errore: ${lastError.message}`);
                 console.error(`  Codice errore: ${lastError.code || 'N/A'}`);
-                
-                if (lastError.response) {
-                    console.error(`  Status HTTP: ${lastError.response.status}`);
-                    console.error(`  Headers risposta:`, lastError.response.headers);
-                }
                 
                 // Log dello stack trace per debug avanzato
             } else {
@@ -137,7 +128,6 @@ class StreamProxyManager {
         });
     
         // Debug all'inizio
-        console.log(`DEBUG - buildProxyUrl - Headers originali:`, JSON.stringify(headers));
     
         // Assicuriamoci di avere uno user agent valido
         const userAgent = headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent;
@@ -152,7 +142,6 @@ class StreamProxyManager {
         
         if (referer) {
             referer = referer.replace(/\/$/, ''); // Rimuovi lo slash finale
-            console.log(`DEBUG - Referer DOPO pulizia: ${referer}`);
             params.append('h_referer', referer);
         }
     
@@ -163,7 +152,6 @@ class StreamProxyManager {
         
         if (origin) {
             origin = origin.replace(/\/$/, ''); // Rimuovi lo slash finale
-            console.log(`DEBUG - Origin DOPO pulizia: ${origin}`);
             params.append('h_origin', origin);
         }
     
@@ -176,14 +164,12 @@ class StreamProxyManager {
             proxyUrl = `${baseUrl}/proxy/stream?${params.toString()}`;
         }
     
-        console.log(`DEBUG - URL Proxy costruito: ${proxyUrl}`);
         return proxyUrl;
     }
 
     async getProxyStreams(input, userConfig = {}) {
         // Blocca solo gli URL che sono già proxy
         if (input.url.includes(userConfig.proxy)) {
-            console.log(`⚠️ L'URL è già un proxy, salto: ${input.url}`);
             return [];
         }
         
@@ -227,9 +213,7 @@ class StreamProxyManager {
                     bingeGroup: "tv"
                 }
             });
-    
-            console.log(`✅ Proxy aggiunto: ${proxyUrl}`);
-    
+        
         } catch (error) {
             console.error('❌ Errore durante l\'elaborazione del proxy:', error.message);
         }
