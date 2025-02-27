@@ -216,7 +216,7 @@ class StreamProxyManager {
                 // Aggiungi lo stream originale se il proxy non funziona
                 streams.push({
                     name: input.name,
-                    title: `📺 ${input.originalName}`,
+                    title: `${input.originalName}`,
                     url: input.url,
                     headers: input.headers,
                     behaviorHints: {
@@ -232,7 +232,7 @@ class StreamProxyManager {
             // In caso di errore, aggiungi comunque lo stream originale
             streams.push({
                 name: input.name,
-                title: `📺 ${input.originalName}`,
+                title: `${input.originalName}`,
                 url: input.url,
                 headers: input.headers,
                 behaviorHints: {
