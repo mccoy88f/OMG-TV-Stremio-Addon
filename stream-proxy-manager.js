@@ -67,20 +67,10 @@ class StreamProxyManager {
                 
                 isHealthy = response.status < 400;
                 
-                if (isHealthy) {
-                    console.log(`✓ Proxy verificato con successo al tentativo ${attempts}`);
-                } else {
-                    console.log(`✗ Proxy non valido al tentativo ${attempts}`);
-                    if (attempts < this.MAX_RETRY_ATTEMPTS) {
-                        await this.sleep(this.RETRY_DELAY);
-                    }
-                }
+
             } catch (error) {
                 lastError = error;
-                console.error(`✗ Errore al tentativo ${attempts}/${this.MAX_RETRY_ATTEMPTS}:`, {
-                    messaggio: error.message,
-                    codice: error.code
-                });
+
                 
                 // Se non è l'ultimo tentativo, aspetta prima di riprovare
                 if (attempts < this.MAX_RETRY_ATTEMPTS) {
