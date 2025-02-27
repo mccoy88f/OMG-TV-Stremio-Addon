@@ -292,9 +292,6 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                                    Abilita Resolver Python
                                </label>
                                
-                               <label>Intervallo Aggiornamento Resolver:</label>
-                               <input type="text" name="resolver_update_interval" value="${query.resolver_update_interval || '12:00'}" placeholder="HH:MM (predefinito 12:00)">
-                               <small style="color: #999;">Formato HH:MM (es. 1:00 o 01:00), predefinito 12:00</small>
                            </div>
                        </div>
                        <input type="hidden" name="python_script_url" id="hidden_python_script_url" value="${query.python_script_url || ''}">
