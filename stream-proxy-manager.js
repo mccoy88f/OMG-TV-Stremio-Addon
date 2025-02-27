@@ -176,7 +176,17 @@ class StreamProxyManager {
         // Se il proxy non è configurato, interrompe l'elaborazione
         if (!userConfig.proxy || !userConfig.proxy_pwd) {
             console.log('⚠️ Proxy non configurato per:', input.name);
-            return [];
+            // Restituisci lo stream originale
+            return [{
+                name: input.name,
+                title: `📺 ${input.originalName}`,
+                url: input.url,
+                headers: input.headers,
+                behaviorHints: {
+                    notWebReady: false,
+                    bingeGroup: "tv"
+                }
+            }];
         }
     
         let streams = [];
@@ -194,28 +204,52 @@ class StreamProxyManager {
     
             // Verifica se il proxy è attivo e funzionante
             const isHealthy = await this.checkProxyHealth(proxyUrl, headers);
-            if (!isHealthy) {
-                console.log(`✗ Proxy non valido per: ${input.url}`);
-                return [];
-            }
-    
+            
             // Determina il tipo di stream (HLS, DASH o HTTP)
             let streamType = input.url.endsWith('.m3u8') ? 'HLS' : 
                              input.url.endsWith('.mpd') ? 'DASH' : 'HTTP';
     
-            // Aggiunge lo stream proxato all'array
+            if (isHealthy) {
+                // Aggiunge lo stream proxato all'array
+                streams.push({
+                    name: input.name,
+                    title: `🌐 ${input.originalName}\n[Proxy ${streamType}]`,
+                    url: proxyUrl,
+                    behaviorHints: {
+                        notWebReady: false,
+                        bingeGroup: "tv"
+                    }
+                });
+            } else {
+                console.log(`⚠️ Proxy non valido per: ${input.url}, mantengo stream originale`);
+                
+                // Aggiungi lo stream originale se il proxy non funziona
+                streams.push({
+                    name: input.name,
+                    title: `📺 ${input.originalName}`,
+                    url: input.url,
+                    headers: input.headers,
+                    behaviorHints: {
+                        notWebReady: false,
+                        bingeGroup: "tv"
+                    }
+                });
+            }
+        
+        } catch (error) {
+            console.error('❌ Errore durante l\'elaborazione del proxy:', error.message);
+            
+            // In caso di errore, aggiungi comunque lo stream originale
             streams.push({
                 name: input.name,
-                title: `🌐 ${input.originalName}\n[Proxy ${streamType}]`,
-                url: proxyUrl,
+                title: `📺 ${input.originalName}`,
+                url: input.url,
+                headers: input.headers,
                 behaviorHints: {
                     notWebReady: false,
                     bingeGroup: "tv"
                 }
             });
-        
-        } catch (error) {
-            console.error('❌ Errore durante l\'elaborazione del proxy:', error.message);
         }
     
         return streams;
