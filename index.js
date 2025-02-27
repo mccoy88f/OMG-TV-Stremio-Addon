@@ -11,7 +11,8 @@ const { renderConfigPage } = require('./views');
 const PythonRunner = require('./python-runner');
 const ResolverStreamManager = require('./resolver-stream-manager')();
 const PythonResolver = require('./python-resolver');
-
+const fs = require('fs');
+const path = require('path');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -234,6 +235,43 @@ app.get('/:resource/:type/:id/:extra?.json', async (req, res, next) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+function cleanupTempFolder() {
+    console.log('\n=== Pulizia cartella temp all\'avvio ===');
+    const tempDir = path.join(__dirname, 'temp');
+    
+    // Controlla se la cartella temp esiste
+    if (!fs.existsSync(tempDir)) {
+        console.log('Cartella temp non trovata, la creo...');
+        fs.mkdirSync(tempDir, { recursive: true });
+        return;
+    }
+    
+    try {
+        // Leggi tutti i file nella cartella temp
+        const files = fs.readdirSync(tempDir);
+        let deletedCount = 0;
+        
+        // Elimina ogni file
+        for (const file of files) {
+            try {
+                const filePath = path.join(tempDir, file);
+                // Controlla se è un file e non una cartella
+                if (fs.statSync(filePath).isFile()) {
+                    fs.unlinkSync(filePath);
+                    deletedCount++;
+                }
+            } catch (fileError) {
+                console.error(`❌ Errore nell'eliminazione del file ${file}:`, fileError.message);
+            }
+        }
+        
+        console.log(`✓ Eliminati ${deletedCount} file temporanei`);
+        console.log('=== Pulizia cartella temp completata ===\n');
+    } catch (error) {
+        console.error('❌ Errore nella pulizia della cartella temp:', error.message);
+    }
+}
 
 function safeParseExtra(extraParam) {
     try {
@@ -488,6 +526,8 @@ app.post('/api/python-script', async (req, res) => {
     }
 });
 async function startAddon() {
+   cleanupTempFolder();
+
    try {
        const port = process.env.PORT || 10000;
        app.listen(port, () => {
