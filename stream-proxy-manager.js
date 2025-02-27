@@ -129,29 +129,44 @@ class StreamProxyManager {
         if (!userConfig.proxy || !userConfig.proxy_pwd) {
             return null;
         }
-
+    
         const baseUrl = userConfig.proxy.replace(/\/+$/, '');
         const params = new URLSearchParams({
             api_password: userConfig.proxy_pwd,
             d: streamUrl,
         });
-
+    
+        // Debug all'inizio
+        console.log(`DEBUG - buildProxyUrl - Headers originali:`, JSON.stringify(headers));
+    
         // Assicuriamoci di avere uno user agent valido
         const userAgent = headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent;
         params.append('h_user-agent', userAgent);
-
-        // Verifica tutte le varianti di referer/referrer e aggiunge con prefisso h_
-        if (headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer']) {
-            params.append('h_referer', 
-                headers['referer'] || headers['Referer'] || 
-                headers['referrer'] || headers['Referrer']);
+    
+        // Gestione referer - rimuovi slash finale
+        let referer = null;
+        if (headers['referer']) referer = headers['referer'];
+        else if (headers['Referer']) referer = headers['Referer'];
+        else if (headers['referrer']) referer = headers['referrer'];
+        else if (headers['Referrer']) referer = headers['Referrer'];
+        
+        if (referer) {
+            referer = referer.replace(/\/$/, ''); // Rimuovi lo slash finale
+            console.log(`DEBUG - Referer DOPO pulizia: ${referer}`);
+            params.append('h_referer', referer);
         }
-
-        // Verifica tutte le varianti di origin e aggiunge con prefisso h_
-        if (headers['origin'] || headers['Origin']) {
-            params.append('h_origin', headers['origin'] || headers['Origin']);
+    
+        // Gestione origin - rimuovi slash finale
+        let origin = null;
+        if (headers['origin']) origin = headers['origin'];
+        else if (headers['Origin']) origin = headers['Origin'];
+        
+        if (origin) {
+            origin = origin.replace(/\/$/, ''); // Rimuovi lo slash finale
+            console.log(`DEBUG - Origin DOPO pulizia: ${origin}`);
+            params.append('h_origin', origin);
         }
-
+    
         let proxyUrl;
         if (streamUrl.endsWith('.m3u8')) {
             proxyUrl = `${baseUrl}/proxy/hls/manifest.m3u8?${params.toString()}`;
@@ -160,7 +175,8 @@ class StreamProxyManager {
         } else if (streamUrl.startsWith('https://')) {
             proxyUrl = `${baseUrl}/proxy/stream?${params.toString()}`;
         }
-
+    
+        console.log(`DEBUG - URL Proxy costruito: ${proxyUrl}`);
         return proxyUrl;
     }
 
