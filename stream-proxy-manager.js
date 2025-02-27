@@ -176,17 +176,7 @@ class StreamProxyManager {
         // Se il proxy non è configurato, interrompe l'elaborazione
         if (!userConfig.proxy || !userConfig.proxy_pwd) {
             console.log('⚠️ Proxy non configurato per:', input.name);
-            // Restituisci lo stream originale
-            return [{
-                name: input.name,
-                title: `📺 ${input.originalName}`,
-                url: input.url,
-                headers: input.headers,
-                behaviorHints: {
-                    notWebReady: false,
-                    bingeGroup: "tv"
-                }
-            }];
+            return [];
         }
     
         let streams = [];
