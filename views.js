@@ -384,8 +384,6 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                            </div>
                        
                            <div id="resolverForm">
-                               <label>URL dello Script Resolver:</label>
-                               <input type="url" id="resolverScriptUrl" placeholder="https://example.com/resolver.py">
                        
                                <div style="display: flex; gap: 10px; margin-top: 15px;">
                                    <button onclick="downloadResolverScript()" style="flex: 1;">SCARICA SCRIPT</button>
