@@ -108,6 +108,8 @@ const getViewScripts = (protocol, host) => {
             const file = event.target.files[0];
             if (!file) return;
         
+            showLoader('Ripristino configurazione in corso...');
+            
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
@@ -206,12 +208,15 @@ const getViewScripts = (protocol, host) => {
                         }
                     }
         
+                    hideLoader();
+                    
                     // Aggiorna la pagina solo dopo che tutte le operazioni sono state completate
                     const configQueryString = getConfigQueryString();
                     const configBase64 = btoa(configQueryString);
                     window.location.href = \`${protocol}://${host}/\${configBase64}/configure\`;
         
                 } catch (error) {
+                    hideLoader();
                     console.error('Errore:', error);
                     alert('Errore nel caricamento del file di configurazione: ' + error.message);
                 }
@@ -267,6 +272,8 @@ const getViewScripts = (protocol, host) => {
             document.getElementById('hidden_python_script_url').value = url;
             
             try {
+                showLoader('Download script Python in corso...');
+                
                 const response = await fetch('/api/python-script', {
                     method: 'POST',
                     headers: {
@@ -279,6 +286,8 @@ const getViewScripts = (protocol, host) => {
                 });
                 
                 const data = await response.json();
+                hideLoader();
+                
                 if (data.success) {
                     alert('Script scaricato con successo!');
                 } else {
@@ -287,12 +296,15 @@ const getViewScripts = (protocol, host) => {
                 
                 checkPythonStatus();
             } catch (error) {
+                hideLoader();
                 alert('Errore nella richiesta: ' + error.message);
             }
         }
 
         async function executePythonScript() {
             try {
+                showLoader('Esecuzione script Python in corso...');
+                
                 const response = await fetch('/api/python-script', {
                     method: 'POST',
                     headers: {
@@ -304,6 +316,8 @@ const getViewScripts = (protocol, host) => {
                 });
                 
                 const data = await response.json();
+                hideLoader();
+                
                 if (data.success) {
                     alert('Script eseguito con successo!');
                     showM3uUrl(data.m3uUrl);
@@ -313,6 +327,7 @@ const getViewScripts = (protocol, host) => {
                 
                 checkPythonStatus();
             } catch (error) {
+                hideLoader();
                 alert('Errore nella richiesta: ' + error.message);
             }
         }
