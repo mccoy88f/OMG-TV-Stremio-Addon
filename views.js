@@ -304,9 +304,8 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                        <button onclick="backupConfig()">BACKUP CONFIGURAZIONE</button>
                        <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreConfig(event)">
                        <button onclick="document.getElementById('restoreFile').click()">RIPRISTINA CONFIGURAZIONE</button>
-                       <h4>Ricordati di generare la configurazione prima di eseguire il backup</h4>
                    </div>
-                   <div style="margin-top: 30px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 4px;">
+                   <div style="margin-top: 15px; background: rgba(255,255,255,0.1); padding: 1px; border-radius: 4px;">
                        <ul style="text-align: center; margin-top: 10px;">
                            <p>Ricordati di generare la configurazione prima di eseguire il backup</p>
                        </ul>
