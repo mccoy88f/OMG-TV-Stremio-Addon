@@ -466,14 +466,36 @@ const getViewScripts = (protocol, host) => {
             contentEl.innerHTML = html;
         }
 
+        function initializeResolverFields() {
+            // Copia il valore dell'intervallo dalla configurazione avanzata
+            const resolverUpdateInterval = document.querySelector('input[name="resolver_update_interval"]').value;
+            
+            if (resolverUpdateInterval) {
+                document.getElementById('resolverUpdateInterval').value = resolverUpdateInterval;
+            }
+            
+            // Esegui il controllo dello stato
+            checkResolverStatus();
+        }
+        
+        // Aggiungi questa chiamata all'evento DOMContentLoaded
+        window.addEventListener('DOMContentLoaded', function() {
+            initializePythonFields();
+            initializeResolverFields(); // Aggiungi questa riga
+        });
+
         async function downloadResolverScript() {
-            const url = document.getElementById('resolverScriptUrl').value;
+            // Leggi l'URL dal campo nella configurazione avanzata
+            const url = document.querySelector('input[name="resolver_script"]').value;
+            
             if (!url) {
-                alert('Inserisci un URL valido per lo script resolver');
+                alert('Inserisci un URL valido nella sezione "Impostazioni Avanzate" → "URL Script Resolver Python"');
                 return;
             }
             
             try {
+                showLoader('Download script resolver in corso...');
+                
                 const response = await fetch('/api/resolver', {
                     method: 'POST',
                     headers: {
@@ -486,9 +508,11 @@ const getViewScripts = (protocol, host) => {
                 });
                 
                 const data = await response.json();
+                hideLoader();
+                
                 if (data.success) {
                     alert('Script resolver scaricato con successo!');
-                    document.querySelector('input[name="resolver_script"]').value = url;
+                    // Non serve impostare nuovamente l'URL poiché lo leggiamo direttamente dal campo configurazione
                     document.querySelector('input[name="resolver_enabled"]').checked = true;
                 } else {
                     alert('Errore: ' + data.message);
@@ -496,6 +520,7 @@ const getViewScripts = (protocol, host) => {
                 
                 checkResolverStatus();
             } catch (error) {
+                hideLoader();
                 alert('Errore nella richiesta: ' + error.message);
             }
         }
