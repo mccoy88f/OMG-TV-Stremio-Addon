@@ -129,10 +129,7 @@ app.get('/:config/manifest.json', async (req, res) => {
         const host = req.headers['x-forwarded-host'] || req.get('host');
         const configString = Buffer.from(req.params.config, 'base64').toString();
         const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
-       
-        if (decodedConfig.resolver_update_interval) {
-            configurationURL += `?resolver_update_interval=${encodeURIComponent(decodedConfig.resolver_update_interval)}`;
-        }
+
         if (decodedConfig.m3u && CacheManager.cache.m3uUrl !== decodedConfig.m3u) {
             await CacheManager.rebuildCache(decodedConfig.m3u);
         }
