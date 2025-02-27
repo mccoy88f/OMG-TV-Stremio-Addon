@@ -717,6 +717,45 @@ const getViewScripts = (protocol, host) => {
         function hideLoader() {
             document.getElementById('loaderOverlay').style.display = 'none';
         }
+
+        async function stopResolverUpdates() {
+            try {
+                showLoader('Arresto aggiornamenti automatici in corso...');
+                
+                const response = await fetch('/api/resolver', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'stopSchedule'
+                    })
+                });
+                
+                const data = await response.json();
+                hideLoader();
+                
+                if (data.success) {
+                    alert(data.message);
+                    
+                    // Pulisci anche il campo dell'intervallo
+                    document.getElementById('resolverUpdateInterval').value = '';
+                    
+                    // Aggiorna anche il valore nel campo nascosto
+                    let hiddenField = document.querySelector('input[name="resolver_update_interval"]');
+                    if (hiddenField) {
+                        hiddenField.value = '';
+                    }
+                } else {
+                    alert('Errore: ' + data.message);
+                }
+                
+                checkResolverStatus();
+            } catch (error) {
+                hideLoader();
+                alert('Errore nella richiesta: ' + error.message);
+            }
+        }
         
         // Inizializza i campi Python all'avvio
         window.addEventListener('DOMContentLoaded', function() {
