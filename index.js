@@ -63,7 +63,9 @@ app.get('/manifest.json', async (req, res) => {
         const protocol = req.headers['x-forwarded-proto'] || req.protocol;
         const host = req.headers['x-forwarded-host'] || req.get('host');
         const configUrl = `${protocol}://${host}/?${new URLSearchParams(req.query)}`;
-
+        if (req.query.resolver_update_interval) {
+            configUrl += `&resolver_update_interval=${encodeURIComponent(req.query.resolver_update_interval)}`;
+        }
         if (req.query.m3u && CacheManager.cache.m3uUrl !== req.query.m3u) {
             await CacheManager.rebuildCache(req.query.m3u);
         }
@@ -127,11 +129,28 @@ app.get('/:config/manifest.json', async (req, res) => {
         const host = req.headers['x-forwarded-host'] || req.get('host');
         const configString = Buffer.from(req.params.config, 'base64').toString();
         const decodedConfig = Object.fromEntries(new URLSearchParams(configString));
-
+       
+        if (decodedConfig.resolver_update_interval) {
+            configurationURL += `?resolver_update_interval=${encodeURIComponent(decodedConfig.resolver_update_interval)}`;
+        }
         if (decodedConfig.m3u && CacheManager.cache.m3uUrl !== decodedConfig.m3u) {
             await CacheManager.rebuildCache(decodedConfig.m3u);
         }
-        
+        if (decodedConfig.resolver_script) {
+            console.log('Inizializzazione Script Resolver dalla configurazione');
+            try {
+                // Scarica lo script Resolver
+                const resolverDownloaded = await PythonResolver.downloadScript(decodedConfig.resolver_script);
+              
+                // Se è stato definito un intervallo di aggiornamento, impostalo
+                if (decodedConfig.resolver_update_interval) {
+                    console.log('Impostazione dell\'aggiornamento automatico del resolver');
+                    PythonResolver.scheduleUpdate(decodedConfig.resolver_update_interval);
+                }
+            } catch (resolverError) {
+                console.error('Errore nell\'inizializzazione dello script Resolver:', resolverError);
+            }
+        }
         // Inizializza il generatore Python se configurato
         if (decodedConfig.python_script_url) {
             console.log('Inizializzazione Script Python Generatore dalla configurazione');
