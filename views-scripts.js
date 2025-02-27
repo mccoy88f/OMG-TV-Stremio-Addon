@@ -94,7 +94,11 @@ const getViewScripts = (protocol, host) => {
             params.epg_enabled = params.epg_enabled === 'true';
             params.force_proxy = params.force_proxy === 'true';
             params.resolver_enabled = params.resolver_enabled === 'true';
-
+            params.resolver_update_interval = 
+                document.getElementById('resolverUpdateInterval').value || 
+                document.querySelector('input[name="resolver_update_interval"]')?.value || 
+                '';
+                
             const configBlob = new Blob([JSON.stringify(params, null, 2)], {type: 'application/json'});
             const url = URL.createObjectURL(configBlob);
             const a = document.createElement('a');
