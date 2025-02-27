@@ -149,7 +149,12 @@ class StreamProxyManager {
                 maxRedirects: 5,
                 validateStatus: status => status < 400 || status === 302
             });
-    
+
+            console.log('🔄 Risposta dopo redirect:', {
+                status: response.status,
+                headers: response.headers,
+                finalUrl: response.request.res.responseUrl || streamUrl
+            });
             // Usa l'URL finale dopo i reindirizzamenti
             const finalUrl = response.request.res.responseUrl || streamUrl;
     
