@@ -394,6 +394,7 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                                    <div style="display: flex; gap: 10px; align-items: center;">
                                        <input type="text" id="resolverUpdateInterval" placeholder="HH:MM (es. 12:00)" style="flex: 2;">
                                        <button onclick="scheduleResolverUpdates()" style="flex: 1;">PIANIFICA</button>
+                                       <button onclick="stopResolverUpdates()" style="flex: 1;">FERMA</button>
                                        <button onclick="clearResolverCache()" style="flex: 1;">PULISCI CACHE</button>
                                    </div>
                                    <small style="color: #999; display: block; margin-top: 5px;">
