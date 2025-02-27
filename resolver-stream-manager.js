@@ -140,7 +140,24 @@ class ResolverStreamManager {
                         url: stream.url,
                         headers: headers
                     };
-
+                    // Pulizia degli header prima di inviare al resolver
+                    if (streamDetails.headers) {
+                        // Rimuovi lo slash finale da referer/referrer
+                        if (streamDetails.headers['referer'] || streamDetails.headers['Referer'] || 
+                            streamDetails.headers['referrer'] || streamDetails.headers['Referrer']) {
+                            const referer = streamDetails.headers['referer'] || streamDetails.headers['Referer'] || 
+                                           streamDetails.headers['referrer'] || streamDetails.headers['Referrer'];
+                            // Rimuovi lo slash finale se presente
+                            streamDetails.headers['Referer'] = referer.replace(/\/$/, '');
+                        }
+                    
+                        // Rimuovi lo slash finale da origin
+                        if (streamDetails.headers['origin'] || streamDetails.headers['Origin']) {
+                            const origin = streamDetails.headers['origin'] || streamDetails.headers['Origin'];
+                            // Rimuovi lo slash finale se presente
+                            streamDetails.headers['Origin'] = origin.replace(/\/$/, '');
+                        }
+                    }
                     // Risolvi l'URL tramite lo script Python
                     const result = await PythonResolver.resolveLink(
                         streamDetails.url, 
