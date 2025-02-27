@@ -236,6 +236,25 @@ app.get('/:resource/:type/:id/:extra?.json', async (req, res, next) => {
     }
 });
 
+//route download template
+app.get('/api/resolver/download-template', (req, res) => {
+    const PythonResolver = require('./python-resolver');
+    const fs = require('fs');
+    
+    try {
+        if (fs.existsSync(PythonResolver.scriptPath)) {
+            res.setHeader('Content-Type', 'text/plain');
+            res.setHeader('Content-Disposition', 'attachment; filename="resolver_script.py"');
+            res.sendFile(PythonResolver.scriptPath);
+        } else {
+            res.status(404).json({ success: false, message: 'Template non trovato. Crealo prima con la funzione "Crea Template".' });
+        }
+    } catch (error) {
+        console.error('Errore nel download del template:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 function cleanupTempFolder() {
     console.log('\n=== Pulizia cartella temp all\'avvio ===');
     const tempDir = path.join(__dirname, 'temp');
