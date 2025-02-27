@@ -45,7 +45,6 @@ class PythonResolver {
                 return false;
             }
             
-            console.log('✓ Script Python resolver scaricato con successo');
             return true;
         } catch (error) {
             console.error('❌ Errore durante il download dello script Python resolver:', error.message);
@@ -109,7 +108,6 @@ class PythonResolver {
         }
     
         if (this.isRunning) {
-            console.log('⚠️ Un\'altra risoluzione è in corso, attendere...');
             await new Promise(resolve => setTimeout(resolve, 500));
         }
     
@@ -133,7 +131,6 @@ class PythonResolver {
             // Esegui lo script Python con i parametri
             const cmd = `${this.pythonCmd} ${this.scriptPath} --resolve "${inputFile}" "${outputFile}"`;
             
-            console.log(`Esecuzione: ${cmd}`);
             const { stdout, stderr } = await execAsync(cmd);
             
             if (stderr) {
@@ -155,7 +152,7 @@ class PythonResolver {
                     
                     this.lastExecution = new Date();
                     this.lastError = null;
-                    console.log(`✓ URL risolto per ${channelName}: ${result.resolved_url.substring(0, 50)}...`);
+                    console.log(`✓ URL risolto per ${channelName}`);
     
     
                     // Elimina i file temporanei
