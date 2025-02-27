@@ -455,6 +455,10 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                    ${getViewScripts(protocol, host)}
                </script>
            </div>
+           <div id="loaderOverlay" class="loader-overlay">
+               <div class="loader"></div>
+               <div id="loaderMessage" class="loader-message">Operazione in corso...</div>
+           </div>
        </body>
        </html>
    `;
