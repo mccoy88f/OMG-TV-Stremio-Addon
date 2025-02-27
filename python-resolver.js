@@ -196,7 +196,7 @@ class PythonResolver {
         
         // Validazione del formato orario
         if (!timeFormat || !/^\d{1,2}:\d{2}$/.test(timeFormat)) {
-            console.error('❌ Formato orario non valido. Usa HH:MM o H:MM');
+            console.error('❌ [RESOLVER] Formato orario non valido. Usa HH:MM o H:MM');
             this.lastError = 'Formato orario non valido. Usa HH:MM o H:MM';
             return false;
         }
@@ -206,7 +206,7 @@ class PythonResolver {
             const [hours, minutes] = timeFormat.split(':').map(Number);
             
             if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-                console.error('❌ Orario non valido. Ore: 0-23, Minuti: 0-59');
+                console.error('❌ [RESOLVER] Orario non valido. Ore: 0-23, Minuti: 0-59');
                 this.lastError = 'Orario non valido. Ore: 0-23, Minuti: 0-59';
                 return false;
             }
@@ -217,15 +217,15 @@ class PythonResolver {
             if (hours === 0) {
                 // Esegui ogni X minuti
                 cronExpression = `*/${minutes} * * * *`;
-                console.log(`✓ Pianificazione impostata: ogni ${minutes} minuti`);
+                console.log(`✓ [RESOLVER] Pianificazione impostata: ogni ${minutes} minuti`);
             } else {
                 // Esegui ogni X ore
                 cronExpression = `${minutes} */${hours} * * *`;
-                console.log(`✓ Pianificazione impostata: ogni ${hours} ore e ${minutes} minuti`);
+                console.log(`✓ [RESOLVER] Pianificazione impostata: ogni ${hours} ore e ${minutes} minuti`);
             }
             
             this.cronJob = cron.schedule(cronExpression, async () => {
-                console.log(`\n=== Aggiornamento automatico script resolver (${new Date().toLocaleString()}) ===`);
+                console.log(`\n=== [RESOLVER] Aggiornamento automatico script resolver (${new Date().toLocaleString()}) ===`);
                 if (this.scriptUrl) {
                     await this.downloadScript(this.scriptUrl);
                 }
@@ -234,10 +234,10 @@ class PythonResolver {
             });
             
             this.updateInterval = timeFormat;
-            console.log(`✓ Aggiornamento automatico configurato: ${timeFormat}`);
+            console.log(`✓ [RESOLVER] Aggiornamento automatico configurato: ${timeFormat}`);
             return true;
         } catch (error) {
-            console.error('❌ Errore nella pianificazione:', error.message);
+            console.error('❌ [RESOLVER] Errore nella pianificazione:', error.message);
             this.lastError = `Errore nella pianificazione: ${error.message}`;
             return false;
         }
