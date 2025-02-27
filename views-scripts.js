@@ -632,6 +632,16 @@ const getViewScripts = (protocol, host) => {
             }
         }
 
+        //funzioni per visualizzare la rotella di caricamento
+        function showLoader(message = "Operazione in corso...") {
+            document.getElementById('loaderMessage').textContent = message;
+            document.getElementById('loaderOverlay').style.display = 'flex';
+        }
+        
+        function hideLoader() {
+            document.getElementById('loaderOverlay').style.display = 'none';
+        }
+        
         // Inizializza i campi Python all'avvio
         window.addEventListener('DOMContentLoaded', function() {
             initializePythonFields();
