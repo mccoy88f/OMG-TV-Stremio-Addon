@@ -179,7 +179,30 @@ class PythonRunner {
             
             this.cronJob = cron.schedule(cronExpression, async () => {
                 console.log(`\n=== Esecuzione automatica script Python (${new Date().toLocaleString()}) ===`);
-                await this.executeScript();
+                const success = await this.executeScript();
+                
+                // Dopo l'esecuzione dello script, aggiorna la cache se necessario
+                if (success) {
+                    try {
+                        // Ottieni le istanze necessarie
+                        const config = require('./config');
+                        const CacheManager = require('./cache-manager')(config);
+                        
+                        // Usa l'URL attualmente configurato nella cache
+                        const currentM3uUrl = CacheManager.cache.m3uUrl;
+                        
+                        if (currentM3uUrl) {
+                            console.log(`\n=== Ricostruzione cache dopo esecuzione automatica dello script ===`);
+                            console.log(`Utilizzo l'URL corrente: ${currentM3uUrl}`);
+                            await CacheManager.rebuildCache(currentM3uUrl);
+                            console.log(`✓ Cache ricostruita con successo dopo esecuzione automatica`);
+                        } else {
+                            console.log(`❌ Nessun URL M3U configurato nella cache, impossibile ricostruire`);
+                        }
+                    } catch (cacheError) {
+                        console.error(`❌ Errore nella ricostruzione della cache dopo esecuzione automatica:`, cacheError);
+                    }
+                }
             });
             
             this.updateInterval = timeFormat;
