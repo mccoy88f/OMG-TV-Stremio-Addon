@@ -65,6 +65,43 @@ const renderConfigPage = (protocol, host, query, manifest) => {
                    margin: 20px 0;
                    font-size: 12px;
                }
+
+               .loader-overlay {
+                   position: fixed;
+                   top: 0;
+                   left: 0;
+                   width: 100%;
+                   height: 100%;
+                   background: rgba(0,0,0,0.8);
+                   display: none;
+                   justify-content: center;
+                   align-items: center;
+                   z-index: 2000;
+                   flex-direction: column;
+               }
+               
+               .loader {
+                   border: 6px solid #3d2a56;
+                   border-radius: 50%;
+                   border-top: 6px solid #8A5AAB;
+                   width: 50px;
+                   height: 50px;
+                   animation: spin 1s linear infinite;
+                   margin-bottom: 20px;
+               }
+               
+               .loader-message {
+                   color: white;
+                   font-size: 18px;
+                   text-align: center;
+                   max-width: 80%;
+               }
+               
+               @keyframes spin {
+                   0% { transform: rotate(0deg); }
+                   100% { transform: rotate(360deg); }
+               }
+               
                .config-form {
                    text-align: left;
                    background: rgba(255,255,255,0.1);
