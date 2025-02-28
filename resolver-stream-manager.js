@@ -186,19 +186,10 @@ class ResolverStreamManager {
                         };
                     }
                     
-                    // Debug: Mostra l'URL originale e quello risolto
-
-                    // Determina il tipo di stream
-                    let streamType = 'HTTP';
-                    if (result.resolved_url.includes('.m3u8')) {
-                        streamType = 'HLS';
-                    } else if (result.resolved_url.includes('.mpd')) {
-                        streamType = 'DASH';
-                    }
 
                     return {
                         name: `${input.originalName}`,
-                        title: `🧩 ${streamDetails.name}\n[Resolver ${streamType}]`,
+                        title: `🧩 ${streamDetails.name}\n[Resolved]`,
                         url: result.resolved_url,
                         headers: result.headers || streamDetails.headers,
                         behaviorHints: {
