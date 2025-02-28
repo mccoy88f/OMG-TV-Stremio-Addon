@@ -107,7 +107,8 @@ class StreamProxyManager {
     }
 
     async buildProxyUrl(streamUrl, headers = {}, userConfig = {}) {
-        if (!userConfig.proxy || !userConfig.proxy_pwd) {
+        if (!userConfig.proxy || !userConfig.proxy_pwd || !streamUrl || typeof streamUrl !== 'string') {
+            console.warn('⚠️ buildProxyUrl: Parametri mancanti o non validi');
             return null;
         }
     
@@ -118,57 +119,40 @@ class StreamProxyManager {
         });
     
         // Assicurati di avere uno user agent valido
-        const userAgent = headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent;
+        const userAgent = headers['User-Agent'] || headers['user-agent'] || config.defaultUserAgent || 'Mozilla/5.0';
         params.append('h_user-agent', userAgent);
     
-        // Gestione referer - rimuovi slash finale
-        let referer = null;
-        if (headers['referer']) referer = headers['referer'];
-        else if (headers['Referer']) referer = headers['Referer'];
-        else if (headers['referrer']) referer = headers['referrer'];
-        else if (headers['Referrer']) referer = headers['Referrer'];
-        
-        if (referer) {
-            referer = referer.replace(/\/$/, ''); // Rimuovi lo slash finale
-            params.append('h_referer', referer);
+        // Gestione referer e origin
+        let referer = headers['referer'] || headers['Referer'] || headers['referrer'] || headers['Referrer'];
+        if (referer) params.append('h_referer', referer.replace(/\/$/, ''));
+    
+        let origin = headers['origin'] || headers['Origin'];
+        if (origin) params.append('h_origin', origin.replace(/\/$/, ''));
+    
+        // Determina il tipo di stream senza seguire i redirect
+        let streamType = 'HLS'; // Default
+        if (streamUrl.endsWith('.mpd')) {
+            streamType = 'DASH';
+        } else if (streamUrl.endsWith('.mp4')) {
+            streamType = 'HTTP';
         }
     
-        // Gestione origin - rimuovi slash finale
-        let origin = null;
-        if (headers['origin']) origin = headers['origin'];
-        else if (headers['Origin']) origin = headers['Origin'];
-        
-        if (origin) {
-            origin = origin.replace(/\/$/, ''); // Rimuovi lo slash finale
-            params.append('h_origin', origin);
+        // Costruisci l'URL del proxy basato sul tipo di stream
+        let proxyUrl;
+        if (streamType === 'HLS') {
+            proxyUrl = `${baseUrl}/proxy/hls/manifest.m3u8?${params.toString()}`;
+        } else if (streamType === 'DASH') {
+            proxyUrl = `${baseUrl}/proxy/mpd/manifest.m3u8?${params.toString()}`;
+        } else {
+            proxyUrl = `${baseUrl}/proxy/stream?${params.toString()}`;
         }
     
-        try {
-            // Segui i reindirizzamenti e ottieni l'URL finale
-            const response = await axios.head(streamUrl, {
-                maxRedirects: 5,
-                validateStatus: status => status < 400 || status === 302
-            });
+        // Log per debugging
+        console.log(`🔍 Tipo di stream rilevato: ${streamType} - URL: ${streamUrl}`);
     
-            // Usa l'URL finale dopo i reindirizzamenti
-            const finalUrl = response.request.res.responseUrl || streamUrl;
-    
-            // Costruisci l'URL del proxy basato sull'URL finale
-            let proxyUrl;
-            if (finalUrl.endsWith('.m3u8') || finalUrl.includes('playlist.m3u8')) {
-                proxyUrl = `${baseUrl}/proxy/hls/manifest.m3u8?${params.toString()}`;
-            } else if (finalUrl.endsWith('.mpd') || finalUrl.includes('manifest.mpd')) {
-                proxyUrl = `${baseUrl}/proxy/mpd/manifest.m3u8?${params.toString()}`;
-            } else {
-                proxyUrl = `${baseUrl}/proxy/stream?${params.toString()}`;
-            }
-    
-            return proxyUrl;
-        } catch (error) {
-            console.warn('Errore nel rilevamento del tipo di stream:', error.message);
-            return `${baseUrl}/proxy/stream?${params.toString()}`;
-        }
+        return proxyUrl;
     }
+
 
     async getProxyStreams(input, userConfig = {}) {
         // Blocca solo gli URL che sono già proxy
