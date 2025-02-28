@@ -5,6 +5,13 @@
 A Stremio addon to add M3U playlist (IPTV) channels with EPG support to your catalog.
 For the PLUS version with custom playlist support, visit: https://github.com/mccoy88f/OMG-Plus-TV-Stremio-Addon
 
+⚠️⚠️⚠️ MOLTO IMPORtANte! LA NUOVA VERSIONE DI OMG+ TV RIBRANDIZZATA E AGGIORNATA FEB 2025 E' ARRIVATA!: Questa repo verrà abbandonata e poi chiusa!
+PROVA ora a OMG Premium TV!
+https://www.reddit.com/r/Stremio_Italia/comments/1j0h44x/tv_su_stremio_omg_premium_tv_m3u_playlist_addon/
+NUOVA REPO: https://github.com/mccoy88f/OMG-Premium-TV
+
+OMG TV (base) rimarra così com'è come addon preimpostato e non personalizzabile.
+
 IMPORTANT: First of all...
 
 <a href="https://www.buymeacoffee.com/mccoy88f"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a beer&emoji=🍺&slug=mccoy88f&button_colour=FFDD00&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=ffffff" /></a>
