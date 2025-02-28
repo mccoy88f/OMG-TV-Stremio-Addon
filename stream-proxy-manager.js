@@ -183,8 +183,12 @@ class StreamProxyManager {
             const isHealthy = await this.checkProxyHealth(proxyUrl, headers);
             
             // Determina il tipo di stream (HLS, DASH o HTTP)
-            let streamType = input.url.endsWith('.m3u8') ? 'HLS' : 
-                             input.url.endsWith('.mpd') ? 'DASH' : 'HTTP';
+            let streamType = 'HLS'; // Default
+            if (input.url.endsWith('.mpd')) {
+                streamType = 'DASH';
+            } else if (input.url.endsWith('.mp4')) {
+                streamType = 'HTTP';
+            }
     
             if (isHealthy) {
                 // Aggiunge lo stream proxato all'array
