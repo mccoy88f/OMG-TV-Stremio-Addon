@@ -205,6 +205,25 @@ class StreamProxyManager {
                 console.log(`⚠️ Proxy non valido per: ${input.url}, mantengo stream originale`);
                 
                 // Aggiungi lo stream originale se il proxy non funziona
+                if (userConfig.force_proxy === 'true') {
+                    streams.push({
+                        name: input.name,
+                        title: `${input.originalName}`,
+                        url: input.url,
+                        headers: input.headers,
+                        behaviorHints: {
+                            notWebReady: false,
+                            bingeGroup: "tv"
+                        }
+                    });
+                }
+            }
+        
+        } catch (error) {
+            console.error('❌ Errore durante l\'elaborazione del proxy:', error.message);
+            
+            // In caso di errore, aggiungi comunque lo stream originale
+            if (userConfig.force_proxy === 'true') {
                 streams.push({
                     name: input.name,
                     title: `${input.originalName}`,
@@ -216,21 +235,6 @@ class StreamProxyManager {
                     }
                 });
             }
-        
-        } catch (error) {
-            console.error('❌ Errore durante l\'elaborazione del proxy:', error.message);
-            
-            // In caso di errore, aggiungi comunque lo stream originale
-            streams.push({
-                name: input.name,
-                title: `${input.originalName}`,
-                url: input.url,
-                headers: input.headers,
-                behaviorHints: {
-                    notWebReady: false,
-                    bingeGroup: "tv"
-                }
-            });
         }
     
         return streams;
